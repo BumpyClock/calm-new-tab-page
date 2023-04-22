@@ -140,7 +140,7 @@ function displaySubscribedFeeds() {
 function setupBackButton() {
   const backButton = document.getElementById('back-to-main');
   backButton.addEventListener('click', () => {
-    window.location.href = 'index.html';
+    window.location.href = 'newtab.html';
   });
 }
 
