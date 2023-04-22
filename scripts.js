@@ -2,9 +2,54 @@ const SUBSCRIBED_FEEDS_KEY = 'subscribedFeeds';
 const DEFAULT_FEED_URL = 'https://www.theverge.com/rss/index.xml';
 
 document.addEventListener('DOMContentLoaded', () => {
+  const date = new Date();
+  const hours = date.getHours();
+  let greeting = '';
+
+  if (hours < 12) {
+    greeting = 'Good morning';
+  } else if (hours < 18) {
+    greeting = 'Good afternoon';
+  } else {
+    greeting = 'Good evening';
+  }
+
+  document.title = `${greeting} - RSS Feed Reader`;
+  document.getElementById('greeting').textContent = greeting;
   loadSubscribedFeeds();
-  setupSubscriptionForm();
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.querySelector('#feed-container')) {
+    // Main page
+    loadSubscribedFeeds();
+  } else {
+    // Settings page
+    setupSubscriptionForm();
+    displaySubscribedFeeds();
+    setupBackButton();
+  }
+});
+
+// ...
+
+function displaySubscribedFeeds() {
+  const feeds = getSubscribedFeeds();
+  const list = document.getElementById('subscribed-feeds-list');
+
+  feeds.forEach((feedURL) => {
+    const listItem = document.createElement('li');
+    listItem.textContent = feedURL;
+    list.appendChild(listItem);
+  });
+}
+
+function setupBackButton() {
+  const backButton = document.getElementById('back-to-main');
+  backButton.addEventListener('click', () => {
+    window.location.href = 'index.html';
+  });
+}
 
 function getSubscribedFeeds() {
   return JSON.parse(localStorage.getItem(SUBSCRIBED_FEEDS_KEY)) || [DEFAULT_FEED_URL];

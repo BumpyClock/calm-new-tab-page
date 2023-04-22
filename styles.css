@@ -1,8 +1,8 @@
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Segoe UI Variable Text', 'Segoe UI', Arial, Helvetica, sans-serif;
     background-color: #f5f5f5;
    
-    padding: 20px;
+    padding: 24px;
   }
   #subscription-form {
     display: flex;
@@ -34,23 +34,23 @@ body {
     border: 1px solid #ccc;
     border-radius: 7px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-       width: 300px;
-       height:auto;
+    width: 100%;
     display: flex;
     flex-direction: column;
-    /*justify-content: flex-start;*/
     overflow: hidden;
-    transition: transform ease-out 500ms;
-
+    height: auto;
+    max-width: 400px;
+    margin-bottom: 24px;
+    break-inside: avoid;
+    transition: ease-in-out 0.3s;
   }
 
   .card:hover{
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-    transform: translateY(-8px);
   }
   
   .card .text-content {
-    padding: 20px;
+    padding: 12px 24px 24px 24px;
   }
   
   
@@ -59,24 +59,37 @@ body {
     object-fit: cover;
     height: 150px;
     width: 100%;
-    margin-bottom: 15px;
+    margin-bottom: 4px;
   }
   
   .card h3 {
     margin: 0;
+    margin-bottom: 8px;
     font-size: 18px;
+    line-height: 1.33;
+    font-weight: 600;
+  }
+
+  .card p{
+    margin: 0;
+    margin-bottom: 12px;
+    font-size: 14px;
+    line-height: 1.33;
   }
   
   .card a {
     text-decoration: none;
     color: #2a6496;
+    font-weight: 600;
+    margin-bottom: 8px;
   }
 
   .feedsContainer {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 24px;
-    justify-content: center;
+    column-count: 4;
+    column-gap: 24px;
+    padding: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
   }
 
   .card button {
