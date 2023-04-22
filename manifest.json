@@ -1,16 +1,28 @@
 {
-    "manifest_version": 2,
-    "name": "RSS Feed Reader",
-    "version": "1.0",
-    "description": "A Chrome extension to replace the new tab with RSS feeds in a card layout.",
-    "permissions": ["storage"],
-    "chrome_url_overrides": {
-      "newtab": "newtab.html"
-    },
-    "content_security_policy": "script-src 'self' 'sha256-qxnPjX59DtD7nyLNLFx1lgF84C6ZU0zLs6ReJU0i5Gc='; object-src 'self'",
-    "icons": {
-      "48": "icon48.png",
-      "128": "icon128.png"
+  "manifest_version": 3,
+  "name": "RSS Feed Reader",
+  "version": "0.0.1",
+  "description": "A simple RSS Feed Reader extension for Chrome",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
     }
+  },
+  "permissions": ["storage"],
+  "icons": {
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "background_fetchFeeds.js"
+  },
+  "options_page": "settings.html",
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
   }
-  
+}
