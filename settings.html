@@ -9,18 +9,18 @@
   <script src="scripts.js"></script>
 </head>
 <body>
-  <h1>Settings</h1>
-  <h2>Subscribed Feeds</h2>
-  <ul id="subscribed-feeds-list"></ul>
+  <div class="settings-container">
+    <h1>Settings</h1>
+    <h2>Subscribed Feeds</h2>
+    <ul id="subscribed-feeds-list" class="subscribed-feeds-list"></ul>
 
-  <h2>Add a new feed</h2>
-  <form id="subscription-form">
-    <input type="url" id="feed-url" placeholder="Enter feed URL" required>
-    <button type="submit">Subscribe</button>
-  </form>
+    <h2>Add a new feed</h2>
+    <form id="subscription-form" class="subscription-form">
+      <input type="url" id="feed-url" placeholder="Enter feed URL" required>
+      <button type="submit">Subscribe</button>
+    </form>
 
-  <button id="back-to-main">Back to Main</button>
-
-  
+    <button id="back-to-main">Back to Main</button>
+  </div>
 </body>
 </html>

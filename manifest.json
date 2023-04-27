@@ -17,6 +17,7 @@
   },
   "background": {
     "service_worker": "background_fetchFeeds.js"
+    
   },
   "options_page": "settings.html",
   "chrome_url_overrides": {

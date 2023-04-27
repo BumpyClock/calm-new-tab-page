@@ -1,5 +1,8 @@
+(function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 const SUBSCRIBED_FEEDS_KEY = 'subscribedFeeds';
 const DEFAULT_FEED_URL = 'https://daringfireball.net/feeds/main';
+
+
 
 document.addEventListener('DOMContentLoaded', () => {
   const date = new Date();
@@ -33,6 +36,17 @@ document.addEventListener('DOMContentLoaded', () => {
       window.location.href = 'settings.html';
     });
   }
+
+  if (document.querySelector('#feed-container')) {
+    // Main page
+    document.getElementById('greeting').textContent = greeting;
+  
+    loadSubscribedFeeds();
+    handleSearch();
+  }
+ // generateDynamicBackground();
+
+  
 });
 
 
@@ -78,19 +92,24 @@ function compareItemsByDate(a, b) {
 
 
 async function loadFeed(feedURL) {
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(
-      { action: 'fetchFeed', feedURL },
-      (response) => {
-        if (response.success) {
-          resolve(response.feed);
-        } else {
-          reject(response.error);
-        }
+  chrome.runtime.sendMessage(
+    { action: "fetchFeed", feedURL },
+    (response) => {
+      if (response.success) {
+        const feed = response.feed;
+        const feedContainer = document.getElementById("feed-container");
+
+        feed.items.forEach((item) => {
+          const card = createCard(item);
+          feedContainer.appendChild(card);
+        });
+      } else {
+        console.error("Failed to fetch feed:", response.error);
       }
-    );
-  });
+    }
+  );
 }
+
 
 async function loadSubscribedFeeds() {
   const feeds = getSubscribedFeeds();
@@ -212,3 +231,89 @@ function extractThumbnailURL(content) {
   const match = content.match(imgRegex);
   return match ? match[1] : null;
 }
+
+
+// Search code 
+
+function handleSearch() {
+  const searchInput = document.getElementById('search-input');
+  const searchEngineSelect = document.getElementById('search-engine');
+  const searchButton = document.getElementById('search-button');
+
+  searchButton.addEventListener('click', () => {
+    const query = searchInput.value;
+    const searchEngineURL = searchEngineSelect.value;
+    const searchURL = searchEngineURL + encodeURIComponent(query);
+    window.open(searchURL, '_blank');
+  });
+
+  searchInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      searchButton.click();
+    }
+  });
+}
+
+function generateDynamicBackground() {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  gradient.addColorStop(0, getRandomColor());
+  gradient.addColorStop(1, getRandomColor());
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  canvas.style.position = 'fixed';
+  canvas.style.top = 0;
+  canvas.style.left = 0;
+  canvas.style.zIndex = -1;
+}
+
+function getRandomColor() {
+  const letters = '0123456789ABCDEF';
+  let color = '#';
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+}
+
+// Add this function to remove a feed
+function removeFeed(feedURL) {
+  const feeds = getSubscribedFeeds();
+  const updatedFeeds = feeds.filter(url => url !== feedURL);
+  setSubscribedFeeds(updatedFeeds);
+  displaySubscribedFeeds();
+}
+
+// Modify displaySubscribedFeeds function
+function displaySubscribedFeeds() {
+  const feeds = getSubscribedFeeds();
+  const list = document.getElementById('subscribed-feeds-list');
+  list.innerHTML = ''; // Clear the list
+
+  feeds.forEach((feedURL) => {
+    const listItem = document.createElement('li');
+
+    const feedText = document.createElement('span');
+    feedText.textContent = feedURL;
+    listItem.appendChild(feedText);
+
+    const removeButton = document.createElement('button');
+    removeButton.textContent = 'x';
+    removeButton.className = 'remove-feed-button';
+    removeButton.addEventListener('click', () => {
+      removeFeed(feedURL);
+    });
+    listItem.appendChild(removeButton);
+
+    list.appendChild(listItem);
+  });
+}
+
+
+},{}]},{},[1]);

@@ -6,13 +6,33 @@
     <title>RSS Feed Reader</title>
     <link rel="stylesheet" href="styles.css">
     <script src="rss-parser.min.js"></script>
+    <script src="canvasbackground.js"></script>
+
 
   </head>
   <body>
-    <h1 id="greeting">RSS Feed Reader</h1>
-    <!-- Add this button inside the body of index.html -->
-<button id="settings-button">Settings</button>
-    
+    <!-- Canvas -->
+<!-- <canvas class="orb-canvas"></canvas> -->
+<!-- Overlay -->
+
+    <div id="main-container">
+      <button id="settings-button">Settings</button>
+      <div class="header">
+       
+        <h1 id="greeting" class="greeting"></h1>
+        <div id="search-container">
+          <input type="text" id="search-input" placeholder="Search...">
+          <select id="search-engine">
+            <option value="https://www.google.com/search?q=">Google</option>
+            <option value="https://www.bing.com/search?q=">Bing</option>
+            <option value="https://duckduckgo.com/?q=">DuckDuckGo</option>
+          </select>
+          <button id="search-button">Search</button>
+        </div>
+        
+      </div>
+      
+
     <div id="feed-container" class='feedsContainer'></div>
     <script src="scripts.js"></script>
   </body>
