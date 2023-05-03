@@ -18,6 +18,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     //const feed = await parser.parseURL(feedURL);
     return feed;
   }
+
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === "contentScript") {
+    port.postMessage({ action: "fetchReadableContent" });
+  }
+});
+
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === "contentScript") {
+    port.postMessage({ action: "getReadableContent" });
+  }
+});
   
   
   

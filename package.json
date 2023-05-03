@@ -4,8 +4,10 @@
     "browserify": "^17.0.0",
     "debounce": "^1.2.1",
     "hsl-to-hex": "^1.0.0",
+    "jsdom": "^22.0.0",
     "pixi": "^0.3.1",
     "pixi.js": "^7.2.4",
+    "readability": "^0.1.0",
     "rss-parser": "^3.13.0",
     "simplex-noise": "^4.0.1"
   }
