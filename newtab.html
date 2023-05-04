@@ -6,12 +6,7 @@
   <meta charset="utf-8">
   <title>RSS Feed Reader</title>
   <link rel="stylesheet" href="styles.css">
-  <script src="rss-parser.min.js"></script>
   <script src="readability.js"></script>
-
-  <script src="canvasbackground.js"></script>
-
-
 </head>
 
 <body>
@@ -25,10 +20,9 @@
     <button id="settings-button">Settings</button>
     <div class="header">
 
-      <h1 id="greeting" class="greeting"></h1>
       <div id="search-container">
         <input type="text" id="search-input" placeholder="Search...">
-        <select id="search-engine">
+        <select title="select search engine" id="search-engine" class="search-engine">
           <option value="https://www.google.com/search?q=">Google</option>
           <option value="https://www.bing.com/search?q=">Bing</option>
           <option value="https://duckduckgo.com/?q=">DuckDuckGo</option>
@@ -37,7 +31,6 @@
       </div>
       <!-- Add this below the search bar -->
       <div id="most-visited-sites" class="most-visited-sites">
-        <h3>Most Visited Sites</h3>
         <div class="most-visited-sites-container"></div>
       </div>
 

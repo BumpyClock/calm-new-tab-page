@@ -58,11 +58,10 @@ body > *:not(.background-image-container) {
   place-items: center;
 }
 .card {
-  background-color: white;
-  border: 1px solid #ccc;
-  border-radius: 7px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  width: 100%;
+  background: #FDFDFD; 
+   border: 1px solid rgba(0, 0, 0, 0.0578);
+border-radius: 7px;
+box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.04);  width: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -71,6 +70,8 @@ body > *:not(.background-image-container) {
   margin-bottom: 24px;
   break-inside: avoid;
   transition: ease-in-out 0.3s;
+  -webkit-backdrop-filter: blur(30px);
+  backdrop-filter: blur(30px);
 }
 
 .card:hover {
@@ -78,11 +79,11 @@ body > *:not(.background-image-container) {
 }
 
 .card .text-content {
-  padding: 12px 24px 24px 24px;
+  padding: 8px 24px 24px 24px;
 }
 
 .card img {
-  border-radius: 5px 5px 0 0;
+  border-radius: 7px 7px 0 0;
   object-fit: cover;
   height: 150px;
   width: 100%;
@@ -129,11 +130,33 @@ body > *:not(.background-image-container) {
   color: white;
   cursor: pointer;
   font-size: 14px;
-  margin-top: 10px;
+  margin-top: 12px;
   padding: 8px 12px;
   text-transform: uppercase;
 }
-
+.website-info img {
+  width:16px;
+  height: 16px;
+  margin:0;
+  padding: 0px;
+  border-radius: 2px;
+}
+.website-info {
+  display: flex;
+  flex-direction: row;
+  background-color: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+  align-items: center;
+  width: -moz-fit-content;
+  width: fit-content;
+  padding: 4px 8px;
+  font-weight: 400;
+  font-size:10px;
+  font-kerning: none ;
+  gap: 4px;
+  margin-bottom: 12px;
+}
 .description {
   display: -webkit-box;
   -webkit-line-clamp: 3;
@@ -141,6 +164,11 @@ body > *:not(.background-image-container) {
   overflow: hidden;
   text-overflow: ellipsis;
   margin-bottom: 10px;
+}
+.long-description {
+  -webkit-line-clamp: 6;
+  font-size: 14px;
+  line-height: 1.33;
 }
 
 .read-more-link {
@@ -151,11 +179,12 @@ body > *:not(.background-image-container) {
 
 .header {
   display: flex;
+  justify-content: flex-start;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 75vh;
-  padding: 2rem;
+  min-height: 85vh;
+  padding: 18rem 2rem;
   
 }
 
@@ -172,22 +201,33 @@ body > *:not(.background-image-container) {
 }
 
 #search-input {
-  font-size: 1.2rem;
-  padding: 0.5rem;
+  font-size: 14px;
+  padding: 12px;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 7px;
   flex-grow: 1;
   min-width: -webkit-fill-available;
-  margin-right: 0.5rem;
+  margin-right: 8px;
   font-weight: 400;
 }
 
 #search-engine {
-  font-size: 1rem;
-  padding: 0.5rem;
-  margin-right: 0.5rem;
+  font-size: 14px;
+  padding: 12px;
+  margin-right: 8px;
+  border-radius: 7px;
+  border: 1px solid #ccc;
+
+
 }
 
+#search-engine .option {
+  font-size: 14px;
+  padding: 12px;
+  margin-right: 8px;
+  border-radius: 7px;
+  border: 1px solid #ccc;
+}
 #search-button {
   font-size: 1rem;
   padding: 0.5rem 1rem;
@@ -301,6 +341,7 @@ strong {
     var(--complimentary2)
   );
   -webkit-background-clip: text;
+  background-clip: text;;
   -webkit-text-fill-color: transparent;
   -moz-background-clip: text;
   -moz-text-fill-color: transparent;
@@ -487,8 +528,8 @@ a {
 /* Remove Feed Button */
 .remove-feed-button {
   background-color: transparent;
-  border: none;
-  color: #f00;
+    border: none;
+  color: #000;
   font-weight: bold;
   margin-left: 1rem;
   cursor: pointer;
@@ -508,7 +549,8 @@ a {
 
 #subscribed-feeds-list li {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap:24px;
   align-items: center;
   padding: 1rem;
   background-color: #fff;
@@ -521,6 +563,18 @@ a {
   word-wrap: break-word;
   max-width: 90%;
   overflow-wrap: break-word;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.33;
+  width: -webkit-fill-available;
+}
+
+#subscribed-feeds-list li img {
+  width: 48px;
+  height: 48px;
+  border-radius: 7px;
+  object-fit: cover;
+
 }
 
 .reader-view-modal {
@@ -530,6 +584,7 @@ a {
   height: 100%;
   width: 100%;
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   font-family: Georgia, serif;
   line-height: 1.6;
   font-size: 18px;
@@ -606,7 +661,7 @@ a {
   border-radius: 8px;
   position: relative;
   max-height: 100vh;
-  max-width: 1200px;
+  max-width: 800px;
   overflow-y: auto;
   -ms-overflow-style: none; /* Internet Explorer and Edge */
   scrollbar-width: none; /* Firefox */
@@ -628,13 +683,13 @@ a {
   font-size: 16px;
   margin: 0;
   font-weight: 400;
-  font-style: italic;
 }
 
 .reader-view-reading-time {
-  font-size: 12px;
-margin:0;
-  text-align: match-parent;
+  font-size: 14px;
+margin:8px 0px !important;
+margin-bottom: 4px;
+  
 }
 
 .reader-view-reading-time p {
@@ -643,7 +698,7 @@ margin:0;
 .reader-view-close {
   position: absolute;
   top: 24px;
-  right: 48px;
+  right: 24px;
   font-size: 2rem;
   font-weight: 900;
   color: #000;
@@ -685,12 +740,15 @@ margin:0;
 }
 
 .site-card {
-  width: 120px;
-  height: 120px;
-
-  border: 1px solid #ccc;
+  max-width: 120px;
+  max-height: 120px;
+width: 10vw;
+height: 10vw;
+min-width: 96px;
+min-height: 96px;
+  border: 1px solid rgba(0, 0, 0, 0.0578);
   padding: 4px;
-  border-radius: 5px;
+  border-radius: 7px;
   background-color: #fff;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -705,8 +763,10 @@ margin:0;
 }
 
 .site-favicon {
-  width: 48px;
-  height: 48px;
+  max-width: 48px;
+  width: 5vw;
+  height: 5vw;
+  max-height: 48px;
   padding: 4px;
 }
 
@@ -763,5 +823,6 @@ border-radius: 100px;
   stroke-linecap: round;
   transform-origin: 50% 50%;
   transform: rotate(-90deg);
+  transition: all .05s ease-in;
 }
 
