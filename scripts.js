@@ -1,6 +1,6 @@
-(function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 const SUBSCRIBED_FEEDS_KEY = 'subscribedFeeds';
 const DEFAULT_FEED_URL = '';
+let mostVisitedSitesCache = null;
 
 
 
@@ -17,12 +17,12 @@ document.addEventListener('DOMContentLoaded', () => {
     greeting = 'Good evening';
   }
 
-  document.title = `${greeting} - RSS Feed Reader`;
+  document.title = `${greeting} - New Tab`;
   if (document.querySelector('#feed-container')) {
     // Main page
-    document.getElementById('greeting').textContent = greeting;
+   // document.getElementById('greeting').textContent = greeting;
 
-   // loadSubscribedFeeds();
+  // loadSubscribedFeeds();
     
   } else {
     // Settings page
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (document.querySelector('#feed-container')) {
     // Main page
-    document.getElementById('greeting').textContent = greeting;
+   // document.getElementById('greeting').textContent = greeting;
   
     loadSubscribedFeeds();
     handleSearch();
@@ -93,10 +93,11 @@ async function loadSubscribedFeeds() {
   allItems.sort(compareItemsByDate);
 
   const feedContainer = document.getElementById('feed-container');
-  allItems.forEach(item => {
-    const card = createCard(item);
+  for (const item of allItems) {
+    const card = await createCard(item);
     feedContainer.appendChild(card);
-  });
+  }
+  
 }
 
 function compareItemsByDate(a, b) {
@@ -114,22 +115,49 @@ function compareItemsByDate(a, b) {
 
 
 async function loadFeed(feedURL) {
-  chrome.runtime.sendMessage(
-    { action: "fetchFeed", feedURL },
-    (response) => {
-      if (response.success) {
-        const feed = response.feed;
-        const feedContainer = document.getElementById("feed-container");
+  try {
+    const feed = await fetchRssFeed(feedURL);
+    const feedContainer = document.getElementById("feed-container");
 
-        feed.items.forEach((item) => {
-          const card = createCard(item);
-          feedContainer.appendChild(card);
-        });
-      } else {
-        console.error("Failed to fetch feed:", response.error);
-      }
+     // Sort feed items chronologically
+     feed.items.sort((a, b) => {
+      const dateA = new Date(a.pubDate);
+      const dateB = new Date(b.pubDate);
+      return dateB - dateA; // For descending order (most recent first)
+      // return dateA - dateB; // For ascending order (oldest first)
+    });
+
+    for (const item of feed.items) {
+      const thumbnailURL = extractThumbnailURL(item);
+      const card = await createCard(item, thumbnailURL);
+      feedContainer.appendChild(card);
     }
-  );
+  } catch (error) {
+    console.error("Failed to fetch feed:", error);
+  }
+}
+
+
+
+async function fetchRssFeed(feedUrl) {
+  const rss2jsonApiKey = "exr1uihphn0zohhpeaqesbn4bb1pqzxm3xoe8cuj"; // Replace with your API key from rss2json.com
+  const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&api_key=${rss2jsonApiKey}`;
+
+  return fetch(apiUrl)
+    .then((response) => {
+      if (response.ok) {
+        return response.json();
+      } else {
+        throw new Error("Failed to fetch RSS feed");
+      }
+    })
+    .then((data) => {
+      if (data.status === "ok") {
+        return data;
+      } else {
+        throw new Error("Failed to parse RSS feed");
+      }
+    });
 }
 
 
@@ -167,16 +195,7 @@ function setupSubscriptionForm() {
   });
 }
 
-function displaySubscribedFeeds() {
-  const feeds = getSubscribedFeeds();
-  const list = document.getElementById('subscribed-feeds-list');
 
-  feeds.forEach((feedURL) => {
-    const listItem = document.createElement('li');
-    listItem.textContent = feedURL;
-    list.appendChild(listItem);
-  });
-}
 
 function setupBackButton() {
   const backButton = document.getElementById('back-to-main');
@@ -185,46 +204,67 @@ function setupBackButton() {
   });
 }
 
-function createCard(item) {
-  const card = document.createElement('div');
-  card.className = 'card';
-
-  const thumbnailURL = extractThumbnailURL(item.content);
+async function createCard(item, thumbnailURL) {
+  const card = document.createElement("div");
+  card.className = "card";
+ var website_title =  await getWebsiteTitle(item.link);
   if (thumbnailURL) {
-    const img = document.createElement('img');
+    const img = document.createElement("img");
     img.src = thumbnailURL;
     card.appendChild(img);
   }
 
   const textContentDiv = document.createElement("div");
   textContentDiv.classList.add("text-content");
+// Add website name and favicon
+const websiteInfoDiv = document.createElement("div");
+websiteInfoDiv.className = "website-info";
 
-  const title = document.createElement('h3');
+const favicon = document.createElement("img");
+const mainDomain = new URL(item.link).hostname;
+favicon.src = `https://icon.horse/icon/${mainDomain}`;
+favicon.alt = `${mainDomain} Favicon`;
+favicon.className = "site-favicon";
+websiteInfoDiv.appendChild(favicon);
+
+const websiteName = document.createElement("span");
+websiteName.textContent = website_title;
+websiteInfoDiv.appendChild(websiteName);
+
+textContentDiv.appendChild(websiteInfoDiv);
+
+  const title = document.createElement("h3");
   title.textContent = item.title;
   textContentDiv.appendChild(title);
 
   if (item.contentSnippet) {
-    const snippet = document.createElement('p');
-    snippet.className = 'description';
+    const snippet = document.createElement("p");
+    snippet.className = "description";
     snippet.textContent = item.contentSnippet;
     textContentDiv.appendChild(snippet);
   }
 
   if (item.link) {
-    const link = new URL(item.link);
-    
     const date = new Date(item.pubDate);
     const dateString = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
 
-    const details = document.createElement('p');
+    const details = document.createElement("p");
     details.textContent = `${dateString}`;
     textContentDiv.appendChild(details);
 
-    const readMoreLink = document.createElement('a');
+    if (!thumbnailURL) {
+      const description = document.createElement("div");
+      description.className = "description long-description";
+      const plainTextDescription = item.description.replace(/(<([^>]+)>)/gi, ""); // Remove HTML tags
+      description.innerText = plainTextDescription;
+      textContentDiv.appendChild(description);
+    }
+
+    const readMoreLink = document.createElement("a");
     readMoreLink.href = item.link;
-    readMoreLink.target = '_blank';
-    readMoreLink.textContent = 'Read more';
-    readMoreLink.className = 'read-more-link';
+    readMoreLink.target = "_blank";
+    readMoreLink.textContent = "Read more";
+    readMoreLink.className = "read-more-link";
     textContentDiv.appendChild(readMoreLink);
   }
 
@@ -240,12 +280,12 @@ function createCard(item) {
 
 async function getWebsiteTitle(url) {
   try {
-    const response = await fetch(url);
+    const parsedUrl = new URL(url);
+    const rootDomain = `${parsedUrl.protocol}//${parsedUrl.host}`;
+    const response = await fetch(rootDomain);
     const text = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(text, "text/html");
-    const title = doc.querySelector('title');
-    return title ? title.textContent : url;
+    const matches = text.match(/<title>(.*?)<\/title>/i);
+    return matches && matches[1] ? matches[1] : url;
   } catch (e) {
     console.error('Failed to get website title:', e);
     return url;
@@ -253,11 +293,43 @@ async function getWebsiteTitle(url) {
 }
 
 
-function extractThumbnailURL(content) {
+
+function extractThumbnailURL(item) {
   const imgRegex = /<img[^>]+src="([^">]+)"/;
-  const match = content.match(imgRegex);
-  return match ? match[1] : null;
+
+  // Check if 'content' field exists and try to extract the thumbnail URL
+  if (item.content) {
+    const match = item.content.match(imgRegex);
+    if (match) return match[1];
+  }
+
+  // Check if 'description' field exists and try to extract the thumbnail URL
+  if (item.description) {
+    const match = item.description.match(imgRegex);
+    if (match) return match[1];
+  }
+
+  // Check if 'enclosure' field exists and has a URL attribute with type "image/jpg"
+  if (item.enclosure && item.enclosure.link && (item.enclosure.type === "image/jpg" || item.enclosure.type === "image/jpeg")) {
+    return item.enclosure.link;
+  }
+
+  // Check if 'media:group' field exists and has a valid URL in 'media:content'
+  if (item['media:group'] && item['media:group']['media:content']) {
+    const mediaContent = item['media:group']['media:content'];
+    if (Array.isArray(mediaContent)) {
+      for (const media of mediaContent) {
+        if (media.url && media.type === "image/jpeg") return media.url;
+      }
+    } else if (mediaContent.type === "image/jpeg") {
+      return mediaContent.url;
+    }
+  }
+
+  return null;
 }
+
+
 
 
 // Search code 
@@ -281,33 +353,7 @@ function handleSearch() {
   });
 }
 
-function generateDynamicBackground() {
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  document.body.appendChild(canvas);
 
-  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-  gradient.addColorStop(0, getRandomColor());
-  gradient.addColorStop(1, getRandomColor());
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  canvas.style.position = 'fixed';
-  canvas.style.top = 0;
-  canvas.style.left = 0;
-  canvas.style.zIndex = -1;
-}
-
-function getRandomColor() {
-  const letters = '0123456789ABCDEF';
-  let color = '#';
-  for (let i = 0; i < 6; i++) {
-    color += letters[Math.floor(Math.random() * 16)];
-  }
-  return color;
-}
 
 // Add this function to remove a feed
 function removeFeed(feedURL) {
@@ -444,31 +490,60 @@ function toggleBodyScroll(isEnabled) {
 }
 
 // Modify displaySubscribedFeeds function
-function displaySubscribedFeeds() {
+async function displaySubscribedFeeds() {
   const feeds = getSubscribedFeeds();
-  const list = document.getElementById('subscribed-feeds-list');
-  list.innerHTML = ''; // Clear the list
+  const list = document.getElementById("subscribed-feeds-list");
+  list.innerHTML = ""; // Clear the list
 
-  feeds.forEach((feedURL) => {
-    const listItem = document.createElement('li');
+  for (const feedURL of feeds) {
+    const listItem = document.createElement("li");
 
-    const feedText = document.createElement('span');
-    feedText.textContent = feedURL;
-    listItem.appendChild(feedText);
+    // Add website favicon
+    const favicon = document.createElement("img");
+    const mainDomain = new URL(feedURL).hostname;
+    favicon.src = `https://icon.horse/icon/${mainDomain}`;
+    favicon.alt = `${mainDomain} Favicon`;
+    favicon.className = "site-favicon";
+    listItem.appendChild(favicon);
 
-    const removeButton = document.createElement('button');
-    removeButton.textContent = 'x';
-    removeButton.className = 'remove-feed-button';
-    removeButton.addEventListener('click', () => {
+    // Add website name
+    const websiteName = document.createElement("span");
+    const siteTitle = await getWebsiteTitle(feedURL);
+    websiteName.textContent = siteTitle;
+    listItem.appendChild(websiteName);
+
+    const removeButton = document.createElement("button");
+    removeButton.textContent = "X";
+    removeButton.className = "remove-feed-button";
+    removeButton.addEventListener("click", () => {
       removeFeed(feedURL);
     });
     listItem.appendChild(removeButton);
 
     list.appendChild(listItem);
-  });
+  }
 }
 
+
 // Show Top Sites
+async function initializeMostVisitedSitesCache() {
+  mostVisitedSitesCache = await new Promise((resolve) => {
+    chrome.topSites.get(async (sites) => {
+      const siteCards = await Promise.all(
+        sites.slice(0, 10).map(async (site) => {
+          const siteCard = await createMostVisitedSiteCard(site);
+          return siteCard;
+        })
+      );
+      resolve(siteCards);
+    });
+  });
+
+  // Call fetchMostVisitedSites to display the most visited sites once the cache is initialized
+  fetchMostVisitedSites();
+}
+
+
 function createMostVisitedSiteCard(site) {
   const siteUrl = new URL(site.url);
   const mainDomain = siteUrl.hostname;
@@ -476,29 +551,59 @@ function createMostVisitedSiteCard(site) {
   siteCard.className = "site-card";
   siteCard.innerHTML = `
     <a href="${site.url}" class="site-link">
-      <img src="https://www.google.com/s2/favicons?domain=${mainDomain}&sz=256" alt="${site.title} Favicon" class="site-favicon">
+      <img src="https://icon.horse/icon/${mainDomain}" alt="${site.title} Favicon" class="site-favicon">
       <div class="site-title">${site.title}</div>
     </a>
   `;
   return siteCard;
 }
 
+
+
 function fetchMostVisitedSites() {
-  chrome.topSites.get((sites) => {
-    const mostVisitedSitesContainer = document.querySelector(".most-visited-sites-container");
-    sites.slice(0, 10).forEach((site) => {
-      const siteCard = createMostVisitedSiteCard(site);
-      mostVisitedSitesContainer.appendChild(siteCard);
-    });
+  if (!mostVisitedSitesCache) {
+    console.error("Most visited sites cache is not initialized");
+    initializeMostVisitedSitesCache();
+
+    return;
+  }
+
+  const mostVisitedSitesContainer = document.querySelector(".most-visited-sites-container");
+
+  mostVisitedSitesCache.forEach((siteCard) => {
+    mostVisitedSitesContainer.appendChild(siteCard.cloneNode(true));
   });
 }
 
 
 
+//cache favicons for improve perf
+async function cacheFavicon(domain) {
+  const response = await fetch(`https://icon.horse/icon/${domain}`);
+  const blob = await response.blob();
+  const dataURL = await new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  });
+  localStorage.setItem(`favicon-${domain}`, dataURL);
+  return dataURL;
+}
+
+async function getFavicon(domain) {
+  const cachedFavicon = localStorage.getItem(`favicon-${domain}`);
+  if (cachedFavicon) {
+    return cachedFavicon;
+  } else {
+    const fetchedFavicon = await cacheFavicon(domain);
+    return fetchedFavicon;
+  }
+}
+
 
 
 // Call the fetchMostVisitedSites function when the DOM is loaded
-document.addEventListener("DOMContentLoaded", fetchMostVisitedSites);
+//document.addEventListener("DOMContentLoaded", initializeMostVisitedSitesCache);
 document.addEventListener("DOMContentLoaded", fetchBingImageOfTheDay);
 
 async function fetchBingImageOfTheDay() {
@@ -528,7 +633,8 @@ window.addEventListener("scroll", () => {
   bgContainer.style.filter = `blur(${blurIntensity}px) brightness(${1 - darkIntensity})`;
 });
 
+//load most visited sites from cache
+initializeMostVisitedSitesCache();
 
 
 
-},{}]},{},[1]);

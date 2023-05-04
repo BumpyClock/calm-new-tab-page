@@ -2,10 +2,9 @@
   "manifest_version": 3,
   "name": "Calm New Tab Page",
   "version": "0.0.1",
-  "description": "A simple RSS Feed Reader extension for Chrome",
+  "description": "A Clean New Tab Page with a focus on privacy, simplicity and customizability.",
   "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
+      "default_icon": {
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }
@@ -17,10 +16,6 @@
   },
   "host_permissions": ["http://*/*", "https://*/*"],
 
-  "background": {
-    "service_worker": "background_fetchFeeds.js"
-    
-  },
   "options_page": "settings.html",
   "chrome_url_overrides": {
     "newtab": "newtab.html"
@@ -28,7 +23,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["readability.js", "contentScript.js"],
+      "js": ["readability.js"],
       "all_frames": true
     }],
 
