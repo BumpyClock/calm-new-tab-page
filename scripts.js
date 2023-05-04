@@ -50,17 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
 });
 
-chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-  chrome.scripting.executeScript(
-    {
-      target: { tabId: tabs[0].id },
-      files: ["contentScript.js"],
-    },
-    () => {
-      // Handle any errors or perform further actions after content script execution
-    }
-  );
-});
+
 
 
 
@@ -83,22 +73,25 @@ function setSubscribedFeeds(feeds) {
 
 async function loadSubscribedFeeds() {
   const feeds = getSubscribedFeeds();
-  let allItems = [];
-
-  for (const feedURL of feeds) {
-    const feed = loadFeed(feedURL);
-    allItems = allItems.concat(feed.items);
-  }
-
-  allItems.sort(compareItemsByDate);
+  const allItems = await Promise.all(feeds.map(loadFeed))
+    .then((feeds) => {
+      // Filter out any undefined values and then use flatMap
+      return feeds.filter(feed => feed).flatMap(feed => feed.items);
+    })
+    .then((items) => {
+      items.sort(compareItemsByDate);
+      return items;
+    });
 
   const feedContainer = document.getElementById('feed-container');
-  for (const item of allItems) {
-    const card = await createCard(item);
+  allItems.forEach(item => {
+    const card = createCard(item);
     feedContainer.appendChild(card);
-  }
-  
+  });
 }
+
+
+
 
 function compareItemsByDate(a, b) {
   const dateA = new Date(a.pubDate);
@@ -161,23 +154,7 @@ async function fetchRssFeed(feedUrl) {
 }
 
 
-async function loadSubscribedFeeds() {
-  const feeds = getSubscribedFeeds();
-  const allItems = await Promise.all(feeds.map(loadFeed))
-    .then((feeds) => {
-      return feeds.flatMap(feed => feed.items);
-    })
-    .then((items) => {
-      items.sort(compareItemsByDate);
-      return items;
-    });
 
-  const feedContainer = document.getElementById('feed-container');
-  allItems.forEach(item => {
-    const card = createCard(item);
-    feedContainer.appendChild(card);
-  });
-}
 
 
 function setupSubscriptionForm() {
@@ -204,7 +181,7 @@ function setupBackButton() {
   });
 }
 
-async function createCard(item, thumbnailURL) {
+async function createCard(item, thumbnailURL=null) {
   const card = document.createElement("div");
   card.className = "card";
  var website_title =  await getWebsiteTitle(item.link);
