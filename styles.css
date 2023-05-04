@@ -823,5 +823,6 @@ border-radius: 100px;
   stroke-linecap: round;
   transform-origin: 50% 50%;
   transform: rotate(-90deg);
+  transition: all .05s ease-in;
 }
 
