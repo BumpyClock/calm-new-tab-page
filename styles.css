@@ -137,7 +137,7 @@ box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.04);  width: 100%;
 .website-info img {
   width:16px;
   height: 16px;
-  margin:0;
+  margin:0 !important;
   padding: 0px;
   border-radius: 2px;
 }
@@ -677,6 +677,8 @@ a {
 .reader-view-title {
   font-size: 36px;
   margin: 0;
+  margin-bottom: 8px;
+  line-height: 1.2;
 }
 
 .reader-view-author {
