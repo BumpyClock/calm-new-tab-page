@@ -10,7 +10,7 @@
       "128": "icons/icon128.png"
     }
   },
-  "permissions": ["storage", "topSites","scripting"],
+  "permissions": ["storage", "topSites"],
   "icons": {
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
