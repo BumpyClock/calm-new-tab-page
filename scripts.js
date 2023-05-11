@@ -1,5 +1,5 @@
 const SUBSCRIBED_FEEDS_KEY = 'subscribedFeeds';
-const DEFAULT_FEED_URL = '';
+const DEFAULT_FEED_URL = 'https://www.vox.com/rss/index.xml';
 let mostVisitedSitesCache = null;
 
 
@@ -345,6 +345,30 @@ function removeFeed(feedURL) {
   displaySubscribedFeeds();
 }
 
+// async function showReaderView(url) {
+//   try {
+//     const response = await fetch(url);
+//     const html = await response.text();
+//     const parser = new DOMParser();
+//     const doc = parser.parseFromString(html, "text/html");
+//     const reader = new Readability(doc);
+//     const article = reader.parse();
+
+//     if (article) {
+//       const readerViewModal = createReaderViewModal(article);
+//       document.body.appendChild(readerViewModal);
+//       setTimeout(() => {
+//         readerViewModal.classList.add("visible");
+//       }, 10);
+//       toggleBodyScroll(false);
+//     } else {
+//       console.error("Failed to fetch readable content.");
+//     }
+//   } catch (error) {
+//     console.error("Error fetching the page content:", error);
+//   }
+// }
+
 async function showReaderView(url) {
   try {
     const response = await fetch(url);
@@ -361,6 +385,34 @@ async function showReaderView(url) {
         readerViewModal.classList.add("visible");
       }, 10);
       toggleBodyScroll(false);
+
+      // Add website name and favicon
+      const websiteInfoDiv = document.createElement("div");
+      websiteInfoDiv.className = "website-info";
+
+      const favicon = document.createElement("img");
+      const mainDomain = new URL(url).hostname;
+      favicon.src = `https://icon.horse/icon/${mainDomain}`;
+      favicon.alt = `${mainDomain} Favicon`;
+      favicon.className = "site-favicon";
+      websiteInfoDiv.appendChild(favicon);
+
+      const websiteName = document.createElement("span");
+      websiteName.textContent = await getWebsiteTitle(url);
+      websiteName.style.fontSize = "10px";
+      websiteName.style.fontWeight = "900";
+      websiteInfoDiv.appendChild(websiteName);
+
+      readerViewModal.querySelector("#website-info-placeholder").appendChild(websiteInfoDiv);
+
+      // Check if content overflows
+      const contentHeight = readerViewModal.querySelector('.reader-view-page-text');
+      const contentContainerHeight = readerViewModal.querySelector('.reader-view-content');
+      const progressRing = document.getElementById('progress-ring');
+      if (contentHeight.clientHeight < contentContainerHeight.clientHeight) {
+        progressRing.style.display = 'none';
+      } 
+
     } else {
       console.error("Failed to fetch readable content.");
     }
@@ -378,18 +430,17 @@ function createReaderViewModal(article) {
       
       <div class="reader-view-page-content">
         <div class="reader-view-header">
-        <span class="reader-view-close">&times;</span>
-          <h1 class="reader-view-title">${article.title}</h1>
+          <span class="reader-view-close">&times;</span>
+          <h1 class="reader-view-title"><span id="website-info-placeholder"></span>${article.title}</h1>
           ${article.byline ? `<h2 class="reader-view-author">${article.byline}</h2>` : ""}
           <p class="reader-view-reading-time">${estimateReadingTime(article.textContent)} minutes</p>
-          <hr class ="solid">
-
+          <hr class="solid">
         </div>
         <div class="reader-view-page-text">
           <div class="reader-view-article">${article.content}</div>
         </div>
       </div>
-      <div class="progress-indicator-container"></div>
+      <div id="progress-ring" class="progress-indicator-container"></div>
     </div>
   `;
 
@@ -423,7 +474,7 @@ function createCircularProgressIndicator() {
   progressIndicator.className = "progress-indicator";
 
   progressIndicator.innerHTML = `
-    <svg class="progress-circle" viewBox="0 0 36 36">
+    <svg id="progress-ring" class="progress-circle" viewBox="0 0 36 36">
       <circle class="progress-circle__background" cx="18" cy="18" r="15.9155" stroke-width="2"></circle>
       <circle class="progress-circle__progress" cx="18" cy="18" r="15.9155" stroke-width="2" stroke-dasharray="100" stroke-dashoffset="100"></circle>
     </svg>
@@ -478,10 +529,12 @@ async function displaySubscribedFeeds() {
   list.innerHTML = ""; // Clear the list
 
   for (const feedURL of feeds) {
+    if (feedURL != null) {
     const listItem = document.createElement("li");
 
     // Add website favicon
     const favicon = document.createElement("img");
+    
     const mainDomain = new URL(feedURL).hostname;
     favicon.src = `https://icon.horse/icon/${mainDomain}`;
     favicon.alt = `${mainDomain} Favicon`;
@@ -504,7 +557,9 @@ async function displaySubscribedFeeds() {
 
     list.appendChild(listItem);
   }
+  }
 }
+
 
 
 // Show Top Sites
