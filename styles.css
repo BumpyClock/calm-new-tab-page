@@ -139,8 +139,14 @@ box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.04);  width: 100%;
   height: 16px;
   margin:0;
   padding: 0px;
-  border-radius: 2px;
+  border:none !important;
+  box-shadow: none;
+  background:none;
+
+  
 }
+
+
 .website-info {
   display: flex;
   flex-direction: row;
@@ -156,6 +162,15 @@ box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.04);  width: 100%;
   font-kerning: none ;
   gap: 4px;
   margin-bottom: 12px;
+}
+.website-info .site-favicon {
+  max-width: 16px;
+  
+  max-height: 16px;
+  background:none !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 3px;
 }
 .description {
   display: -webkit-box;
@@ -746,11 +761,10 @@ width: 10vw;
 height: 10vw;
 min-width: 96px;
 min-height: 96px;
-  border: 1px solid rgba(0, 0, 0, 0.0578);
+  
   padding: 4px;
   border-radius: 7px;
-  background-color: #fff;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  
   overflow: hidden;
 }
 
@@ -759,15 +773,20 @@ min-height: 96px;
   flex-direction: column;
   align-items: center;
   text-decoration: none;
-  color: #333;
+  color: #fff;
+  gap:4px;
 }
 
 .site-favicon {
-  max-width: 48px;
+  max-width: 64px;
   width: 5vw;
   height: 5vw;
-  max-height: 48px;
-  padding: 4px;
+  max-height: 64px;
+  padding: 12px;
+  background:rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.0578);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
 }
 
 .site-title {
@@ -779,6 +798,7 @@ min-height: 96px;
   text-overflow: ellipsis;
   max-height: 48px;
   max-width: 120px;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .progress-indicator-container {

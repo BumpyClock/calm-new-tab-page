@@ -290,6 +290,11 @@ function extractThumbnailURL(item) {
   if (item.enclosure && item.enclosure.link && (item.enclosure.type === "image/jpg" || item.enclosure.type === "image/jpeg")) {
     return item.enclosure.link;
   }
+  
+    // Check if 'enclosure' field exists and has a URL attribute with type "image/png", "image/jpg" or "image/jpeg"
+    if (item.enclosure && item.enclosure.link && (item.enclosure.type === "image/png" || item.enclosure.type === "image/jpg" || item.enclosure.type === "image/jpeg")) {
+      return item.enclosure.link;
+    }
 
   // Check if 'media:group' field exists and has a valid URL in 'media:content'
   if (item['media:group'] && item['media:group']['media:content']) {
