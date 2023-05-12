@@ -1,29 +1,40 @@
-const SUBSCRIBED_FEEDS_KEY = 'subscribedFeeds';
-const DEFAULT_FEED_URL = 'https://www.vox.com/rss/index.xml';
+// Path: scripts.js
+const SUBSCRIBED_FEEDS_KEY = "subscribedFeeds";
+
+// default feed url array
+const DEFAULT_FEED_URLS = [
+  "https://www.vox.com/rss/index.xml",
+  "https://www.nytimes.com/sitemap.xml",
+  "https://rss.cnn.com/rss/cnn_topstories.rss"
+];
+
+// Declare a cache object outside the showReaderView function
+const siteInfoCache = {};
 let mostVisitedSitesCache = null;
 
-
-
-document.addEventListener('DOMContentLoaded', () => {
+const getGreeting = () => {
   const date = new Date();
   const hours = date.getHours();
-  let greeting = '';
 
   if (hours < 12) {
-    greeting = 'Good morning';
+    return "Good morning";
   } else if (hours < 18) {
-    greeting = 'Good afternoon';
+    return "Good afternoon";
   } else {
-    greeting = 'Good evening';
+    return "Good evening";
   }
+};
 
-  document.title = `${greeting} - New Tab`;
-  if (document.querySelector('#feed-container')) {
+document.addEventListener("DOMContentLoaded", () => {
+  const setGreeting = () => {
+    const greeting = getGreeting();
+    document.title = `${greeting} - New Tab`;
+  };
+
+  if (document.querySelector("#feed-container")) {
     // Main page
-   // document.getElementById('greeting').textContent = greeting;
-
-  // loadSubscribedFeeds();
-    
+    loadSubscribedFeeds();
+    handleSearch();
   } else {
     // Settings page
     setupSubscriptionForm();
@@ -32,27 +43,12 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchBingImageOfTheDay();
   }
 
-  if (document.querySelector('#settings-button')) {
-    document.getElementById('settings-button').addEventListener('click', () => {
-      window.location.href = 'settings.html';
+  if (document.querySelector("#settings-button")) {
+    document.getElementById("settings-button").addEventListener("click", () => {
+      window.location.href = "settings.html";
     });
   }
-
-  if (document.querySelector('#feed-container')) {
-    // Main page
-   // document.getElementById('greeting').textContent = greeting;
-  
-    loadSubscribedFeeds();
-    handleSearch();
-  }
- // generateDynamicBackground();
-
-  
 });
-
-
-
-
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "readableContentFetched") {
@@ -61,10 +57,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-
-
 function getSubscribedFeeds() {
-  return JSON.parse(localStorage.getItem(SUBSCRIBED_FEEDS_KEY)) || [DEFAULT_FEED_URL];
+  return (
+    JSON.parse(localStorage.getItem(SUBSCRIBED_FEEDS_KEY)) || [DEFAULT_FEED_URL]
+  );
 }
 
 function setSubscribedFeeds(feeds) {
@@ -76,22 +72,19 @@ async function loadSubscribedFeeds() {
   const allItems = await Promise.all(feeds.map(loadFeed))
     .then((feeds) => {
       // Filter out any undefined values and then use flatMap
-      return feeds.filter(feed => feed).flatMap(feed => feed.items);
+      return feeds.filter((feed) => feed).flatMap((feed) => feed.items);
     })
     .then((items) => {
       items.sort(compareItemsByDate);
       return items;
     });
 
-  const feedContainer = document.getElementById('feed-container');
-  allItems.forEach(item => {
+  const feedContainer = document.getElementById("feed-container");
+  allItems.forEach((item) => {
     const card = createCard(item);
     feedContainer.appendChild(card);
   });
 }
-
-
-
 
 function compareItemsByDate(a, b) {
   const dateA = new Date(a.pubDate);
@@ -106,14 +99,13 @@ function compareItemsByDate(a, b) {
   }
 }
 
-
 async function loadFeed(feedURL) {
   try {
     const feed = await fetchRssFeed(feedURL);
     const feedContainer = document.getElementById("feed-container");
 
-     // Sort feed items chronologically
-     feed.items.sort((a, b) => {
+    // Sort feed items chronologically
+    feed.items.sort((a, b) => {
       const dateA = new Date(a.pubDate);
       const dateB = new Date(b.pubDate);
       return dateB - dateA; // For descending order (most recent first)
@@ -130,11 +122,11 @@ async function loadFeed(feedURL) {
   }
 }
 
-
-
 async function fetchRssFeed(feedUrl) {
   const rss2jsonApiKey = "exr1uihphn0zohhpeaqesbn4bb1pqzxm3xoe8cuj"; // Replace with your API key from rss2json.com
-  const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&api_key=${rss2jsonApiKey}`;
+  const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(
+    feedUrl
+  )}&api_key=${rss2jsonApiKey}`;
 
   return fetch(apiUrl)
     .then((response) => {
@@ -153,16 +145,12 @@ async function fetchRssFeed(feedUrl) {
     });
 }
 
-
-
-
-
 function setupSubscriptionForm() {
-  const form = document.getElementById('subscription-form');
-  form.addEventListener('submit', async (event) => {
+  const form = document.getElementById("subscription-form");
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    const feedURL = form.elements['feed-url'].value;
+    const feedURL = form.elements["feed-url"].value;
     const feeds = getSubscribedFeeds();
     feeds.push(feedURL);
     setSubscribedFeeds(feeds);
@@ -172,19 +160,17 @@ function setupSubscriptionForm() {
   });
 }
 
-
-
 function setupBackButton() {
-  const backButton = document.getElementById('back-to-main');
-  backButton.addEventListener('click', () => {
-    window.location.href = 'newtab.html';
+  const backButton = document.getElementById("back-to-main");
+  backButton.addEventListener("click", () => {
+    window.location.href = "newtab.html";
   });
 }
 
-async function createCard(item, thumbnailURL=null) {
+async function createCard(item, thumbnailURL = null) {
   const card = document.createElement("div");
   card.className = "card";
- var website_title =  await getWebsiteTitle(item.link);
+  var website_title = await getWebsiteTitle(item.link);
   if (thumbnailURL) {
     const img = document.createElement("img");
     img.src = thumbnailURL;
@@ -193,22 +179,22 @@ async function createCard(item, thumbnailURL=null) {
 
   const textContentDiv = document.createElement("div");
   textContentDiv.classList.add("text-content");
-// Add website name and favicon
-const websiteInfoDiv = document.createElement("div");
-websiteInfoDiv.className = "website-info";
+  // Add website name and favicon
+  const websiteInfoDiv = document.createElement("div");
+  websiteInfoDiv.className = "website-info";
 
-const favicon = document.createElement("img");
-const mainDomain = new URL(item.link).hostname;
-favicon.src = `https://icon.horse/icon/${mainDomain}`;
-favicon.alt = `${mainDomain} Favicon`;
-favicon.className = "site-favicon";
-websiteInfoDiv.appendChild(favicon);
+  const favicon = document.createElement("img");
+  const mainDomain = new URL(item.link).hostname;
+  favicon.src = `https://icon.horse/icon/${mainDomain}`;
+  favicon.alt = `${mainDomain} Favicon`;
+  favicon.className = "site-favicon";
+  websiteInfoDiv.appendChild(favicon);
 
-const websiteName = document.createElement("span");
-websiteName.textContent = website_title;
-websiteInfoDiv.appendChild(websiteName);
+  const websiteName = document.createElement("span");
+  websiteName.textContent = website_title;
+  websiteInfoDiv.appendChild(websiteName);
 
-textContentDiv.appendChild(websiteInfoDiv);
+  textContentDiv.appendChild(websiteInfoDiv);
 
   const title = document.createElement("h3");
   title.textContent = item.title;
@@ -232,7 +218,10 @@ textContentDiv.appendChild(websiteInfoDiv);
     if (!thumbnailURL) {
       const description = document.createElement("div");
       description.className = "description long-description";
-      const plainTextDescription = item.description.replace(/(<([^>]+)>)/gi, ""); // Remove HTML tags
+      const plainTextDescription = item.description.replace(
+        /(<([^>]+)>)/gi,
+        ""
+      ); // Remove HTML tags
       description.innerText = plainTextDescription;
       textContentDiv.appendChild(description);
     }
@@ -264,12 +253,10 @@ async function getWebsiteTitle(url) {
     const matches = text.match(/<title>(.*?)<\/title>/i);
     return matches && matches[1] ? matches[1] : url;
   } catch (e) {
-    console.error('Failed to get website title:', e);
+    console.error("Failed to get website title:", e);
     return url;
   }
 }
-
-
 
 function extractThumbnailURL(item) {
   const imgRegex = /<img[^>]+src="([^">]+)"/;
@@ -287,18 +274,29 @@ function extractThumbnailURL(item) {
   }
 
   // Check if 'enclosure' field exists and has a URL attribute with type "image/jpg"
-  if (item.enclosure && item.enclosure.link && (item.enclosure.type === "image/jpg" || item.enclosure.type === "image/jpeg")) {
+  if (
+    item.enclosure &&
+    item.enclosure.link &&
+    (item.enclosure.type === "image/jpg" ||
+      item.enclosure.type === "image/jpeg")
+  ) {
     return item.enclosure.link;
   }
-  
-    // Check if 'enclosure' field exists and has a URL attribute with type "image/png", "image/jpg" or "image/jpeg"
-    if (item.enclosure && item.enclosure.link && (item.enclosure.type === "image/png" || item.enclosure.type === "image/jpg" || item.enclosure.type === "image/jpeg")) {
-      return item.enclosure.link;
-    }
+
+  // Check if 'enclosure' field exists and has a URL attribute with type "image/png", "image/jpg" or "image/jpeg"
+  if (
+    item.enclosure &&
+    item.enclosure.link &&
+    (item.enclosure.type === "image/png" ||
+      item.enclosure.type === "image/jpg" ||
+      item.enclosure.type === "image/jpeg")
+  ) {
+    return item.enclosure.link;
+  }
 
   // Check if 'media:group' field exists and has a valid URL in 'media:content'
-  if (item['media:group'] && item['media:group']['media:content']) {
-    const mediaContent = item['media:group']['media:content'];
+  if (item["media:group"] && item["media:group"]["media:content"]) {
+    const mediaContent = item["media:group"]["media:content"];
     if (Array.isArray(mediaContent)) {
       for (const media of mediaContent) {
         if (media.url && media.type === "image/jpeg") return media.url;
@@ -311,36 +309,31 @@ function extractThumbnailURL(item) {
   return null;
 }
 
-
-
-
-// Search code 
+// Search code
 
 function handleSearch() {
-  const searchInput = document.getElementById('search-input');
-  const searchEngineSelect = document.getElementById('search-engine');
-  const searchButton = document.getElementById('search-button');
+  const searchInput = document.getElementById("search-input");
+  const searchEngineSelect = document.getElementById("search-engine");
+  const searchButton = document.getElementById("search-button");
 
-  searchButton.addEventListener('click', () => {
+  searchButton.addEventListener("click", () => {
     const query = searchInput.value;
     const searchEngineURL = searchEngineSelect.value;
     const searchURL = searchEngineURL + encodeURIComponent(query);
-    window.open(searchURL, '_blank');
+    window.open(searchURL, "_blank");
   });
 
-  searchInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
+  searchInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
       searchButton.click();
     }
   });
 }
 
-
-
 // Add this function to remove a feed
 function removeFeed(feedURL) {
   const feeds = getSubscribedFeeds();
-  const updatedFeeds = feeds.filter(url => url !== feedURL);
+  const updatedFeeds = feeds.filter((url) => url !== feedURL);
   setSubscribedFeeds(updatedFeeds);
   displaySubscribedFeeds();
 }
@@ -403,16 +396,21 @@ async function showReaderView(url) {
       websiteName.style.fontWeight = "900";
       websiteInfoDiv.appendChild(websiteName);
 
-      readerViewModal.querySelector("#website-info-placeholder").appendChild(websiteInfoDiv);
+      readerViewModal
+        .querySelector("#website-info-placeholder")
+        .appendChild(websiteInfoDiv);
 
       // Check if content overflows
-      const contentHeight = readerViewModal.querySelector('.reader-view-page-text');
-      const contentContainerHeight = readerViewModal.querySelector('.reader-view-content');
-      const progressRing = document.getElementById('progress-ring');
+      const contentHeight = readerViewModal.querySelector(
+        ".reader-view-page-text"
+      );
+      const contentContainerHeight = readerViewModal.querySelector(
+        ".reader-view-content"
+      );
+      const progressRing = document.getElementById("progress-ring");
       if (contentHeight.clientHeight < contentContainerHeight.clientHeight) {
-        progressRing.style.display = 'none';
-      } 
-
+        progressRing.style.display = "none";
+      }
     } else {
       console.error("Failed to fetch readable content.");
     }
@@ -420,7 +418,6 @@ async function showReaderView(url) {
     console.error("Error fetching the page content:", error);
   }
 }
-
 
 function createReaderViewModal(article) {
   const modal = document.createElement("div");
@@ -431,9 +428,17 @@ function createReaderViewModal(article) {
       <div class="reader-view-page-content">
         <div class="reader-view-header">
           <span class="reader-view-close">&times;</span>
-          <h1 class="reader-view-title"><span id="website-info-placeholder"></span>${article.title}</h1>
-          ${article.byline ? `<h2 class="reader-view-author">${article.byline}</h2>` : ""}
-          <p class="reader-view-reading-time">${estimateReadingTime(article.textContent)} minutes</p>
+          <h1 class="reader-view-title"><span id="website-info-placeholder"></span>${
+            article.title
+          }</h1>
+          ${
+            article.byline
+              ? `<h2 class="reader-view-author">${article.byline}</h2>`
+              : ""
+          }
+          <p class="reader-view-reading-time">${estimateReadingTime(
+            article.textContent
+          )} minutes</p>
           <hr class="solid">
         </div>
         <div class="reader-view-page-text">
@@ -447,7 +452,6 @@ function createReaderViewModal(article) {
   modal.querySelector(".reader-view-close").onclick = () => {
     modal.remove();
     toggleBodyScroll(true);
-
   };
   modal.addEventListener("click", (event) => {
     if (!modal.querySelector(".reader-view-content").contains(event.target)) {
@@ -457,13 +461,17 @@ function createReaderViewModal(article) {
   });
 
   const progressIndicator = createCircularProgressIndicator();
-  modal.querySelector(".progress-indicator-container").appendChild(progressIndicator);
-  const progressCircle = progressIndicator.querySelector(".progress-circle__progress");
+  modal
+    .querySelector(".progress-indicator-container")
+    .appendChild(progressIndicator);
+  const progressCircle = progressIndicator.querySelector(
+    ".progress-circle__progress"
+  );
   const pageText = modal.querySelector(".reader-view-content");
-  pageText.addEventListener("scroll", () => updateReadingProgress(progressCircle, pageText));
+  pageText.addEventListener("scroll", () =>
+    updateReadingProgress(progressCircle, pageText)
+  );
 
-  
-  
   return modal;
 }
 
@@ -483,14 +491,12 @@ function createCircularProgressIndicator() {
   return progressIndicator;
 }
 
-
 function updateReadingProgress(progressCircle, pageText) {
   const scrollPosition = pageText.scrollTop;
   const maxScroll = pageText.scrollHeight - pageText.clientHeight;
 
   const progressPercentage = (scrollPosition / maxScroll) * 100;
 
-  
   setCircularProgress(progressCircle, progressPercentage);
 }
 
@@ -502,8 +508,6 @@ function setCircularProgress(progressIndicator, progressPercentage) {
   progressIndicator.style.strokeDashoffset = offset;
 }
 
-
-
 //function to estimate reading time
 function estimateReadingTime(text) {
   const wordsPerMinute = 183; // Adjust this value based on your preferred reading speed
@@ -512,7 +516,6 @@ function estimateReadingTime(text) {
 
   return readingTimeInMinutes;
 }
-
 
 function toggleBodyScroll(isEnabled) {
   if (isEnabled) {
@@ -530,37 +533,35 @@ async function displaySubscribedFeeds() {
 
   for (const feedURL of feeds) {
     if (feedURL != null) {
-    const listItem = document.createElement("li");
+      const listItem = document.createElement("li");
 
-    // Add website favicon
-    const favicon = document.createElement("img");
-    
-    const mainDomain = new URL(feedURL).hostname;
-    favicon.src = `https://icon.horse/icon/${mainDomain}`;
-    favicon.alt = `${mainDomain} Favicon`;
-    favicon.className = "site-favicon";
-    listItem.appendChild(favicon);
+      // Add website favicon
+      const favicon = document.createElement("img");
 
-    // Add website name
-    const websiteName = document.createElement("span");
-    const siteTitle = await getWebsiteTitle(feedURL);
-    websiteName.textContent = siteTitle;
-    listItem.appendChild(websiteName);
+      const mainDomain = new URL(feedURL).hostname;
+      favicon.src = `https://icon.horse/icon/${mainDomain}`;
+      favicon.alt = `${mainDomain} Favicon`;
+      favicon.className = "site-favicon";
+      listItem.appendChild(favicon);
 
-    const removeButton = document.createElement("button");
-    removeButton.textContent = "X";
-    removeButton.className = "remove-feed-button";
-    removeButton.addEventListener("click", () => {
-      removeFeed(feedURL);
-    });
-    listItem.appendChild(removeButton);
+      // Add website name
+      const websiteName = document.createElement("span");
+      const siteTitle = await getWebsiteTitle(feedURL);
+      websiteName.textContent = siteTitle;
+      listItem.appendChild(websiteName);
 
-    list.appendChild(listItem);
-  }
+      const removeButton = document.createElement("button");
+      removeButton.textContent = "X";
+      removeButton.className = "remove-feed-button";
+      removeButton.addEventListener("click", () => {
+        removeFeed(feedURL);
+      });
+      listItem.appendChild(removeButton);
+
+      list.appendChild(listItem);
+    }
   }
 }
-
-
 
 // Show Top Sites
 async function initializeMostVisitedSitesCache() {
@@ -580,7 +581,6 @@ async function initializeMostVisitedSitesCache() {
   fetchMostVisitedSites();
 }
 
-
 function createMostVisitedSiteCard(site) {
   const siteUrl = new URL(site.url);
   const mainDomain = siteUrl.hostname;
@@ -595,8 +595,6 @@ function createMostVisitedSiteCard(site) {
   return siteCard;
 }
 
-
-
 function fetchMostVisitedSites() {
   if (!mostVisitedSitesCache) {
     console.error("Most visited sites cache is not initialized");
@@ -605,14 +603,14 @@ function fetchMostVisitedSites() {
     return;
   }
 
-  const mostVisitedSitesContainer = document.querySelector(".most-visited-sites-container");
+  const mostVisitedSitesContainer = document.querySelector(
+    ".most-visited-sites-container"
+  );
 
   mostVisitedSitesCache.forEach((siteCard) => {
     mostVisitedSitesContainer.appendChild(siteCard.cloneNode(true));
   });
 }
-
-
 
 //cache favicons for improve perf
 async function cacheFavicon(domain) {
@@ -637,23 +635,25 @@ async function getFavicon(domain) {
   }
 }
 
-
-
 // Call the fetchMostVisitedSites function when the DOM is loaded
 //document.addEventListener("DOMContentLoaded", initializeMostVisitedSitesCache);
 document.addEventListener("DOMContentLoaded", fetchBingImageOfTheDay);
 
 async function fetchBingImageOfTheDay() {
   try {
-    const response = await fetch("https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US");
+    const response = await fetch(
+      "https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US"
+    );
     const data = await response.json();
     const imageUrl = "https://www.bing.com" + data.images[0].url;
     const title = data.images[0].title;
-      const copyright = data.images[0].copyright;
+    const copyright = data.images[0].copyright;
     const bgContainer = document.querySelector(".background-image-container");
     bgContainer.style.backgroundImage = `url(${imageUrl})`;
-    const attributionContainer = document.querySelector(".attribution-container");
-      attributionContainer.innerHTML = `
+    const attributionContainer = document.querySelector(
+      ".attribution-container"
+    );
+    attributionContainer.innerHTML = `
         <p class="attribution-title">${title}</p>
         <p class="attribution-copyright">${copyright} | Bing & Microsoft</p>
       `;
@@ -663,15 +663,15 @@ async function fetchBingImageOfTheDay() {
 }
 
 window.addEventListener("scroll", () => {
-  const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+  const scrollPosition =
+    window.pageYOffset || document.documentElement.scrollTop;
   const blurIntensity = Math.min(scrollPosition / 100, 10);
   const darkIntensity = Math.min(scrollPosition / 1000, 0.6); // Adjust the values as per your preference
   const bgContainer = document.querySelector(".background-image-container");
-  bgContainer.style.filter = `blur(${blurIntensity}px) brightness(${1 - darkIntensity})`;
+  bgContainer.style.filter = `blur(${blurIntensity}px) brightness(${
+    1 - darkIntensity
+  })`;
 });
 
 //load most visited sites from cache
 initializeMostVisitedSitesCache();
-
-
-
