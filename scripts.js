@@ -59,7 +59,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 function getSubscribedFeeds() {
   return (
-    JSON.parse(localStorage.getItem(SUBSCRIBED_FEEDS_KEY)) || [DEFAULT_FEED_URL]
+    JSON.parse(localStorage.getItem(SUBSCRIBED_FEEDS_KEY)) || [DEFAULT_FEED_URLS]
   );
 }
 
@@ -421,11 +421,11 @@ async function showReaderView(url) {
 
 function createReaderViewModal(article) {
   const modal = document.createElement("div");
-  modal.className = "reader-view-modal";
+  modal.className = "reader-view-modal light";
   modal.innerHTML = `
-    <div class="reader-view-content">
+    <div class="reader-view-content ">
       
-      <div class="reader-view-page-content">
+      <div class="reader-view-page-content light ">
         <div class="reader-view-header">
           <span class="reader-view-close">&times;</span>
           <h1 class="reader-view-title"><span id="website-info-placeholder"></span>${
@@ -447,14 +447,59 @@ function createReaderViewModal(article) {
       </div>
       <div id="progress-ring" class="progress-indicator-container"></div>
     </div>
+    <div class="reader-view-settings-pane">
+      <label for="theme-select">Theme:</label>
+      <select id="theme-select">
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+        <option value="sepia">Sepia</option>
+      </select>
+    </div>
   `;
+
+  // add event handlers for theme selection
+
+ 
+  const themeDropdown = modal.querySelector("#theme-select");
+  themeDropdown.addEventListener("change", (event) => {
+    const selectedTheme = event.target.value;
+    const readerViewPageText = modal.querySelector(".reader-view-page-content");
+    const readerViewSettingsPane = modal.querySelector(".reader-view-settings-pane");
+    const readerViewContent = modal.querySelector(".reader-view-content");
+
+    // Remove any existing theme class
+    readerViewPageText.classList.remove("light", "dark", "sepia");
+    readerViewSettingsPane.classList.remove("light", "dark", "sepia");
+    readerViewContent.classList.remove("light", "dark", "sepia");
+
+
+    // Add the selected theme class
+    if (selectedTheme === "light") {
+      readerViewPageText.classList.add("light");
+      readerViewSettingsPane.classList.add("light");
+      readerViewContent.classList.add("light");
+    } else if (selectedTheme === "dark") {
+      readerViewPageText.classList.add("dark");
+      readerViewSettingsPane.classList.add("dark");
+      readerViewContent.classList.add("dark");
+    }
+    else if(selectedTheme === "sepia"){
+      readerViewPageText.classList.add("sepia");
+      readerViewSettingsPane.classList.add("sepia");
+      readerViewContent.classList.add("sepia");
+    }
+  });
+
 
   modal.querySelector(".reader-view-close").onclick = () => {
     modal.remove();
     toggleBodyScroll(true);
   };
   modal.addEventListener("click", (event) => {
-    if (!modal.querySelector(".reader-view-content").contains(event.target)) {
+    const readerViewContent = modal.querySelector(".reader-view-content");
+  const readerViewSettingsPane = modal.querySelector(".reader-view-settings-pane");
+
+    if (!readerViewContent.contains(event.target) && !readerViewSettingsPane.contains(event.target)) {
       modal.remove();
       toggleBodyScroll(true);
     }
