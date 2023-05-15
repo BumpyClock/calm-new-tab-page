@@ -5,8 +5,8 @@
   --sepia-accent-color-2: #d8bfaa;
   --sepia-border-color: #d8bfaa;
   --dark-background-color: #1a1a1a;
-  --dark-foreground-color: #e6e6e6;
-  --dark-accent-color: #2a6496;
+  --dark-foreground-color: #aad0ee;
+  --dark-accent-color: #aad0ee;
   --dark-border-color: #000;
   --light-background-color: #f5f5f5;
   --light-foreground-color: #1a1a1a;
@@ -32,13 +32,15 @@
   --font-weight-light: 300;}
 
 
-.material-symbols-outlined {
-  font-variation-settings:
-  'FILL' 0,
-  'wght' 400,
-  'GRAD' 0,
-  'opsz' 48
-}
+  
+  .material-symbols-rounded {
+    font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 48
+  }
+  
 
 
 * {
@@ -114,14 +116,16 @@ body {
   z-index: -1;
   background-repeat: no-repeat;
   background-size: cover;
-  transition: filter 0.1s ease-in-out;
-
+  transition: all 0.1s ease-in-out;
+  -webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */
+  filter: grayscale(100%);
 }
 
 /* Add this to ensure the content is placed above the background image */
 body > *:not(.background-image-container) {
   position: relative;
   z-index: 1;
+  
 }
 
 .attribution-container {
@@ -363,6 +367,7 @@ box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.04);  width: 100%;
   position: absolute;
   top: 1rem;
   right: 1rem;
+  transition: all .250s ease-in-out;
 }
 
 #settings-button:hover {
@@ -607,7 +612,7 @@ a {
   flex-direction: column;
   gap: 1rem;
   opacity: 0;
-  transition: all 0.125s ease-in-out;
+  transition: all 0.250s ease-in-out;
 }
 .reader-view-modal.visible {
   opacity: 1;
@@ -627,7 +632,7 @@ a {
 
 .reader-view-modal a {
   clear: both;
-  color: #005689;
+  color: var(--accent-color);
   text-decoration: underline;
   display: contents;
 }
@@ -751,10 +756,11 @@ opacity: 0.7;
 }
 
 .site-card {
+  display: -webkit-box;
   max-width: 120px;
   max-height: 120px;
 width: 10vw;
-height: 10vw;
+height: fit-content;
 min-width: 96px;
 min-height: 96px;
   
@@ -771,6 +777,7 @@ min-height: 96px;
   text-decoration: none;
   color: #fff;
   gap:4px;
+  height:fit-content;
 }
 
 .site-favicon {
@@ -788,13 +795,14 @@ min-height: 96px;
 .site-title {
   font-size: 12px;
   text-align: center;
-  font-weight: 800;
+  font-weight: 600;
   overflow: hidden;
-  padding: 4px 12px 12px 12px;
+  padding: 4px 12px 0px 12px;
   text-overflow: ellipsis;
-  max-height: 48px;
+height:fit-content;
   max-width: 120px;
   text-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  -webkit-line-clamp: 2;
 }
 
 .progress-indicator-container {

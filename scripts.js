@@ -427,7 +427,7 @@ function createReaderViewModal(article) {
       
       <div class="reader-view-page-content light ">
         <div class="reader-view-header">
-          <span class="reader-view-close">&times;</span>
+          <span class="reader-view-close material-symbols-rounded">close</span>
           <h1 class="reader-view-title"><span id="website-info-placeholder"></span>${
             article.title
           }</h1>
@@ -714,8 +714,8 @@ window.addEventListener("scroll", () => {
   const darkIntensity = Math.min(scrollPosition / 1000, 0.6); // Adjust the values as per your preference
   const bgContainer = document.querySelector(".background-image-container");
   bgContainer.style.filter = `blur(${blurIntensity}px) brightness(${
-    1 - darkIntensity
-  })`;
+    1 - darkIntensity 
+  }) grayscale(100%)`;
 });
 
 //load most visited sites from cache
