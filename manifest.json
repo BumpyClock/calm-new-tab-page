@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Calm New Tab Page",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A Clean New Tab Page with a focus on privacy, simplicity and customizability.",
   "action": {
     
@@ -27,6 +27,10 @@
       "js": ["readability.js"],
       "all_frames": true
     }],
+
+    "background": {
+      "service_worker": "service-worker.js"
+    },
 
  "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"

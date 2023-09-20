@@ -4,9 +4,21 @@ const SUBSCRIBED_FEEDS_KEY = "subscribedFeeds";
 // default feed url array
 const DEFAULT_FEED_URLS = [
   "https://www.vox.com/rss/index.xml",
-  "https://www.nytimes.com/sitemap.xml",
-  "https://rss.cnn.com/rss/cnn_topstories.rss"
+  "https://www.theverge.com/rss/index.xml",
+  "https://www.wired.com/feed/rss"
 ];
+
+// Register service worker
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker
+    .register("/service-worker.js")
+    .then(function (registration) {
+      console.log("Service Worker registered with scope:", registration.scope);
+    })
+    .catch(function (error) {
+      console.log("Service Worker registration failed:", error);
+    });
+}
 
 // Declare a cache object outside the showReaderView function
 const siteInfoCache = {};
@@ -59,7 +71,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 function getSubscribedFeeds() {
   return (
-    JSON.parse(localStorage.getItem(SUBSCRIBED_FEEDS_KEY)) || [DEFAULT_FEED_URLS]
+    JSON.parse(localStorage.getItem(SUBSCRIBED_FEEDS_KEY)) || [
+      DEFAULT_FEED_URLS
+    ]
   );
 }
 
@@ -68,81 +82,71 @@ function setSubscribedFeeds(feeds) {
 }
 
 async function loadSubscribedFeeds() {
+  showLoadingState();
+
   const feeds = getSubscribedFeeds();
-  const allItems = await Promise.all(feeds.map(loadFeed))
-    .then((feeds) => {
-      // Filter out any undefined values and then use flatMap
-      return feeds.filter((feed) => feed).flatMap((feed) => feed.items);
-    })
-    .then((items) => {
-      items.sort(compareItemsByDate);
-      return items;
+  console.log("loadSubscribedFeeds: ", feeds);
+
+  const serviceWorker = navigator.serviceWorker.controller;
+  if (serviceWorker) {
+    console.log("service worker is active and controlled");
+    console.log("sending message to service worker");
+    serviceWorker.postMessage({
+      action: "fetchRSS",
+      feedUrls: feeds
     });
-
-  const feedContainer = document.getElementById("feed-container");
-  allItems.forEach((item) => {
-    const card = createCard(item);
-    feedContainer.appendChild(card);
-  });
-}
-
-function compareItemsByDate(a, b) {
-  const dateA = new Date(a.pubDate);
-  const dateB = new Date(b.pubDate);
-
-  if (dateA > dateB) {
-    return -1;
-  } else if (dateA < dateB) {
-    return 1;
   } else {
-    return 0;
+    console.error("Service worker is not active or not controlled.");
   }
 }
 
-async function loadFeed(feedURL) {
-  try {
-    const feed = await fetchRssFeed(feedURL);
-    const feedContainer = document.getElementById("feed-container");
-
-    // Sort feed items chronologically
-    feed.items.sort((a, b) => {
-      const dateA = new Date(a.pubDate);
-      const dateB = new Date(b.pubDate);
-      return dateB - dateA; // For descending order (most recent first)
-      // return dateA - dateB; // For ascending order (oldest first)
-    });
-
-    for (const item of feed.items) {
+async function renderFeed(feeditems){
+  console.log("entering renderFeed");
+  const feedContainer = document.getElementById("feed-container");
+  for (const item of feeditems) {
       const thumbnailURL = extractThumbnailURL(item);
       const card = await createCard(item, thumbnailURL);
-      feedContainer.appendChild(card);
-    }
-  } catch (error) {
-    console.error("Failed to fetch feed:", error);
+      
+      if (card instanceof Node) {
+          feedContainer.appendChild(card);
+      } else {
+          console.error('Card is not a valid DOM Node:', card);
+      }
   }
 }
 
-async function fetchRssFeed(feedUrl) {
-  const rss2jsonApiKey = "exr1uihphn0zohhpeaqesbn4bb1pqzxm3xoe8cuj"; // Replace with your API key from rss2json.com
-  const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(
-    feedUrl
-  )}&api_key=${rss2jsonApiKey}`;
 
-  return fetch(apiUrl)
-    .then((response) => {
-      if (response.ok) {
-        return response.json();
-      } else {
-        throw new Error("Failed to fetch RSS feed");
-      }
-    })
-    .then((data) => {
-      if (data.status === "ok") {
-        return data;
-      } else {
-        throw new Error("Failed to parse RSS feed");
-      }
-    });
+
+navigator.serviceWorker.addEventListener("message", function (event) {
+  if (event.data.action === "rssUpdate") {
+    console.log("Received RSS Data:", event.data.rssData);
+    console.log("rendering feed");
+    hideLoadingState();
+    let response = JSON.parse(event.data.rssData);
+    console.log(response);
+    let feedItems = response.items;
+    console.log(feedItems);
+
+    const feedContainer = document.getElementById("feed-container");
+
+    // If feedItems is a string, parse it as JSON
+    console.log("parsed feedItems as JSON: ", feedItems);
+
+    renderFeed(feedItems).catch(error => {
+      console.error("Error rendering the feed:", error);
+  });
+  }
+});
+
+
+function showLoadingState() {
+  const feedContainer = document.getElementById("feed-container");
+  feedContainer.innerHTML = "<p>Loading...</p>"; // or a spinner
+}
+
+function hideLoadingState() {
+  const feedContainer = document.getElementById("feed-container");
+  feedContainer.innerHTML = "";
 }
 
 function setupSubscriptionForm() {
@@ -168,6 +172,7 @@ function setupBackButton() {
 }
 
 async function createCard(item, thumbnailURL = null) {
+  console.log("entering createCard");
   const card = document.createElement("div");
   card.className = "card";
   var website_title = await getWebsiteTitle(item.link);
@@ -338,30 +343,6 @@ function removeFeed(feedURL) {
   displaySubscribedFeeds();
 }
 
-// async function showReaderView(url) {
-//   try {
-//     const response = await fetch(url);
-//     const html = await response.text();
-//     const parser = new DOMParser();
-//     const doc = parser.parseFromString(html, "text/html");
-//     const reader = new Readability(doc);
-//     const article = reader.parse();
-
-//     if (article) {
-//       const readerViewModal = createReaderViewModal(article);
-//       document.body.appendChild(readerViewModal);
-//       setTimeout(() => {
-//         readerViewModal.classList.add("visible");
-//       }, 10);
-//       toggleBodyScroll(false);
-//     } else {
-//       console.error("Failed to fetch readable content.");
-//     }
-//   } catch (error) {
-//     console.error("Error fetching the page content:", error);
-//   }
-// }
-
 async function showReaderView(url) {
   try {
     const response = await fetch(url);
@@ -459,19 +440,19 @@ function createReaderViewModal(article) {
 
   // add event handlers for theme selection
 
- 
   const themeDropdown = modal.querySelector("#theme-select");
   themeDropdown.addEventListener("change", (event) => {
     const selectedTheme = event.target.value;
     const readerViewPageText = modal.querySelector(".reader-view-page-content");
-    const readerViewSettingsPane = modal.querySelector(".reader-view-settings-pane");
+    const readerViewSettingsPane = modal.querySelector(
+      ".reader-view-settings-pane"
+    );
     const readerViewContent = modal.querySelector(".reader-view-content");
 
     // Remove any existing theme class
     readerViewPageText.classList.remove("light", "dark", "sepia");
     readerViewSettingsPane.classList.remove("light", "dark", "sepia");
     readerViewContent.classList.remove("light", "dark", "sepia");
-
 
     // Add the selected theme class
     if (selectedTheme === "light") {
@@ -482,14 +463,12 @@ function createReaderViewModal(article) {
       readerViewPageText.classList.add("dark");
       readerViewSettingsPane.classList.add("dark");
       readerViewContent.classList.add("dark");
-    }
-    else if(selectedTheme === "sepia"){
+    } else if (selectedTheme === "sepia") {
       readerViewPageText.classList.add("sepia");
       readerViewSettingsPane.classList.add("sepia");
       readerViewContent.classList.add("sepia");
     }
   });
-
 
   modal.querySelector(".reader-view-close").onclick = () => {
     modal.remove();
@@ -497,9 +476,14 @@ function createReaderViewModal(article) {
   };
   modal.addEventListener("click", (event) => {
     const readerViewContent = modal.querySelector(".reader-view-content");
-  const readerViewSettingsPane = modal.querySelector(".reader-view-settings-pane");
+    const readerViewSettingsPane = modal.querySelector(
+      ".reader-view-settings-pane"
+    );
 
-    if (!readerViewContent.contains(event.target) && !readerViewSettingsPane.contains(event.target)) {
+    if (
+      !readerViewContent.contains(event.target) &&
+      !readerViewSettingsPane.contains(event.target)
+    ) {
       modal.remove();
       toggleBodyScroll(true);
     }
@@ -714,7 +698,7 @@ window.addEventListener("scroll", () => {
   const darkIntensity = Math.min(scrollPosition / 1000, 0.6); // Adjust the values as per your preference
   const bgContainer = document.querySelector(".background-image-container");
   bgContainer.style.filter = `blur(${blurIntensity}px) brightness(${
-    1 - darkIntensity 
+    1 - darkIntensity
   }) grayscale(100%)`;
 });
 
