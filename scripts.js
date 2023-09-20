@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.title = `${greeting} - New Tab`;
   };
 
-  setGreeting(); // This was previously defined but never called. You might want to call it.
+  setGreeting(); 
 
   if (document.querySelector("#feed-container")) {
     // Main page
@@ -71,7 +71,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     setupSubscriptionForm();
     displaySubscribedFeeds();
     setupBackButton();
-    fetchBingImageOfTheDay();
   }
 
   if (document.querySelector("#settings-button")) {
@@ -707,10 +706,13 @@ document.addEventListener("DOMContentLoaded", fetchBingImageOfTheDay);
 async function fetchBingImageOfTheDay() {
   try {
     const response = await fetch(
-      "https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US"
+      "https://www.bing.com/HPImageArchive.aspx?resoultion=3840&format=js&image_format=webp&idx=random&n=1&mkt=en-US"
     );
     const data = await response.json();
-    const imageUrl = "https://www.bing.com" + data.images[0].url;
+    let imageUrl = "https://www.bing.com" + data.images[0].url;
+    imageUrl = imageUrl.replace(/1920x1080/g, "UHD");
+    console.log(imageUrl);
+
     const title = data.images[0].title;
     const copyright = data.images[0].copyright;
     const bgContainer = document.querySelector(".background-image-container");
@@ -737,7 +739,7 @@ window.addEventListener("scroll", () => {
   //   1 - darkIntensity
   // }) grayscale(100%)`;
   const bgContainer = document.querySelector(".background-image-container");
-  bgContainer.style.filter = `blur(${blurIntensity}px) grayscale(100%)`;
+  bgContainer.style.filter = `blur(${blurIntensity}px)`;
 });
 
 //load most visited sites from cache

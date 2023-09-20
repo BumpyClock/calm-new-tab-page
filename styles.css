@@ -105,10 +105,10 @@ body {
   height: 100vh;
   z-index: -1;
   background-repeat: no-repeat;
-  background-size: cover;
+  background-size: contain;
   transition: all 0.1s ease-in-out;
-  -webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */
-  filter: grayscale(100%);
+  /* -webkit-filter: grayscale(100%);  */
+  /* filter: grayscale(100%); */
 }
 
 /* Add this to ensure the content is placed above the background image */
