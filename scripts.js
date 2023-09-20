@@ -24,12 +24,9 @@ if ("serviceWorker" in navigator) {
 let feedsCache = null;
 let cachedCards = []; // Store the cards in an array to avoid re-creating them for every new tab
 
-
 // Create a BroadcastChannel object
-const channel = new BroadcastChannel('rss_feeds_channel');
+const channel = new BroadcastChannel("rss_feeds_channel");
 const CARD_CACHE_NAME = "card-items-cache";
-
-
 
 // Declare a cache object outside the showReaderView function
 const siteInfoCache = {};
@@ -48,77 +45,52 @@ const getGreeting = () => {
   }
 };
 
-
-
-// document.addEventListener("DOMContentLoaded", async () => {
-//   const setGreeting = () => {
-//     const greeting = getGreeting();
-//     document.title = `${greeting} - New Tab`;
-//   };
-//   setGreeting();
-
-//   if (document.querySelector("#feed-container")) {
-//     // Main page
-//     loadSubscribedFeeds();
-//     handleSearch();
-    
-
-    
-//   } else {
-//     // Settings page
-//     setupSubscriptionForm();
-//     displaySubscribedFeeds();
-//     setupBackButton();
-//     fetchBingImageOfTheDay();
-//   }
-
-//   if (document.querySelector("#settings-button")) {
-//     document.getElementById("settings-button").addEventListener("click", () => {
-//       window.location.href = "settings.html";
-//     });
-//   }
-// });
-
-
 document.addEventListener("DOMContentLoaded", async () => {
   const setGreeting = () => {
-      const greeting = getGreeting();
-      document.title = `${greeting} - New Tab`;
+    const greeting = getGreeting();
+    document.title = `${greeting} - New Tab`;
   };
 
   setGreeting(); // This was previously defined but never called. You might want to call it.
 
   if (document.querySelector("#feed-container")) {
-      // Main page
-      const cachedContent = await getCachedRenderedCards();
-      if (cachedContent) {
-          const feedContainer = document.getElementById("feed-container");
-          feedContainer.innerHTML = cachedContent;
-          feedContainer.style.opacity = "1"; // apply the fade-in effect
-      } else {
-          loadSubscribedFeeds();
-      }
-      handleSearch();
+    // Main page
+    const cachedContent = await getCachedRenderedCards();
+    if (cachedContent) {
+      const feedContainer = document.getElementById("feed-container");
+      feedContainer.innerHTML = cachedContent;
+      feedContainer.style.opacity = "1"; // apply the fade-in effect
+    } else {
+      loadSubscribedFeeds();
+    }
+    handleSearch();
   } else {
-      // Settings page
-      setupSubscriptionForm();
-      displaySubscribedFeeds();
-      setupBackButton();
-      fetchBingImageOfTheDay();
+    // Settings page
+    setupSubscriptionForm();
+    displaySubscribedFeeds();
+    setupBackButton();
+    fetchBingImageOfTheDay();
   }
 
   if (document.querySelector("#settings-button")) {
-      document.getElementById("settings-button").addEventListener("click", () => {
-          window.location.href = "settings.html";
-      });
+    document.getElementById("settings-button").addEventListener("click", () => {
+      window.location.href = "settings.html";
+    });
   }
+
+  setInterval(autoRefreshFeed, 15 * 60 * 1000);
+
 });
 
-function getCachedRenderedCards() {
-  return localStorage.getItem('renderedCards');
+async function autoRefreshFeed() {
+  // Assuming loadSubscribedFeeds is the function that fetches and renders the feed
+  await loadSubscribedFeeds();
 }
 
 
+function getCachedRenderedCards() {
+  return localStorage.getItem("renderedCards");
+}
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "readableContentFetched") {
@@ -142,12 +114,11 @@ function setSubscribedFeeds(feeds) {
 async function clearOldCaches() {
   const cacheNames = await caches.keys();
   await Promise.all(
-      cacheNames
-          .filter(name => name !== CARD_CACHE_NAME)
-          .map(name => caches.delete(name))
+    cacheNames
+      .filter((name) => name !== CARD_CACHE_NAME)
+      .map((name) => caches.delete(name))
   );
 }
-
 
 async function loadSubscribedFeeds() {
   await showLoadingState();
@@ -190,21 +161,20 @@ async function renderFeed(feeditems) {
   feedContainer.appendChild(fragment);
   cacheRenderedCards(feedContainer.innerHTML);
 
-
   // Fade-in effect
   feedContainer.style.opacity = "1";
+
+  setLastRefreshedTimestamp();
+
 }
 
 function cacheRenderedCards(htmlContent) {
   try {
-      localStorage.setItem('renderedCards', htmlContent);
+    localStorage.setItem("renderedCards", htmlContent);
   } catch (error) {
-      console.error("Error saving cards to local storage:", error);
+    console.error("Error saving cards to local storage:", error);
   }
 }
-
-
-
 
 navigator.serviceWorker.addEventListener("message", function (event) {
   if (event.data.action === "rssUpdate") {
@@ -213,11 +183,11 @@ navigator.serviceWorker.addEventListener("message", function (event) {
     // hideLoadingState();
     let response = JSON.parse(event.data.rssData);
     let feedItems = response.items;
-      // Broadcast the feeds to other tabs
-      channel.postMessage({
-        action: 'shareFeeds',
-        feeds: feedItems
-      });
+    // Broadcast the feeds to other tabs
+    channel.postMessage({
+      action: "shareFeeds",
+      feeds: feedItems
+    });
     renderFeed(feedItems).catch((error) => {
       console.error("Error rendering the feed:", error);
     });
@@ -225,8 +195,8 @@ navigator.serviceWorker.addEventListener("message", function (event) {
 });
 
 //listen for messages from broadcast channel
-channel.addEventListener('message', (event) => {
-  if (event.data.action === 'shareFeeds' && event.data.feeds) {
+channel.addEventListener("message", (event) => {
+  if (event.data.action === "shareFeeds" && event.data.feeds) {
     renderFeed(event.data.feeds);
   }
 });
@@ -693,6 +663,13 @@ async function cacheFavicon(domain) {
   localStorage.setItem(`favicon-${domain}`, dataURL);
   return dataURL;
 }
+
+function setLastRefreshedTimestamp() {
+  const timestampDiv = document.getElementById('last-refreshed-timestamp');
+  const now = new Date();
+  timestampDiv.textContent = `Last refreshed: ${now.toLocaleTimeString()} on ${now.toLocaleDateString()}`;
+}
+
 
 async function getFavicon(domain) {
   const cachedFavicon = localStorage.getItem(`favicon-${domain}`);
