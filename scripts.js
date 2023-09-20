@@ -32,6 +32,8 @@ const CARD_CACHE_NAME = "card-items-cache";
 const siteInfoCache = {};
 let mostVisitedSitesCache = null;
 
+let lastRefreshed = new Date().getTime(); // Get the current timestamp
+
 const getGreeting = () => {
   const date = new Date();
   const hours = date.getHours();
@@ -56,7 +58,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (document.querySelector("#feed-container")) {
     // Main page
     const cachedContent = await getCachedRenderedCards();
-    if (cachedContent) {
+    if (cachedContent && shouldRefreshFeeds()) {
       const feedContainer = document.getElementById("feed-container");
       feedContainer.innerHTML = cachedContent;
       feedContainer.style.opacity = "1"; // apply the fade-in effect
@@ -79,14 +81,23 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   setInterval(autoRefreshFeed, 15 * 60 * 1000);
-
 });
+
+function shouldRefreshFeeds() {
+  const currentTimestamp = new Date().getTime();
+  const fifteenMinutes = 15 * 60 * 1000;
+
+  // If lastRefreshed isn't set or is older than 15 minutes, refresh
+  if (!lastRefreshed || currentTimestamp - lastRefreshed > fifteenMinutes) {
+    return true;
+  }
+  return false;
+}
 
 async function autoRefreshFeed() {
   // Assuming loadSubscribedFeeds is the function that fetches and renders the feed
   await loadSubscribedFeeds();
 }
-
 
 function getCachedRenderedCards() {
   return localStorage.getItem("renderedCards");
@@ -123,27 +134,27 @@ async function clearOldCaches() {
 async function loadSubscribedFeeds() {
   await showLoadingState();
 
-  // Check if feeds are cached
-  if (feedsCache) {
+  if (!shouldRefreshFeeds() && feedsCache) {
+    // Use cached feeds if available and no need to refresh
     renderFeed(feedsCache);
-    return;
-  }
-
-  const feeds = getSubscribedFeeds();
-  const serviceWorker = navigator.serviceWorker.controller;
-  if (serviceWorker) {
-    serviceWorker.postMessage({
-      action: "fetchRSS",
-      feedUrls: feeds
-    });
+    setLastRefreshedTimestamp(new Date(lastRefreshed));
   } else {
-    console.error("Service worker is not active or not controlled.");
+    const feeds = getSubscribedFeeds();
+    const serviceWorker = navigator.serviceWorker.controller;
+    if (serviceWorker) {
+      lastRefreshed = new Date().getTime();
+      serviceWorker.postMessage({
+        action: "fetchRSS",
+        feedUrls: feeds
+      });
+    } else {
+      console.error("Service worker is not active or not controlled.");
+    }
   }
 }
 
 async function renderFeed(feeditems) {
   feedsCache = feeditems;
-  console.log("entering renderFeed");
   const feedContainer = document.getElementById("feed-container");
   const fragment = document.createDocumentFragment();
 
@@ -160,12 +171,9 @@ async function renderFeed(feeditems) {
 
   feedContainer.appendChild(fragment);
   cacheRenderedCards(feedContainer.innerHTML);
-
+  setLastRefreshedTimestamp();
   // Fade-in effect
   feedContainer.style.opacity = "1";
-
-  setLastRefreshedTimestamp();
-
 }
 
 function cacheRenderedCards(htmlContent) {
@@ -186,7 +194,8 @@ navigator.serviceWorker.addEventListener("message", function (event) {
     // Broadcast the feeds to other tabs
     channel.postMessage({
       action: "shareFeeds",
-      feeds: feedItems
+      feeds: feedItems,
+      lastRefreshed
     });
     renderFeed(feedItems).catch((error) => {
       console.error("Error rendering the feed:", error);
@@ -197,7 +206,15 @@ navigator.serviceWorker.addEventListener("message", function (event) {
 //listen for messages from broadcast channel
 channel.addEventListener("message", (event) => {
   if (event.data.action === "shareFeeds" && event.data.feeds) {
-    renderFeed(event.data.feeds);
+    const currentTimestamp = new Date().getTime();
+    const fifteenMinutes = 15 * 60 * 1000;
+    if (currentTimestamp - event.data.lastRefreshed > fifteenMinutes) {
+      // Refresh the feed
+      loadSubscribedFeeds();
+    } else {
+      renderFeed(event.data.feeds);
+      setLastRefreshedTimestamp(new Date(event.data.lastRefreshed));
+    }
   }
 });
 
@@ -315,6 +332,7 @@ async function getWebsiteTitle(url) {
     const parsedUrl = new URL(url);
     const rootDomain = `${parsedUrl.protocol}//${parsedUrl.host}`;
     const response = await fetch(rootDomain);
+
     const text = await response.text();
     const matches = text.match(/<title>(.*?)<\/title>/i);
     return matches && matches[1] ? matches[1] : url;
@@ -665,11 +683,12 @@ async function cacheFavicon(domain) {
 }
 
 function setLastRefreshedTimestamp() {
-  const timestampDiv = document.getElementById('last-refreshed-timestamp');
+  const timestampDiv = document.getElementById(
+    "last-refreshed-timestamp-container"
+  );
   const now = new Date();
-  timestampDiv.textContent = `Last refreshed: ${now.toLocaleTimeString()} on ${now.toLocaleDateString()}`;
+  timestampDiv.textContent = `Last refreshed: ${now.toLocaleTimeString()}`;
 }
-
 
 async function getFavicon(domain) {
   const cachedFavicon = localStorage.getItem(`favicon-${domain}`);
@@ -712,15 +731,14 @@ window.addEventListener("scroll", () => {
   const scrollPosition =
     window.pageYOffset || document.documentElement.scrollTop;
   const blurIntensity = Math.min(scrollPosition / 100, 10);
-  const darkIntensity = Math.min(scrollPosition / 1000, 0.6); // Adjust the values as per your preference
+  const darkIntensity = Math.min(scrollPosition / 1000, 0.1); // Adjust the values as per your preference
+  // const bgContainer = document.querySelector(".background-image-container");
+  // bgContainer.style.filter = `blur(${blurIntensity}px) brightness(${
+  //   1 - darkIntensity
+  // }) grayscale(100%)`;
   const bgContainer = document.querySelector(".background-image-container");
-  bgContainer.style.filter = `blur(${blurIntensity}px) brightness(${
-    1 - darkIntensity
-  }) grayscale(100%)`;
+  bgContainer.style.filter = `blur(${blurIntensity}px) grayscale(100%)`;
 });
 
 //load most visited sites from cache
 initializeMostVisitedSitesCache();
-window.onbeforeunload = () => {
-  rss_feeds_channel.close();
-};

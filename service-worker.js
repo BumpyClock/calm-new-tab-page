@@ -1,6 +1,6 @@
 self.addEventListener("install", function(event) {
   // RSS feed logic here or any caching logic if needed
-  console.log("installing service worker");
+  // console.log("installing service worker");
   // fetchRSSFeedAndUpdateCache();
 });
 
@@ -28,7 +28,7 @@ async function fetchRSSFeedAndUpdateCache(feedUrls) {
 
       // Convert the sorted items to a JSON string
       const combinedDataString = JSON.stringify({ items: allItems });
-      console.log("sending rss data to client: ", combinedDataString);
+      // console.log("sending rss data to client: ", combinedDataString);
 
       // Send the sorted items to the client
       sendUpdateToClient(combinedDataString);
