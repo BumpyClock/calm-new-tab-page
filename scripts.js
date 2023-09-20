@@ -4,13 +4,35 @@ const SUBSCRIBED_FEEDS_KEY = "subscribedFeeds";
 // default feed url array
 const DEFAULT_FEED_URLS = [
   "https://www.vox.com/rss/index.xml",
-  "https://www.nytimes.com/sitemap.xml",
-  "https://rss.cnn.com/rss/cnn_topstories.rss"
+  "https://www.theverge.com/rss/index.xml",
+  "https://www.wired.com/feed/rss"
 ];
+
+// Register service worker
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker
+    .register("/service-worker.js")
+    .then(function (registration) {
+      console.log("Service Worker registered with scope:", registration.scope);
+    })
+    .catch(function (error) {
+      console.log("Service Worker registration failed:", error);
+    });
+}
+
+//Create an empty feedcache object. Store feeds here once received for the first time
+let feedsCache = null;
+let cachedCards = []; // Store the cards in an array to avoid re-creating them for every new tab
+
+// Create a BroadcastChannel object
+const channel = new BroadcastChannel("rss_feeds_channel");
+const CARD_CACHE_NAME = "card-items-cache";
 
 // Declare a cache object outside the showReaderView function
 const siteInfoCache = {};
 let mostVisitedSitesCache = null;
+
+let lastRefreshed = new Date().getTime(); // Get the current timestamp
 
 const getGreeting = () => {
   const date = new Date();
@@ -25,15 +47,24 @@ const getGreeting = () => {
   }
 };
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const setGreeting = () => {
     const greeting = getGreeting();
     document.title = `${greeting} - New Tab`;
   };
 
+  setGreeting(); // This was previously defined but never called. You might want to call it.
+
   if (document.querySelector("#feed-container")) {
     // Main page
-    loadSubscribedFeeds();
+    const cachedContent = await getCachedRenderedCards();
+    if (cachedContent && shouldRefreshFeeds()) {
+      const feedContainer = document.getElementById("feed-container");
+      feedContainer.innerHTML = cachedContent;
+      feedContainer.style.opacity = "1"; // apply the fade-in effect
+    } else {
+      loadSubscribedFeeds();
+    }
     handleSearch();
   } else {
     // Settings page
@@ -48,7 +79,29 @@ document.addEventListener("DOMContentLoaded", () => {
       window.location.href = "settings.html";
     });
   }
+
+  setInterval(autoRefreshFeed, 15 * 60 * 1000);
 });
+
+function shouldRefreshFeeds() {
+  const currentTimestamp = new Date().getTime();
+  const fifteenMinutes = 15 * 60 * 1000;
+
+  // If lastRefreshed isn't set or is older than 15 minutes, refresh
+  if (!lastRefreshed || currentTimestamp - lastRefreshed > fifteenMinutes) {
+    return true;
+  }
+  return false;
+}
+
+async function autoRefreshFeed() {
+  // Assuming loadSubscribedFeeds is the function that fetches and renders the feed
+  await loadSubscribedFeeds();
+}
+
+function getCachedRenderedCards() {
+  return localStorage.getItem("renderedCards");
+}
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "readableContentFetched") {
@@ -59,7 +112,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 function getSubscribedFeeds() {
   return (
-    JSON.parse(localStorage.getItem(SUBSCRIBED_FEEDS_KEY)) || [DEFAULT_FEED_URLS]
+    JSON.parse(localStorage.getItem(SUBSCRIBED_FEEDS_KEY)) || [
+      DEFAULT_FEED_URLS
+    ]
   );
 }
 
@@ -67,82 +122,110 @@ function setSubscribedFeeds(feeds) {
   localStorage.setItem(SUBSCRIBED_FEEDS_KEY, JSON.stringify(feeds));
 }
 
+async function clearOldCaches() {
+  const cacheNames = await caches.keys();
+  await Promise.all(
+    cacheNames
+      .filter((name) => name !== CARD_CACHE_NAME)
+      .map((name) => caches.delete(name))
+  );
+}
+
 async function loadSubscribedFeeds() {
-  const feeds = getSubscribedFeeds();
-  const allItems = await Promise.all(feeds.map(loadFeed))
-    .then((feeds) => {
-      // Filter out any undefined values and then use flatMap
-      return feeds.filter((feed) => feed).flatMap((feed) => feed.items);
-    })
-    .then((items) => {
-      items.sort(compareItemsByDate);
-      return items;
-    });
+  await showLoadingState();
 
-  const feedContainer = document.getElementById("feed-container");
-  allItems.forEach((item) => {
-    const card = createCard(item);
-    feedContainer.appendChild(card);
-  });
-}
-
-function compareItemsByDate(a, b) {
-  const dateA = new Date(a.pubDate);
-  const dateB = new Date(b.pubDate);
-
-  if (dateA > dateB) {
-    return -1;
-  } else if (dateA < dateB) {
-    return 1;
+  if (!shouldRefreshFeeds() && feedsCache) {
+    // Use cached feeds if available and no need to refresh
+    renderFeed(feedsCache);
+    setLastRefreshedTimestamp(new Date(lastRefreshed));
   } else {
-    return 0;
-  }
-}
-
-async function loadFeed(feedURL) {
-  try {
-    const feed = await fetchRssFeed(feedURL);
-    const feedContainer = document.getElementById("feed-container");
-
-    // Sort feed items chronologically
-    feed.items.sort((a, b) => {
-      const dateA = new Date(a.pubDate);
-      const dateB = new Date(b.pubDate);
-      return dateB - dateA; // For descending order (most recent first)
-      // return dateA - dateB; // For ascending order (oldest first)
-    });
-
-    for (const item of feed.items) {
-      const thumbnailURL = extractThumbnailURL(item);
-      const card = await createCard(item, thumbnailURL);
-      feedContainer.appendChild(card);
+    const feeds = getSubscribedFeeds();
+    const serviceWorker = navigator.serviceWorker.controller;
+    if (serviceWorker) {
+      lastRefreshed = new Date().getTime();
+      serviceWorker.postMessage({
+        action: "fetchRSS",
+        feedUrls: feeds
+      });
+    } else {
+      console.error("Service worker is not active or not controlled.");
     }
-  } catch (error) {
-    console.error("Failed to fetch feed:", error);
   }
 }
 
-async function fetchRssFeed(feedUrl) {
-  const rss2jsonApiKey = "exr1uihphn0zohhpeaqesbn4bb1pqzxm3xoe8cuj"; // Replace with your API key from rss2json.com
-  const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(
-    feedUrl
-  )}&api_key=${rss2jsonApiKey}`;
+async function renderFeed(feeditems) {
+  feedsCache = feeditems;
+  const feedContainer = document.getElementById("feed-container");
+  const fragment = document.createDocumentFragment();
 
-  return fetch(apiUrl)
-    .then((response) => {
-      if (response.ok) {
-        return response.json();
-      } else {
-        throw new Error("Failed to fetch RSS feed");
-      }
-    })
-    .then((data) => {
-      if (data.status === "ok") {
-        return data;
-      } else {
-        throw new Error("Failed to parse RSS feed");
-      }
+  for (const item of feeditems) {
+    const card = await createCard(item, item.thumbnailUrl);
+
+    if (card instanceof Node) {
+      fragment.appendChild(card);
+    } else {
+      console.error("Card is not a valid DOM Node:", card);
+    }
+  }
+  hideLoadingState();
+
+  feedContainer.appendChild(fragment);
+  cacheRenderedCards(feedContainer.innerHTML);
+  setLastRefreshedTimestamp();
+  // Fade-in effect
+  feedContainer.style.opacity = "1";
+}
+
+function cacheRenderedCards(htmlContent) {
+  try {
+    localStorage.setItem("renderedCards", htmlContent);
+  } catch (error) {
+    console.error("Error saving cards to local storage:", error);
+  }
+}
+
+navigator.serviceWorker.addEventListener("message", function (event) {
+  if (event.data.action === "rssUpdate") {
+    // console.log("Received RSS Data:", event.data.rssData);
+    // console.log("rendering feed");
+    // hideLoadingState();
+    let response = JSON.parse(event.data.rssData);
+    let feedItems = response.items;
+    // Broadcast the feeds to other tabs
+    channel.postMessage({
+      action: "shareFeeds",
+      feeds: feedItems,
+      lastRefreshed
     });
+    renderFeed(feedItems).catch((error) => {
+      console.error("Error rendering the feed:", error);
+    });
+  }
+});
+
+//listen for messages from broadcast channel
+channel.addEventListener("message", (event) => {
+  if (event.data.action === "shareFeeds" && event.data.feeds) {
+    const currentTimestamp = new Date().getTime();
+    const fifteenMinutes = 15 * 60 * 1000;
+    if (currentTimestamp - event.data.lastRefreshed > fifteenMinutes) {
+      // Refresh the feed
+      loadSubscribedFeeds();
+    } else {
+      renderFeed(event.data.feeds);
+      setLastRefreshedTimestamp(new Date(event.data.lastRefreshed));
+    }
+  }
+});
+
+function showLoadingState() {
+  const feedContainer = document.getElementById("feed-container");
+  feedContainer.innerHTML = '<div class="spinner"></div>';
+}
+
+function hideLoadingState() {
+  const feedContainer = document.getElementById("feed-container");
+  feedContainer.innerHTML = "";
 }
 
 function setupSubscriptionForm() {
@@ -249,6 +332,7 @@ async function getWebsiteTitle(url) {
     const parsedUrl = new URL(url);
     const rootDomain = `${parsedUrl.protocol}//${parsedUrl.host}`;
     const response = await fetch(rootDomain);
+
     const text = await response.text();
     const matches = text.match(/<title>(.*?)<\/title>/i);
     return matches && matches[1] ? matches[1] : url;
@@ -256,57 +340,6 @@ async function getWebsiteTitle(url) {
     console.error("Failed to get website title:", e);
     return url;
   }
-}
-
-function extractThumbnailURL(item) {
-  const imgRegex = /<img[^>]+src="([^">]+)"/;
-
-  // Check if 'content' field exists and try to extract the thumbnail URL
-  if (item.content) {
-    const match = item.content.match(imgRegex);
-    if (match) return match[1];
-  }
-
-  // Check if 'description' field exists and try to extract the thumbnail URL
-  if (item.description) {
-    const match = item.description.match(imgRegex);
-    if (match) return match[1];
-  }
-
-  // Check if 'enclosure' field exists and has a URL attribute with type "image/jpg"
-  if (
-    item.enclosure &&
-    item.enclosure.link &&
-    (item.enclosure.type === "image/jpg" ||
-      item.enclosure.type === "image/jpeg")
-  ) {
-    return item.enclosure.link;
-  }
-
-  // Check if 'enclosure' field exists and has a URL attribute with type "image/png", "image/jpg" or "image/jpeg"
-  if (
-    item.enclosure &&
-    item.enclosure.link &&
-    (item.enclosure.type === "image/png" ||
-      item.enclosure.type === "image/jpg" ||
-      item.enclosure.type === "image/jpeg")
-  ) {
-    return item.enclosure.link;
-  }
-
-  // Check if 'media:group' field exists and has a valid URL in 'media:content'
-  if (item["media:group"] && item["media:group"]["media:content"]) {
-    const mediaContent = item["media:group"]["media:content"];
-    if (Array.isArray(mediaContent)) {
-      for (const media of mediaContent) {
-        if (media.url && media.type === "image/jpeg") return media.url;
-      }
-    } else if (mediaContent.type === "image/jpeg") {
-      return mediaContent.url;
-    }
-  }
-
-  return null;
 }
 
 // Search code
@@ -337,30 +370,6 @@ function removeFeed(feedURL) {
   setSubscribedFeeds(updatedFeeds);
   displaySubscribedFeeds();
 }
-
-// async function showReaderView(url) {
-//   try {
-//     const response = await fetch(url);
-//     const html = await response.text();
-//     const parser = new DOMParser();
-//     const doc = parser.parseFromString(html, "text/html");
-//     const reader = new Readability(doc);
-//     const article = reader.parse();
-
-//     if (article) {
-//       const readerViewModal = createReaderViewModal(article);
-//       document.body.appendChild(readerViewModal);
-//       setTimeout(() => {
-//         readerViewModal.classList.add("visible");
-//       }, 10);
-//       toggleBodyScroll(false);
-//     } else {
-//       console.error("Failed to fetch readable content.");
-//     }
-//   } catch (error) {
-//     console.error("Error fetching the page content:", error);
-//   }
-// }
 
 async function showReaderView(url) {
   try {
@@ -459,19 +468,19 @@ function createReaderViewModal(article) {
 
   // add event handlers for theme selection
 
- 
   const themeDropdown = modal.querySelector("#theme-select");
   themeDropdown.addEventListener("change", (event) => {
     const selectedTheme = event.target.value;
     const readerViewPageText = modal.querySelector(".reader-view-page-content");
-    const readerViewSettingsPane = modal.querySelector(".reader-view-settings-pane");
+    const readerViewSettingsPane = modal.querySelector(
+      ".reader-view-settings-pane"
+    );
     const readerViewContent = modal.querySelector(".reader-view-content");
 
     // Remove any existing theme class
     readerViewPageText.classList.remove("light", "dark", "sepia");
     readerViewSettingsPane.classList.remove("light", "dark", "sepia");
     readerViewContent.classList.remove("light", "dark", "sepia");
-
 
     // Add the selected theme class
     if (selectedTheme === "light") {
@@ -482,14 +491,12 @@ function createReaderViewModal(article) {
       readerViewPageText.classList.add("dark");
       readerViewSettingsPane.classList.add("dark");
       readerViewContent.classList.add("dark");
-    }
-    else if(selectedTheme === "sepia"){
+    } else if (selectedTheme === "sepia") {
       readerViewPageText.classList.add("sepia");
       readerViewSettingsPane.classList.add("sepia");
       readerViewContent.classList.add("sepia");
     }
   });
-
 
   modal.querySelector(".reader-view-close").onclick = () => {
     modal.remove();
@@ -497,9 +504,14 @@ function createReaderViewModal(article) {
   };
   modal.addEventListener("click", (event) => {
     const readerViewContent = modal.querySelector(".reader-view-content");
-  const readerViewSettingsPane = modal.querySelector(".reader-view-settings-pane");
+    const readerViewSettingsPane = modal.querySelector(
+      ".reader-view-settings-pane"
+    );
 
-    if (!readerViewContent.contains(event.target) && !readerViewSettingsPane.contains(event.target)) {
+    if (
+      !readerViewContent.contains(event.target) &&
+      !readerViewSettingsPane.contains(event.target)
+    ) {
       modal.remove();
       toggleBodyScroll(true);
     }
@@ -670,6 +682,14 @@ async function cacheFavicon(domain) {
   return dataURL;
 }
 
+function setLastRefreshedTimestamp() {
+  const timestampDiv = document.getElementById(
+    "last-refreshed-timestamp-container"
+  );
+  const now = new Date();
+  timestampDiv.textContent = `Last refreshed: ${now.toLocaleTimeString()}`;
+}
+
 async function getFavicon(domain) {
   const cachedFavicon = localStorage.getItem(`favicon-${domain}`);
   if (cachedFavicon) {
@@ -711,11 +731,13 @@ window.addEventListener("scroll", () => {
   const scrollPosition =
     window.pageYOffset || document.documentElement.scrollTop;
   const blurIntensity = Math.min(scrollPosition / 100, 10);
-  const darkIntensity = Math.min(scrollPosition / 1000, 0.6); // Adjust the values as per your preference
+  const darkIntensity = Math.min(scrollPosition / 1000, 0.1); // Adjust the values as per your preference
+  // const bgContainer = document.querySelector(".background-image-container");
+  // bgContainer.style.filter = `blur(${blurIntensity}px) brightness(${
+  //   1 - darkIntensity
+  // }) grayscale(100%)`;
   const bgContainer = document.querySelector(".background-image-container");
-  bgContainer.style.filter = `blur(${blurIntensity}px) brightness(${
-    1 - darkIntensity 
-  }) grayscale(100%)`;
+  bgContainer.style.filter = `blur(${blurIntensity}px) grayscale(100%)`;
 });
 
 //load most visited sites from cache
