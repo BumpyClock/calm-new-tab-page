@@ -19,11 +19,9 @@
   --base: hsl(var(--hue), 95%, 50%);
   --complimentary1: hsl(var(--hue-complimentary1), 95%, 50%);
   --complimentary2: hsl(var(--hue-complimentary2), 95%, 50%);
-  --bg-gradient: linear-gradient(
-    to bottom,
-    hsl(var(--hue), 95%, 99%),
-    hsl(var(--hue), 95%, 84%)
-  );
+  --bg-gradient: linear-gradient(to bottom,
+      hsl(var(--hue), 95%, 99%),
+      hsl(var(--hue), 95%, 84%));
   /* font weight definitions */
   --font-weight-heading: 600;
   --font-weight-bold: 700;
@@ -33,7 +31,7 @@
 }
 
 .material-symbols-rounded {
-  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 48;
+  font-variation-settings: "FILL"0, "wght"400, "GRAD"0, "opsz"48;
 }
 
 * {
@@ -105,14 +103,14 @@ body {
   height: 100vh;
   z-index: -1;
   background-repeat: no-repeat;
-  background-size: contain;
+  background-size: cover;
   transition: all 0.1s ease-in-out;
   /* -webkit-filter: grayscale(100%);  */
   /* filter: grayscale(100%); */
 }
 
 /* Add this to ensure the content is placed above the background image */
-body > *:not(.background-image-container) {
+body>*:not(.background-image-container) {
   position: relative;
   z-index: 1;
 }
@@ -143,12 +141,14 @@ body > *:not(.background-image-container) {
   padding: 24px 0 24px 0;
   place-items: center;
 }
+
 .card {
-  /* background: rgba(255, 255, 255, 0.85); */
-  background-image: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.6));
+  background: rgba(255, 255, 255, 0.85);
+  /* background-image: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.6)); */
   border: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.3));
-  border-radius: 7px;
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.04);
+  border-radius: 12px;
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 10px 15px -3px,
+    rgba(0, 0, 0, 0.05) 0px 4px 6px -2px;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -163,7 +163,15 @@ body > *:not(.background-image-container) {
 }
 
 .card:hover {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 1);
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 20px 25px -5px,
+    rgba(0, 0, 0, 0.04) 0px 10px 10px -5px;
+}
+
+.card:active {
+  background: rgba(219, 219, 219, 0.9);
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 20px 25px -5px,
+    rgba(0, 0, 0, 0.04) 0px 10px 10px -5px;
 }
 
 .card .text-content {
@@ -171,11 +179,23 @@ body > *:not(.background-image-container) {
 }
 
 .card img {
-  border-radius: 7px;
+  border-radius: 12px;
   object-fit: cover;
-  height: 180px;
+  height: 220px;
   width: 100%;
   margin-bottom: 4px;
+  box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px, rgba(0, 0, 0, 0.07) 0px 2px 2px,
+    rgba(0, 0, 0, 0.07) 0px 4px 4px, rgba(0, 0, 0, 0.07) 0px 8px 8px,
+    rgba(0, 0, 0, 0.07) 0px 16px 16px;
+  transition: all .25s ease-in-out;
+}
+
+.card:hover img{
+  border-radius: 12px 12px 0px 0px;
+  box-shadow: rgba(0, 0, 0, 0.04) 0px 1px 1px, rgba(0, 0, 0, 0.04) 0px 2px 2px,
+    rgba(0, 0, 0, 0.04) 0px 4px 4px, rgba(0, 0, 0, 0.04) 0px 8px 8px,
+    rgba(0, 0, 0, 0.04) 0px 16px 16px;
+  box-shadow: none;
 }
 
 .card h3 {
@@ -222,6 +242,7 @@ body > *:not(.background-image-container) {
   padding: 8px 12px;
   text-transform: uppercase;
 }
+
 .website-info img {
   width: 16px;
   height: 16px;
@@ -248,6 +269,7 @@ body > *:not(.background-image-container) {
   gap: 4px;
   margin-bottom: 12px;
 }
+
 .website-info .site-favicon {
   max-width: 16px;
 
@@ -257,6 +279,7 @@ body > *:not(.background-image-container) {
   box-shadow: none !important;
   border-radius: 3px;
 }
+
 .description {
   display: -webkit-box;
   -webkit-line-clamp: 3;
@@ -265,6 +288,7 @@ body > *:not(.background-image-container) {
   text-overflow: ellipsis;
   margin-bottom: 10px;
 }
+
 .long-description {
   -webkit-line-clamp: 6;
   font-size: 14px;
@@ -325,6 +349,7 @@ body > *:not(.background-image-container) {
   border-radius: 7px;
   border: 1px solid #ccc;
 }
+
 #search-button {
   font-size: 1rem;
   padding: 0.5rem 1rem;
@@ -360,11 +385,14 @@ body > *:not(.background-image-container) {
 #feed-container {
   display: grid;
   opacity: 0;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1.5fr));
   column-gap: 24px;
   padding: 24px;
   max-width: 1800px;
   margin: 0 auto;
+  border-radius: 24px;
+  /* background: rgba(210, 210, 210, .45);
+  backdrop-filter: blur(10px); */
   transition: opacity 0.125s ease-in;
 }
 
@@ -372,7 +400,6 @@ body > *:not(.background-image-container) {
   font-weight: 600;
   color: rgba(255, 255, 255, 0.9);
   font-size: 0.875rem;
-
 }
 
 /* loading spinner for feed container */
@@ -390,6 +417,7 @@ body > *:not(.background-image-container) {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -404,6 +432,7 @@ body > *:not(.background-image-container) {
 .reader-view-modal hr.solid {
   border-top: 1px solid #bbb;
 }
+
 .overlay__btn:hover {
   transform: scale(1.05);
   cursor: pointer;
@@ -619,6 +648,7 @@ a {
   opacity: 0;
   transition: all 0.25s ease-in-out;
 }
+
 .reader-view-modal.visible {
   opacity: 1;
   position: fixed;
@@ -680,11 +710,13 @@ a {
   max-height: 90vh;
   max-width: 1000px;
   overflow-y: auto;
-  -ms-overflow-style: none; /* Internet Explorer and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  /* Internet Explorer and Edge */
+  scrollbar-width: none;
+  /* Firefox */
   margin: auto;
   box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px;
-    background-color: var(--background-color);
+  background-color: var(--background-color);
 }
 
 /* For Chrome, Safari, and Opera */
@@ -716,6 +748,7 @@ a {
 .reader-view-reading-time p {
   margin: 0;
 }
+
 .reader-view-close {
   position: absolute;
   top: 24px;
@@ -747,12 +780,14 @@ a {
 }
 
 .reader-view-header {
-  position: -webkit-sticky; /* For Safari */
+  position: -webkit-sticky;
+  /* For Safari */
   position: sticky;
   padding: 32px 48px 12px 48px;
   top: 0;
   background-color: var(--background-color);
-  z-index: 1000; /* To ensure header stays on top of other elements */
+  z-index: 1000;
+  /* To ensure header stays on top of other elements */
   /* ... (other existing styles) */
 }
 
@@ -762,7 +797,7 @@ a {
   max-height: 160px;
   width: 10vw;
   height: 120px;
-  background-color: rgba(0, 0, 0, 0.45);
+  background-color: rgba(255, 255, 255, .7);
   padding: 4px;
   border-radius: 7px;
   overflow: hidden;
@@ -770,13 +805,20 @@ a {
   background-blend-mode: darken;
   -webkit-backdrop-filter: blur(.65em);
   backdrop-filter: blur(.65em);
-
+  transition: all .250s ease-in-out;
 }
 
 .site-card:hover {
-  transform: scale(1.05);
   cursor: pointer;
-  background-color: rgba(0, 0, 0, 0.35);
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 20px 25px -5px,
+    rgba(0, 0, 0, 0.04) 0px 10px 10px -5px;
+  background-color: rgba(255, 255, 255, 1);
+}
+
+.site-card:active {
+  background: rgba(219, 219, 219, 0.9);
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 20px 25px -5px,
+    rgba(0, 0, 0, 0.04) 0px 10px 10px -5px;
 }
 
 .site-link {
@@ -802,7 +844,7 @@ a {
 }
 
 .site-title {
-  color: #fff;
+  color: var(--light-foreground-color);
   font-size: 12px;
   text-align: center;
   font-weight: 600;
@@ -830,6 +872,7 @@ a {
   background-color: #fff;
   border-radius: 100px;
 }
+
 /* reading progress indicator */
 .progress-indicator {
   border-radius: 100px;

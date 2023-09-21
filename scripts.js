@@ -739,7 +739,7 @@ window.addEventListener("scroll", () => {
   //   1 - darkIntensity
   // }) grayscale(100%)`;
   const bgContainer = document.querySelector(".background-image-container");
-  bgContainer.style.filter = `blur(${blurIntensity}px)`;
+  // bgContainer.style.filter = `blur(${blurIntensity}px)`;
 });
 
 //load most visited sites from cache
