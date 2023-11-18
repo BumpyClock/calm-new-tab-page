@@ -4,6 +4,13 @@ self.addEventListener("install", function(event) {
   // fetchRSSFeedAndUpdateCache();
 });
 
+self.addEventListener("message", function(event) {
+  if (event.data.action === "fetchRSS") {
+    fetchRSSFeedAndUpdateCache(event.data.feedUrls); //Sending fetched feed data to tab
+  }
+});
+
+
 async function fetchRSSFeedAndUpdateCache(feedUrls) {
   //   console.log(typeof feedUrls);
   //   console.log(feedUrls);
@@ -38,11 +45,6 @@ async function fetchRSSFeedAndUpdateCache(feedUrls) {
     });
 }
 
-self.addEventListener("message", function(event) {
-  if (event.data.action === "fetchRSS") {
-    fetchRSSFeedAndUpdateCache(event.data.feedUrls); //Sending fetched feed data to tab
-  }
-});
 
 function sendUpdateToClient(data) {
   clients.matchAll().then(clients => {

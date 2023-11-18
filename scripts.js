@@ -177,74 +177,37 @@ async function renderFeed(feeditems) {
 
 //parallax effect for image container
 
-// function setupParallaxEffect() {
-//   const parallaxStrength = 2.5; // Adjust this value as needed
- 
-
-
-//   document.querySelectorAll('.card').forEach(card => {
-    
-//     card.addEventListener('mousemove', (e) => {
-//         const cardRect = card.getBoundingClientRect();
-//         const xVal = (e.clientX - cardRect.left) / cardRect.width;
-//         const yVal = (e.clientY - cardRect.top) / cardRect.height;
-
-//         // Translate this into a percentage-based position
-//         const xOffset = -(xVal - 0.5) * parallaxStrength ; 
-//         const yOffset = -(yVal - 0.5) * parallaxStrength ;
-
-//         // Apply the effect to the image
-//         const img = card.querySelector('.image-container');
-//         if (img) {
-//             img.style.transition = 'none';
-//             img.style.transform = `translate(${xOffset}px, ${yOffset}px)`;
-//         }
-//     });
-
-//     card.addEventListener('mouseleave', () => {
-//         // Reset the image position when the mouse leaves the card
-//         const img = card.querySelector('.image-container');
-//         if (img) {
-//             img.style.transition = 'transform 0.25s ease-in-out';
-//             img.style.transform = 'translate(0px, 0px)';
-//         }
-//     });
-//   });
-// }
-
 function setupParallaxEffect() {
   document.querySelectorAll('.card').forEach(card => {
-    const imageContainer = card.querySelector('.image-container');
+    const imageContainer = card.querySelector('.thumbnail-image');
+
     card.addEventListener('mouseover', () => {
-      //zoom in effect
+      // Zoom in effect
       imageContainer.style.transition = 'transform 0.25s ease-in-out';
-      imageContainer.style.transform = 'scale(1.05)';
-      
+      imageContainer.style.transform = 'scale(1.1)';
+      // imageContainer.style.backgroundPosition = 'center center';
     });
+
     card.addEventListener('mousemove', (e) => {
       const cardRect = card.getBoundingClientRect();
       const xVal = (e.clientX - cardRect.left) / cardRect.width;
       const yVal = (e.clientY - cardRect.top) / cardRect.height;
 
       // Translate this into a percentage-based position
-      const xOffset = -(xVal - 0.5) * 20; // 20 is the maximum offset
+      const xOffset = -(xVal - 0.5) * 20; // Adjust for desired effect strength
       const yOffset = -(yVal - 0.5) * 20;
 
       // Apply the effect to the image container's background
-      
       if (imageContainer) {
-        // imageContainer.style.transition = 'all .1s linear';
         imageContainer.style.backgroundPosition = `${50 + xOffset}% ${50 + yOffset}%`;
       }
     });
 
     card.addEventListener('mouseleave', () => {
       // Reset the background position when the mouse leaves the card
-      const imageContainer = card.querySelector('.image-container');
       if (imageContainer) {
         imageContainer.style.transform = 'scale(1)';
-
-        imageContainer.style.backgroundPosition = 'center';
+        imageContainer.style.backgroundPosition = 'center center';
       }
     });
   });
@@ -328,19 +291,25 @@ function setupBackButton() {
   });
 }
 
-async function createCard(item, thumbnailURL = null) {
+async function createCard(item, thumbnailURL ) {
   const card = document.createElement("div");
   card.className = "card";
   var website_title = await getWebsiteTitle(item.link);
   //create imageContainer for parallax effect
   const imageContainer = document.createElement('div');
+  const thumbnailImage = document.createElement('div');
+  thumbnailImage.className = 'thumbnail-image';
   imageContainer.className = 'image-container';
-  
+  const cardbg = document.createElement('div');
+  cardbg.className = 'card-bg';
   if (thumbnailURL) {
     
-    imageContainer.style.backgroundImage = `url(${thumbnailURL})`;
+    thumbnailImage.style.backgroundImage = `url(${thumbnailURL})`;
+    cardbg.style.backgroundImage = `url(${thumbnailURL})`;
   }
+  imageContainer.appendChild(thumbnailImage);
   card.appendChild(imageContainer);
+  card.appendChild(cardbg);
   const textContentDiv = document.createElement("div");
   textContentDiv.classList.add("text-content");
   // Add website name and favicon
@@ -727,12 +696,14 @@ function createMostVisitedSiteCard(site) {
   siteCard.className = "site-card";
   siteCard.innerHTML = `
     <a href="${site.url}" class="site-link">
+      <div class="background-image-container" style="background-image: url('https://icon.horse/icon/${mainDomain}');"></div>
       <img src="https://icon.horse/icon/${mainDomain}" alt="${site.title} Favicon" class="site-favicon">
       <div class="site-title">${site.title}</div>
     </a>
   `;
   return siteCard;
 }
+
 
 function fetchMostVisitedSites() {
   if (!mostVisitedSitesCache) {
@@ -822,7 +793,7 @@ window.addEventListener("scroll", () => {
   //   1 - darkIntensity
   // }) grayscale(100%)`;
   const bgContainer = document.querySelector(".background-image-container");
-  // bgContainer.style.filter = `blur(${blurIntensity}px)`;
+  bgContainer.style.filter = `blur(${blurIntensity}px)`;
 });
 
 //load most visited sites from cache
