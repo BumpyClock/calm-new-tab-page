@@ -143,10 +143,12 @@ body>*:not(.background-image-container) {
 }
 
 .card {
+  overflow: hidden;
+  position: relative;
+  row-gap: 8px;
   background: rgba(255, 255, 255, 0.85);
-  /* background-image: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.6)); */
   border: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.3));
-  border-radius: 12px;
+  border-radius: 24px;
   box-shadow: rgba(0, 0, 0, 0.1) 0px 10px 15px -3px,
     rgba(0, 0, 0, 0.05) 0px 4px 6px -2px;
   width: 100%;
@@ -159,12 +161,12 @@ body>*:not(.background-image-container) {
   break-inside: avoid;
   -webkit-backdrop-filter: blur(.65em);
   backdrop-filter: blur(.65em);
-  transition: ease-in-out 0.3s;
+  transition: ease-in-out 0.5s;
 }
 
 .card:hover {
   background: rgba(255, 255, 255, 1);
-  box-shadow: rgba(0, 0, 0, 0.1) 0px 20px 25px -5px,
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 20px 25px -5px,
     rgba(0, 0, 0, 0.04) 0px 10px 10px -5px;
 }
 
@@ -174,28 +176,34 @@ body>*:not(.background-image-container) {
     rgba(0, 0, 0, 0.04) 0px 10px 10px -5px;
 }
 
+.card .image-container {
+  width: 100%; /* Slightly larger than the card */
+  height: 220px;
+  max-height: 220px;
+ top: 0;
+ left: 0;
+  transition: transform 0.25s ease-in-out;
+  overflow:hidden;
+  border-radius: 12px;
+  background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+  transform-origin: center;
+  
+}
+
+.card:hover .image-container {
+ 
+    
+}
+
+
+
+
+
+
 .card .text-content {
   padding: 8px 24px 12px 24px;
-}
-
-.card img {
-  border-radius: 12px;
-  object-fit: cover;
-  height: 220px;
-  width: 100%;
-  margin-bottom: 4px;
-  box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 1px, rgba(0, 0, 0, 0.07) 0px 2px 2px,
-    rgba(0, 0, 0, 0.07) 0px 4px 4px, rgba(0, 0, 0, 0.07) 0px 8px 8px,
-    rgba(0, 0, 0, 0.07) 0px 16px 16px;
-  transition: all .25s ease-in-out;
-}
-
-.card:hover img{
-  border-radius: 12px 12px 0px 0px;
-  box-shadow: rgba(0, 0, 0, 0.04) 0px 1px 1px, rgba(0, 0, 0, 0.04) 0px 2px 2px,
-    rgba(0, 0, 0, 0.04) 0px 4px 4px, rgba(0, 0, 0, 0.04) 0px 8px 8px,
-    rgba(0, 0, 0, 0.04) 0px 16px 16px;
-  box-shadow: none;
 }
 
 .card h3 {

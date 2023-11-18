@@ -4,8 +4,6 @@ const SUBSCRIBED_FEEDS_KEY = "subscribedFeeds";
 // default feed url array
 const DEFAULT_FEED_URLS = [
   "https://www.vox.com/rss/index.xml",
-  "https://www.theverge.com/rss/index.xml",
-  "https://www.wired.com/feed/rss"
 ];
 
 // Register service worker
@@ -173,7 +171,88 @@ async function renderFeed(feeditems) {
   setLastRefreshedTimestamp();
   // Fade-in effect
   feedContainer.style.opacity = "1";
+  // Setup parallax effect for each card
+  setupParallaxEffect();
 }
+
+//parallax effect for image container
+
+// function setupParallaxEffect() {
+//   const parallaxStrength = 2.5; // Adjust this value as needed
+ 
+
+
+//   document.querySelectorAll('.card').forEach(card => {
+    
+//     card.addEventListener('mousemove', (e) => {
+//         const cardRect = card.getBoundingClientRect();
+//         const xVal = (e.clientX - cardRect.left) / cardRect.width;
+//         const yVal = (e.clientY - cardRect.top) / cardRect.height;
+
+//         // Translate this into a percentage-based position
+//         const xOffset = -(xVal - 0.5) * parallaxStrength ; 
+//         const yOffset = -(yVal - 0.5) * parallaxStrength ;
+
+//         // Apply the effect to the image
+//         const img = card.querySelector('.image-container');
+//         if (img) {
+//             img.style.transition = 'none';
+//             img.style.transform = `translate(${xOffset}px, ${yOffset}px)`;
+//         }
+//     });
+
+//     card.addEventListener('mouseleave', () => {
+//         // Reset the image position when the mouse leaves the card
+//         const img = card.querySelector('.image-container');
+//         if (img) {
+//             img.style.transition = 'transform 0.25s ease-in-out';
+//             img.style.transform = 'translate(0px, 0px)';
+//         }
+//     });
+//   });
+// }
+
+function setupParallaxEffect() {
+  document.querySelectorAll('.card').forEach(card => {
+    const imageContainer = card.querySelector('.image-container');
+    card.addEventListener('mouseover', () => {
+      //zoom in effect
+      imageContainer.style.transition = 'transform 0.25s ease-in-out';
+      imageContainer.style.transform = 'scale(1.05)';
+      
+    });
+    card.addEventListener('mousemove', (e) => {
+      const cardRect = card.getBoundingClientRect();
+      const xVal = (e.clientX - cardRect.left) / cardRect.width;
+      const yVal = (e.clientY - cardRect.top) / cardRect.height;
+
+      // Translate this into a percentage-based position
+      const xOffset = -(xVal - 0.5) * 20; // 20 is the maximum offset
+      const yOffset = -(yVal - 0.5) * 20;
+
+      // Apply the effect to the image container's background
+      
+      if (imageContainer) {
+        // imageContainer.style.transition = 'all .1s linear';
+        imageContainer.style.backgroundPosition = `${50 + xOffset}% ${50 + yOffset}%`;
+      }
+    });
+
+    card.addEventListener('mouseleave', () => {
+      // Reset the background position when the mouse leaves the card
+      const imageContainer = card.querySelector('.image-container');
+      if (imageContainer) {
+        imageContainer.style.transform = 'scale(1)';
+
+        imageContainer.style.backgroundPosition = 'center';
+      }
+    });
+  });
+}
+
+
+
+
 
 function cacheRenderedCards(htmlContent) {
   try {
@@ -253,12 +332,15 @@ async function createCard(item, thumbnailURL = null) {
   const card = document.createElement("div");
   card.className = "card";
   var website_title = await getWebsiteTitle(item.link);
+  //create imageContainer for parallax effect
+  const imageContainer = document.createElement('div');
+  imageContainer.className = 'image-container';
+  
   if (thumbnailURL) {
-    const img = document.createElement("img");
-    img.src = thumbnailURL;
-    card.appendChild(img);
+    
+    imageContainer.style.backgroundImage = `url(${thumbnailURL})`;
   }
-
+  card.appendChild(imageContainer);
   const textContentDiv = document.createElement("div");
   textContentDiv.classList.add("text-content");
   // Add website name and favicon
@@ -325,6 +407,7 @@ async function createCard(item, thumbnailURL = null) {
 
   return card;
 }
+
 
 async function getWebsiteTitle(url) {
   try {
@@ -731,7 +814,7 @@ async function fetchBingImageOfTheDay() {
 
 window.addEventListener("scroll", () => {
   const scrollPosition =
-    window.pageYOffset || document.documentElement.scrollTop;
+    window.scrollY || document.documentElement.scrollTop;
   const blurIntensity = Math.min(scrollPosition / 100, 10);
   const darkIntensity = Math.min(scrollPosition / 1000, 0.1); // Adjust the values as per your preference
   // const bgContainer = document.querySelector(".background-image-container");
