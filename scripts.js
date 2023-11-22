@@ -183,7 +183,7 @@ function setupParallaxEffect() {
 
     card.addEventListener('mouseover', () => {
       // Zoom in effect
-      imageContainer.style.transition = 'transform 0.25s ease-in-out';
+      imageContainer.style.transition = 'transform 0.25s ease-in';
       imageContainer.style.transform = 'scale(1.1)';
       // imageContainer.style.backgroundPosition = 'center center';
     });

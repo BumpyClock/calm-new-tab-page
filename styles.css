@@ -108,6 +108,7 @@ body {
   width: 100vw;
   height: 100vh;
   z-index: -1;
+  filter: dim(0.5);
   background-repeat: no-repeat;
   background-size: cover;
   transition: all 0.1s linear;
@@ -176,15 +177,15 @@ body > *:not(.background-image-container) {
   left: 0;
   width: 100%;
   height: 100%;
-  filter: blur(90px);
+  filter: blur(60px);
   z-index: -1;
-  opacity: 0.5;
+  opacity: 0.4;
   transition: opacity ease-in-out 0.5s;
 }
 
 .card:hover .card-bg {
   filter: blur(90px);
-  opacity: .65;
+  opacity: .5;
 }
 
 .card:hover {
@@ -216,7 +217,7 @@ body > *:not(.background-image-container) {
  width: 100%;
  height: 100%;
   background-repeat: no-repeat;
-  /* background-position: center center; */
+  background-position: center center;
   background-size: cover;
   transform-origin: center;
   border-radius: 24px;
@@ -795,14 +796,14 @@ a {
   margin-top: 20px;
 }
 
-.most-visited-sites .background-image-container {
-  width: 100%;
-  height: 100%;
+.site-card .background-image-container {
+  width: 110%;
+  height: 110%;
   border-radius: 7px;
   overflow: hidden;
-  filter: blur(90px);
+  filter: blur(20px);
   z-index: -1;
-  opacity: 1;
+  opacity: .25;
 }
 .most-visited-sites h3 {
   margin-bottom: 12px;
@@ -853,7 +854,7 @@ a {
   cursor: pointer;
   box-shadow: rgba(0, 0, 0, 0.1) 0px 20px 25px -5px,
     rgba(0, 0, 0, 0.04) 0px 10px 10px -5px;
-  background-color: rgba(255, 255, 255, 1);
+  background-color: var(--background-color);
 }
 
 .site-card:active {
