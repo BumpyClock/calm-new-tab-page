@@ -1,37 +1,96 @@
 :root {
-  --sepia-background-color: #f4e7d8;
-  --sepia-foreground-color: #5c4a3d;
-  --sepia-accent-color: #d8bfaa;
-  --sepia-accent-color-2: #d8bfaa;
-  --sepia-border-color: #d8bfaa;
-  --dark-background-color: #1a1a1a;
-  --dark-reading-progress-color: #708ea5;
-  --dark-reading-progress-background-color: rgb(37, 37, 36);
-  --dark-foreground-color: #aad0ee;
-  --dark-accent-color: #aad0ee;
-  --dark-border-color: #000;
+  /* Base Theme Variables */
+  --font-family: "Open Sans", "Noto Sans", "Lato", "Roboto", sans-serif;
+  --box-shadow-standard: 0px 10px 15px -3px rgba(0, 0, 0, 0.1),
+                        0px 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --box-shadow-hover: 0px 20px 25px -5px rgba(0, 0, 0, 0.1),
+                      0px 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --blur: blur(0.65em);
+
+  /* Light Theme Colors */
   --light-background-color: #f5f5f5;
+  --light-background-color-hover: rgba(219, 219, 219, 0.9);
   --light-foreground-color: #1a1a1a;
   --light-accent-color: #007bff;
   --light-border-color: #e6e6e6;
-  --font-family: "Open Sans", "Noto Sans", "Lato", "Roboto", sans-serif;
-  transition: all ease-in-out 0.125s;
-  --dark-color: hsl(var(--hue), 100%, 9%);
-  --light-color: hsl(var(--hue), 95%, 98%);
-  --base: hsl(var(--hue), 95%, 50%);
-  --complimentary1: hsl(var(--hue-complimentary1), 95%, 50%);
-  --complimentary2: hsl(var(--hue-complimentary2), 95%, 50%);
-  --bg-gradient: linear-gradient(
-    to bottom,
-    hsl(var(--hue), 95%, 99%),
-    hsl(var(--hue), 95%, 84%)
-  );
-  /* font weight definitions */
-  --font-weight-heading: 600;
-  --font-weight-bold: 700;
-  --font-weight-extra-bold: 800;
-  --font-weight-medium: 500;
-  --font-weight-light: 300;
+
+  /* Dark Theme Colors */
+  --dark-background-color: rgba(0, 0, 0, 0.75);
+  --dark-background-color-hover: rgba(0, 0, 0,.9);
+  --dark-foreground-color: rgba(255, 255, 255, 0.9);
+  --dark-accent-color: #708ea5;
+  --dark-border-color: #000;
+
+  /* Sepia Theme Colors */
+  --sepia-background-color: #f4e7d8;
+  --sepia-foreground-color: #5c4a3d;
+  --sepia-accent-color: #d8bfaa;
+  --sepia-border-color: #d8bfaa;
+
+  /* Progress Indicator */
+  --progress-background: #eee;
+  --progress-foreground-light: #007bff;
+  --progress-foreground-dark: #fff;
+  --progress-foreground-sepia: #704214;
+
+  /* transition variables */
+  --transition-standard: all 0.25s ease-in-out;
+  --transition-slow: all 0.5s ease-in-out;
+}
+
+.light {
+  --background-color: var(--light-background-color);
+  --background-color-hover: var(--light-background-color-hover);
+  --color: var(--light-foreground-color);
+  --accent-color: var(--light-accent-color);
+  --border-color: var(--light-border-color);
+}
+
+.dark {
+  --background-color: var(--dark-background-color);
+  --background-color-hover: var(--dark-background-color-hover);
+  --color: var(--dark-foreground-color);
+  --accent-color: var(--dark-accent-color);
+  --border-color: var(--dark-border-color);
+}
+
+.sepia {
+  --background-color: var(--sepia-background-color);
+  --background-color-hover: var(--sepia-background-color-hover);
+  --color: var(--sepia-foreground-color);
+  --accent-color: var(--sepia-accent-color);
+  --border-color: var(--sepia-border-color);
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    --background-color: var(--dark-background-color);
+    --background-color-hover: var(--dark-background-color-hover);
+    --color: var(--dark-foreground-color);
+    --accent-color: var(--dark-accent-color);
+    --border-color: var(--dark-border-color);
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  body {
+    --background-color: var(--light-background-color);
+    --background-color-hover: var(--light-background-color-hover);
+    --color: var(--light-foreground-color);
+    --accent-color: var(--light-accent-color);
+    --border-color: var(--light-border-color);
+  }
+}
+
+/* Global Styles */
+body {
+  font-family: var(--font-family);
+  background-color: var(--background-color);
+  color: var(--color);
+  transition: var(--transition-standard);
+  margin:0;
+  padding:2rem;
+
 }
 
 .material-symbols-rounded {
@@ -44,62 +103,9 @@
   box-sizing: border-box;
 }
 
-.light {
-  --background-color: var(--light-background-color);
-  --color: var(--light-foreground-color);
-  --accent-color: var(--light-accent-color);
-  --border-color: var(--light-border-color);
-  --foreground-color: var(--light-foreground-color);
-}
 
-.dark {
-  --background-color: var(--dark-background-color);
-  --color: var(--dark-foreground-color);
-  --accent-color: var(--dark-accent-color);
-  --border-color: var(--dark-border-color);
-  --foreground-color: var(--dark-foreground-color);
-  --reading-progress-container-background-color: var(--dark-reading-progress-background-color);
-  --reading-progress-color: var(--dark-reading-progress-color);
-}
 
-.sepia {
-  --background-color: var(--sepia-background-color);
-  --color: var(--sepia-foreground-color);
-  --accent-color: var(--sepia-accent-color);
-  --border-color: var(--sepia-border-color);
-  --foreground-color: var(--sepia-foreground-color);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background-color: var(--dark-background-color);
-    --color: var(--dark-foreground-color);
-    --accent-color: var(--dark-accent-color);
-    --border-color: var(--dark-border-color);
-    --foreground-color: var(--dark-foreground-color);
-  }
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    --background-color: var(--light-background-color);
-    --color: var(--light-foreground-color);
-    --accent-color: var(--light-accent-color);
-    --border-color: var(--light-border-color);
-    --foreground-color: var(--light-foreground-color);
-  }
-}
-
-body {
-  font-family: var(--font-family);
-  margin: 0;
-  padding: 0;
-  background-color: transparent;
-  padding: 2rem;
-  color: var(--dark-color);
-  background: var(--bg-gradient);
-  background: #f5f5f5;
-}
 
 .background-image-container {
   position: fixed;
@@ -153,11 +159,10 @@ body > *:not(.background-image-container) {
   overflow: hidden;
   position: relative;
   row-gap: 8px;
-  background: rgba(255, 255, 255, 0.85);
-  border: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.3));
+  background: var(--background-color);
+  border: var(--border-color);
   border-radius: 24px;
-  box-shadow: rgba(0, 0, 0, 0.1) 0px 10px 15px -3px,
-    rgba(0, 0, 0, 0.05) 0px 4px 6px -2px;
+  box-shadow: var(--box-shadow-standard);
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -166,9 +171,9 @@ body > *:not(.background-image-container) {
   max-width: 400px;
   margin-bottom: 24px;
   break-inside: avoid;
-  -webkit-backdrop-filter: blur(0.65em);
-  backdrop-filter: blur(0.65em);
-  transition: ease-in-out 0.5s;
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  transition: var(--transition-standard);
 }
 
 .card .card-bg {
@@ -180,7 +185,7 @@ body > *:not(.background-image-container) {
   filter: blur(60px);
   z-index: -1;
   opacity: 0.4;
-  transition: opacity ease-in-out 0.5s;
+  transition: var(--transition-slow);
 }
 
 .card:hover .card-bg {
@@ -189,9 +194,8 @@ body > *:not(.background-image-container) {
 }
 
 .card:hover {
-  background: rgba(255, 255, 255, 1);
-  box-shadow: rgba(0, 0, 0, 0.1) 0px 20px 25px -5px,
-    rgba(0, 0, 0, 0.04) 0px 10px 10px -5px;
+  background: var(--background-color-hover);
+  box-shadow: var(--box-shadow-hover);
 }
 
 .card:active {
@@ -480,7 +484,7 @@ body > *:not(.background-image-container) {
 
 a {
   text-decoration: none;
-  color: var(--dark-color);
+  color: var(--color);
   width: 100%;
   height: 100%;
   display: flex;
@@ -743,7 +747,7 @@ a {
   scrollbar-width: none;
   /* Firefox */
   margin: auto;
-  box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px;
+  box-shadow: var(--box-shadow-standard);
   background-color: var(--background-color);
 }
 
@@ -757,6 +761,7 @@ a {
   margin: 0;
   margin-bottom: 8px;
   line-height: 1.2;
+  color: var(--color);
 }
 
 .reader-view-author {
@@ -834,7 +839,7 @@ a {
   max-height: 160px;
   width: 10vw;
   height: 120px;
-  background-color: rgba(255, 255, 255, 0.7);
+  background-color: var(--background-color);
   padding: 4px;
   border-radius: 7px;
   overflow: hidden;
@@ -847,15 +852,13 @@ a {
 
 .site-card:hover {
   cursor: pointer;
-  box-shadow: rgba(0, 0, 0, 0.1) 0px 20px 25px -5px,
-    rgba(0, 0, 0, 0.04) 0px 10px 10px -5px;
-  background-color: var(--background-color);
+  box-shadow: var(--box-shadow-hover);
+  background-color: var(--background-color-hover);
 }
 
 .site-card:active {
-  background: rgba(219, 219, 219, 0.9);
-  box-shadow: rgba(0, 0, 0, 0.1) 0px 20px 25px -5px,
-    rgba(0, 0, 0, 0.04) 0px 10px 10px -5px;
+  background: var(--background-color-hover);
+  box-shadow: var(--box-shadow-hover);
 }
 
 .site-link {
@@ -863,7 +866,7 @@ a {
   flex-direction: column;
   align-items: center;
   text-decoration: none;
-  color: #fff;
+  color: var(--color);
   gap: 4px;
   height: fit-content;
 }
@@ -881,7 +884,7 @@ a {
 }
 
 .site-title {
-  color: var(--light-foreground-color);
+  color: var(--color);
   font-size: 12px;
   text-align: center;
   font-weight: 600;
@@ -974,7 +977,7 @@ a {
   border: 1px solid var(--border-color);
   border-radius: 5px;
   padding: 12px;
-  color: var(--foreground-color);
+  color: var(--color);
   z-index: 1001;
 }
 
@@ -986,7 +989,7 @@ a {
 
 .reader-view-content .dark {
   background-color: var(--background-color);
-  color: #ffffff;
+  color: var(--color);
   transition: color 0.25s ease-in-out;
 }
 
