@@ -345,7 +345,8 @@ async function createCard(item, thumbnailURL ) {
     const date = new Date(item.pubDate);
     const dateString = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
 
-    const details = document.createElement("p");
+    const details = document.createElement("div");
+    details.className = "date";
     details.textContent = `${dateString}`;
     textContentDiv.appendChild(details);
 

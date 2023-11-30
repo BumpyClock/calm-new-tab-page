@@ -85,60 +85,53 @@ async function fetchRSSFeed(feedUrl) {
 //Get thumbnailUrl from the feed items and cache the images
 function extractThumbnailURL(item) {
   const imgRegex = /<img[^>]+src="([^">]+)"/;
+  const imageUrlRegex = /\.(jpeg|jpg|png|gif|bmp)$/i;
 
-  // Check if 'content' field exists and try to extract the thumbnail URL
-  if (item.content) {
-    const match = item.content.match(imgRegex);
-    if (match) {
-      addImageToCache(match[1]);
-      return match[1];
+  // Function to add image to cache
+  function addImageToCache(url) {
+    // Your caching logic here
+  }
+
+  // Extract URL from 'content' or 'description'
+  function extractFromContent(contentField) {
+    if (contentField) {
+      const match = contentField.match(imgRegex);
+      if (match) {
+        addImageToCache(match[1]);
+        return match[1];
+      }
+    }
+    return null;
+  }
+
+  // Try extracting from 'content'
+  let thumbnailUrl = extractFromContent(item.content);
+  if (thumbnailUrl) return thumbnailUrl;
+
+  // Try extracting from 'description'
+  thumbnailUrl = extractFromContent(item.description);
+  if (thumbnailUrl) return thumbnailUrl;
+
+  // Handle 'enclosure'
+  if (item.enclosure && item.enclosure.link) {
+    if (!item.enclosure.type || imageUrlRegex.test(item.enclosure.link)) {
+      addImageToCache(item.enclosure.link);
+      return item.enclosure.link;
     }
   }
 
-  // Check if 'description' field exists and try to extract the thumbnail URL
-  if (item.description) {
-    const match = item.description.match(imgRegex);
-    if (match) {
-      addImageToCache(match[1]);
-      return match[1];
-    }
-  }
-
-  // Check if 'enclosure' field exists and has a URL attribute with type "image/jpg"
-  if (
-    item.enclosure &&
-    item.enclosure.link &&
-    (item.enclosure.type === "image/jpg" ||
-      item.enclosure.type === "image/jpeg")
-  ) {
-    addImageToCache(match[1]);
-    return item.enclosure.link;
-  }
-
-  // Check if 'enclosure' field exists and has a URL attribute with type "image/png", "image/jpg" or "image/jpeg"
-  if (
-    item.enclosure &&
-    item.enclosure.link &&
-    (item.enclosure.type === "image/png" ||
-      item.enclosure.type === "image/jpg" ||
-      item.enclosure.type === "image/jpeg")
-  ) {
-    addImageToCache(match[1]);
-    return item.enclosure.link;
-  }
-
-  // Check if 'media:group' field exists and has a valid URL in 'media:content'
+  // Handle 'media:group'
   if (item["media:group"] && item["media:group"]["media:content"]) {
     const mediaContent = item["media:group"]["media:content"];
     if (Array.isArray(mediaContent)) {
       for (const media of mediaContent) {
-        if (media.url && media.type === "image/jpeg") {
-          addImageToCache(match[1]);
+        if (media.url && (!media.type || imageUrlRegex.test(media.url))) {
+          addImageToCache(media.url);
           return media.url;
         }
       }
-    } else if (mediaContent.type === "image/jpeg") {
-      addImageToCache(match[1]);
+    } else if (mediaContent.url && (!mediaContent.type || imageUrlRegex.test(mediaContent.url))) {
+      addImageToCache(mediaContent.url);
       return mediaContent.url;
     }
   }
