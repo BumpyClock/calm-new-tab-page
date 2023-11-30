@@ -112,8 +112,8 @@ body {
   background-repeat: no-repeat;
   background-size: cover;
   transition: all 0.1s linear;
-  /* -webkit-filter: grayscale(100%);  */
-  /* filter: grayscale(100%); */
+  /* -webkit-filter: grayscale(100%); 
+  filter: grayscale(100%); */
 }
 
 /* Add this to ensure the content is placed above the background image */
@@ -432,13 +432,14 @@ body > *:not(.background-image-container) {
 
 /* loading spinner for feed container */
 .spinner {
-  border: 4px solid rgba(255, 255, 255, 0.3);
+  border: 4px solid rgb(255, 255, 255);
   border-radius: 50%;
-  border-top: 4px solid #000;
+  border-top: 4px solid #14141483;
   width: 50px;
   height: 50px;
   animation: spin 1s linear infinite;
   margin: auto;
+  z-index: 1000000000000 !important;
 }
 
 @keyframes spin {

@@ -70,7 +70,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     displaySubscribedFeeds();
     setupBackButton();
   }
-
+await showLoadingState();
   if (document.querySelector("#settings-button")) {
     document.getElementById("settings-button").addEventListener("click", () => {
       window.location.href = "settings.html";
@@ -259,8 +259,9 @@ channel.addEventListener("message", (event) => {
   }
 });
 
-function showLoadingState() {
+async function showLoadingState() {
   const feedContainer = document.getElementById("feed-container");
+  feedContainer.style.opacity = "1"; // Fade-out effect
   feedContainer.innerHTML = '<div class="spinner"></div>';
 }
 
