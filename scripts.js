@@ -760,7 +760,7 @@ async function displaySubscribedFeeds() {
       const favicon = document.createElement("img");
 
       const mainDomain = new URL(feedURL).hostname;
-      favicon.src = `https://icon.horse/icon/${mainDomain}`;
+      favicon.src = await getsiteFavicon(mainDomain);
       favicon.alt = `${mainDomain} Favicon`;
       favicon.className = "site-favicon";
       listItem.appendChild(favicon);
@@ -820,17 +820,23 @@ async function createMostVisitedSiteCard(site) {
 }
 
 async function getsiteFavicon(mainDomain) {
-  const response = await fetch(
-    `https://www.google.com/s2/favicons?domain=${mainDomain}&sz=256`
-  );
-  if (response.ok) {
-    return response.url;
-  } else {
-    const response = await fetch(`https://icon.horse/icon/${mainDomain}`);
-    if (response.ok) {
-      return response.url;
-    } else {
-      console.log("Error fetching favicon");
+  try {
+    const response = await fetch(`https://www.google.com/s2/favicons?domain=${mainDomain}&sz=256`);
+    if (!response.ok) { // if HTTP-status is 404-599
+      throw new Error(response.statusText);
+    }
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+  } catch (error) {
+    try {
+      const response = await fetch(`https://icon.horse/icon/${mainDomain}`);
+      if (!response.ok) { // if HTTP-status is 404-599
+        throw new Error(response.statusText);
+      }
+      const blob = await response.blob();
+      return URL.createObjectURL(blob);
+    } catch (error) {
+      console.log("Error fetching favicon from both sources");
     }
   }
 }
