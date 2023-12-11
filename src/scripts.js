@@ -1,8 +1,14 @@
 // Path: scripts.js
 const SUBSCRIBED_FEEDS_KEY = "subscribedFeeds";
 
-// default feed url array
-const DEFAULT_FEED_URLS = ["http://www.theverge.com/rss/index.xml"];
+// JSON array for holding default feeds url array
+let feedList = {
+  "subscribedFeeds": ["http://www.theverge.com/rss/index.xml",
+  "https://www.vox.com/rss/index.xml"],
+  "suggestedFeeds": []
+};
+const DEFAULT_FEED_URLS= ["http://www.theverge.com/rss/index.xml",
+"https://www.vox.com/rss/index.xml"];
 
 // Register service worker
 if ("serviceWorker" in navigator) {
@@ -55,6 +61,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   setGreeting();
   await fetchBingImageOfTheDay();
+  //load most visited sites from cache
+initializeMostVisitedSitesCache();
   if (document.querySelector("#feed-container")) {
     // Main page
     cachedCards = await getCachedRenderedCards();
@@ -116,15 +124,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 function getSubscribedFeeds() {
+  console.log("feedList.subscribedFeeds", feedList.subscribedFeeds);
   return (
-    JSON.parse(localStorage.getItem(SUBSCRIBED_FEEDS_KEY)) || [
-      DEFAULT_FEED_URLS,
-    ]
+    console.log("feedList.subscribedFeeds", feedList.subscribedFeeds),
+    JSON.parse(localStorage.getItem(SUBSCRIBED_FEEDS_KEY)) || feedList.subscribedFeeds
   );
 }
 
 function setSubscribedFeeds(feeds) {
-  localStorage.setItem(SUBSCRIBED_FEEDS_KEY, JSON.stringify(feeds));
+  localStorage.setItem(SUBSCRIBED_FEEDS_KEY, feedList.subscribedFeeds);
 }
 
 async function clearOldCaches() {
@@ -151,7 +159,7 @@ async function loadSubscribedFeeds() {
       lastRefreshed = new Date().getTime();
       serviceWorker.postMessage({
         action: "fetchRSS",
-        feedUrls: feeds,
+        feedUrls: feedList.subscribedFeeds,
       });
     } else {
       console.error("Service worker is not active or not controlled.");
@@ -914,5 +922,4 @@ window.addEventListener("scroll", () => {
   bgContainer.style.filter = `blur(${blurIntensity}px)`;
 });
 
-//load most visited sites from cache
-initializeMostVisitedSitesCache();
+
