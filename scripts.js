@@ -297,12 +297,12 @@ function processRSSData(rssData) {
     feedItems.forEach((item) => {
       if (item.published) {
         item.published = new Date(item.published).toISOString();
-        console.log(`item.published: ${item.published} converts to ${new Date(item.published)}`);
+        // console.log(`item.published: ${item.published} converts to ${new Date(item.published)}`);
 
       }
       if (item.created) {
         item.created = new Date(item.created).toISOString();
-        console.log(`item.created: ${item.created} converts to ${new Date(item.created)}`);
+        // console.log(`item.created: ${item.created} converts to ${new Date(item.created)}`);
 
       }
       if (!item.published) {
