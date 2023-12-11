@@ -33,26 +33,33 @@ async function fetchRSSFeedAndUpdateCache(feedUrls) {
         });
 
         // Collect items and add additional required fields
-        for (const item of feed.items) {
-          items.push({
-            id: item.id,
-            title: item.title,
-            thumbnail: item.thumbnail,
-            link: item.link,
-            author: item.author,
-            published: item.published,
-            created: item.created,
-            category: item.category,
-            content: item.content,
-            media: item.media,
-            enclosures: item.enclosures,
-            podcastInfo: {
-              author: item.podcastInfo ? item.podcastInfo.author : '',
-              image: item.podcastInfo ? item.podcastInfo.image : '',
-              categories: item.podcastInfo ? item.podcastInfo.categories : []
-            }
-          });
+        
+        if (Array.isArray(feed.items)) {
+          for (const item of feed.items) {
+            items.push({
+              id: item.id,
+              title: item.title,
+              thumbnail: item.thumbnail,
+              link: item.link,
+              author: item.author,
+              published: item.published,
+              created: item.created,
+              category: item.category,
+              content: item.content,
+              media: item.media,
+              enclosures: item.enclosures,
+              podcastInfo: {
+                author: item.podcastInfo ? item.podcastInfo.author : '',
+                image: item.podcastInfo ? item.podcastInfo.image : '',
+                categories: item.podcastInfo ? item.podcastInfo.categories : []
+              }
+            });
+          }
         }
+        else {
+          console.log("feed.items is not an array: ", JSON.stringify(feed));
+        }
+        
       }
 
       // Sort items chronologically by published date
@@ -122,8 +129,8 @@ function sendUpdateToClient(data) {
 
 //Get thumbnailUrl from the feed items and cache the images
 async function fetchRSSFeed(feedUrls) {
-  const apiUrl = `https://rss.bumpyclock.com/parse`;
-  
+  // const apiUrl = `https://rss.bumpyclock.com/parse`;
+  const apiUrl = `http://192.168.1.51:3000/parse`;
   // console.log("fetching rss feeds: ", feedUrls);
 
   const requestOptions = {

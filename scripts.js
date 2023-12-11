@@ -311,7 +311,10 @@ function processRSSData(rssData) {
       
       
     });
-    feedItems.sort((a, b) => new Date(b.published) - new Date(a.published));
+    if (feedItems.length > 0) {
+      feedItems.sort((a, b) => new Date(b.published) - new Date(a.published));
+      console.log(`sorting feed...`);
+    }
   
   }
   
