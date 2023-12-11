@@ -56,7 +56,7 @@ async function fetchRSSFeedAndUpdateCache(feedUrls) {
       }
 
       // Sort items chronologically by published date
-      items.sort((a, b) => new Date(b.published) - new Date(a.published));
+      items.sort((a, b) => b.published - a.published);
 
       // Combine feed details and items into a single object
       const combinedData = {

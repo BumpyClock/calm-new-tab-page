@@ -229,9 +229,7 @@ navigator.serviceWorker.addEventListener("message", function (event) {
     // hideLoadingState();
     let response = JSON.parse(event.data.rssData);
     const { feedDetails, feedItems } = processRSSData(response);
-    console.log(`feed details: ${feedDetails}`);
-    console.log(`feed items: ${feedItems}`);
-    // Broadcast the feeds to other tabs
+       // Broadcast the feeds to other tabs
     channel.postMessage({
       action: "shareFeeds",
       feedsItems: feedItems,
@@ -287,8 +285,8 @@ function processRSSData(rssData) {
       thumbnail: item.thumbnail,
       link: item.link,
       author: item.author,
-      published: new Date(item.published).toISOString(), // Convert timestamp to ISO string
-      created: new Date(item.created).toISOString(), // Convert timestamp to ISO string
+      published: item.published, // Convert timestamp to ISO string
+      created: item.created, // Convert timestamp to ISO string
       category: item.category,
       content: item.content,
       media: item.media,
@@ -297,19 +295,26 @@ function processRSSData(rssData) {
     }));
     
     feedItems.forEach((item) => {
-      console.log(`item.published: ${new Date(item.published)}`);
+      if (item.published) {
+        item.published = new Date(item.published).toISOString();
+        console.log(`item.published: ${item.published} converts to ${new Date(item.published)}`);
+
+      }
+      if (item.created) {
+        item.created = new Date(item.created).toISOString();
+        console.log(`item.created: ${item.created} converts to ${new Date(item.created)}`);
+
+      }
+      if (!item.published) {
+        item.published = item.created;
+      }
+      
       
     });
-    feedItems.sort((a, b) => b.created - a.published);
+    feedItems.sort((a, b) => new Date(b.published) - new Date(a.published));
   
   }
-  console.log(`sorted feed details: ${JSON.stringify(feedItems)}`);
-
-  //sort the feedItems by published date and time
-
-  // Debug Log the processed data
-  // console.log(`feed details: ${JSON.stringify(feedDetails)}`);
-  // console.log(`feed items: ${JSON.stringify(feedItems)}`);
+  
 
   // Return the processed data
   return { feedDetails, feedItems };
