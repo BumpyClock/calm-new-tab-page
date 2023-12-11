@@ -7,6 +7,7 @@ self.addEventListener("install", function(event) {
 self.addEventListener("message", function(event) {
   if (event.data.action === "fetchRSS") {
     fetchRSSFeedAndUpdateCache(event.data.feedUrls); //Sending fetched feed data to tab
+    
   }
 });
 
@@ -77,6 +78,8 @@ async function fetchRSSFeedAndUpdateCache(feedUrls) {
 
       // Send the sorted items to the client
       sendUpdateToClient(combinedDataString);
+      const channel = new BroadcastChannel('rss_feeds_channel');
+    channel.postMessage({ action: 'rssUpdate', rssData: combinedDataString });
     })
     .catch(error => {
       console.error("Error fetching one or more feeds:", error);
@@ -129,9 +132,9 @@ function sendUpdateToClient(data) {
 
 //Get thumbnailUrl from the feed items and cache the images
 async function fetchRSSFeed(feedUrls) {
-  // const apiUrl = `https://rss.bumpyclock.com/parse`;
-  const apiUrl = `http://192.168.1.51:3000/parse`;
-  // console.log("fetching rss feeds: ", feedUrls);
+  const apiUrl = `https://rss.bumpyclock.com/parse`;
+  // const apiUrl = `http://192.168.1.51:3000/parse`;
+  console.log("fetching rss feeds: ", feedUrls);
 
   const requestOptions = {
     method: 'POST', // Using POST method

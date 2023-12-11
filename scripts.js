@@ -2,7 +2,7 @@
 const SUBSCRIBED_FEEDS_KEY = "subscribedFeeds";
 
 // default feed url array
-const DEFAULT_FEED_URLS = ["http://www.theverge.com/rss/index.xml"];
+const DEFAULT_FEED_URLS =["http://www.theverge.com/rss/index.xml"];
 
 // Register service worker
 if ("serviceWorker" in navigator) {
@@ -53,10 +53,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (document.querySelector("#feed-container")) {
     // Main page
-    const cachedContent = await getCachedRenderedCards();
-    if (cachedContent && shouldRefreshFeeds()) {
+    cachedCards = await getCachedRenderedCards();
+    if (cachedCards) {
+      console.log(`cachedCards: ${cachedCards}`);
       const feedContainer = document.getElementById("feed-container");
-      feedContainer.innerHTML = cachedContent;
+      feedContainer.innerHTML = cachedCards;
       feedContainer.style.opacity = "1"; // apply the fade-in effect
     } else {
       loadSubscribedFeeds();
@@ -77,6 +78,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   setInterval(autoRefreshFeed, 15 * 60 * 1000);
 });
+
+// on exit, clear old caches
+window.addEventListener("unload", async () => {
+  cachedCards = [];
+  localStorage.removeItem("renderedCards");
+});
+
+
 
 function shouldRefreshFeeds() {
   const currentTimestamp = new Date().getTime();
@@ -128,10 +137,11 @@ async function clearOldCaches() {
 
 async function loadSubscribedFeeds() {
   // await showLoadingState();
-
+  const feedContainer = document.getElementById("feed-container");
+  feedContainer.innerHTML = '';
   if (!shouldRefreshFeeds() && feedsCache) {
     // Use cached feeds if available and no need to refresh
-    renderFeed(feedsCache);
+    renderFeed(cachedCards);
     setLastRefreshedTimestamp(new Date(lastRefreshed));
   } else {
     const feeds = getSubscribedFeeds();
@@ -147,12 +157,31 @@ async function loadSubscribedFeeds() {
     }
   }
 }
+function updateDisplayOnNewTab() {
+  const cachedCards = getCachedRenderedCards();
+  if (cachedCards) {
+    renderFeed(cachedCards);
+  } else {
+    loadSubscribedFeeds();
+  }
+}
+
+async function renderFeed(cachedCards)
+{
+  const feedContainer = document.getElementById("feed-container");
+  feedContainer.innerHTML = cachedCards;
+  feedContainer.style.opacity = "1"; // apply the fade-in effect
+  setLastRefreshedTimestamp(new Date(lastRefreshed));
+}
 
 async function renderFeed(feeditems, feedDetails) {
   feedsCache = feeditems;
 
   const feedContainer = document.getElementById("feed-container");
   const fragment = document.createDocumentFragment();
+
+  //check if cachedCards is not empty
+  console.log(`cachedCards: ${cachedCards}`);
 
   for (const item of feeditems) {
     const card = await createCard(item, feedDetails);
@@ -224,18 +253,17 @@ function cacheRenderedCards(htmlContent) {
 
 navigator.serviceWorker.addEventListener("message", function (event) {
   if (event.data.action === "rssUpdate") {
-    // console.log("Received RSS Data:", event.data.rssData);
-    // console.log("rendering feed");
+    
     // hideLoadingState();
     let response = JSON.parse(event.data.rssData);
     const { feedDetails, feedItems } = processRSSData(response);
        // Broadcast the feeds to other tabs
-    channel.postMessage({
-      action: "shareFeeds",
-      feedsItems: feedItems,
-      feedDetails: feedDetails,
-      lastRefreshed,
-    });
+    // channel.postMessage({
+    //   action: "shareFeeds",
+    //   feedsItems: feedItems,
+    //   feedDetails: feedDetails,
+    //   lastRefreshed,
+    // });
     renderFeed(feedItems, feedDetails).catch((error) => {
       console.error("Error rendering the feed:", error);
     });
@@ -313,7 +341,7 @@ function processRSSData(rssData) {
     });
     if (feedItems.length > 0) {
       feedItems.sort((a, b) => new Date(b.published) - new Date(a.published));
-      console.log(`sorting feed...`);
+      // console.log(`sorting feed...`);
     }
   
   }
@@ -895,11 +923,15 @@ function createMostVisitedSiteCard(site) {
   const mainDomain = siteUrl.hostname;
   const siteCard = document.createElement("div");
   siteCard.className = "site-card";
+  //send a get request to get the favicon url from http://192.168.1.51:3000/get-favicon?url=${mainDomain}
+
+
+
   siteCard.innerHTML = `
     <a href="${site.url}" class="site-link">
-      <div class="background-image-container" style="background-image: url('https://icon.horse/icon/${mainDomain}');"></div>
-      <img src="https://icon.horse/icon/${mainDomain}" alt="${site.title} Favicon" class="site-favicon">
-      <div class="site-title">${site.title}</div>
+      <div class="background-image-container" style="background-image: url('https://www.google.com/s2/favicons?domain=${mainDomain}&sz=256');"></div>
+      <img src="https://www.google.com/s2/favicons?domain=${mainDomain}&sz=256" alt="${site.title} Favicon" class="site-favicon">
+      <div class="site-title"><p>${site.title}</p></div>
     </a>
   `;
   return siteCard;
