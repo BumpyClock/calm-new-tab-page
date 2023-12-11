@@ -2,9 +2,7 @@
 const SUBSCRIBED_FEEDS_KEY = "subscribedFeeds";
 
 // default feed url array
-const DEFAULT_FEED_URLS = [
-  "https://www.vox.com/rss/index.xml",
-];
+const DEFAULT_FEED_URLS = ["http://www.theverge.com/rss/index.xml"];
 
 // Register service worker
 if ("serviceWorker" in navigator) {
@@ -51,7 +49,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.title = `${greeting} - New Tab`;
   };
 
-  setGreeting(); 
+  setGreeting();
 
   if (document.querySelector("#feed-container")) {
     // Main page
@@ -70,7 +68,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     displaySubscribedFeeds();
     setupBackButton();
   }
-await showLoadingState();
+  // await  showLoadingState();
   if (document.querySelector("#settings-button")) {
     document.getElementById("settings-button").addEventListener("click", () => {
       window.location.href = "settings.html";
@@ -110,7 +108,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 function getSubscribedFeeds() {
   return (
     JSON.parse(localStorage.getItem(SUBSCRIBED_FEEDS_KEY)) || [
-      DEFAULT_FEED_URLS
+      DEFAULT_FEED_URLS,
     ]
   );
 }
@@ -129,7 +127,7 @@ async function clearOldCaches() {
 }
 
 async function loadSubscribedFeeds() {
-  await showLoadingState();
+  // await showLoadingState();
 
   if (!shouldRefreshFeeds() && feedsCache) {
     // Use cached feeds if available and no need to refresh
@@ -142,7 +140,7 @@ async function loadSubscribedFeeds() {
       lastRefreshed = new Date().getTime();
       serviceWorker.postMessage({
         action: "fetchRSS",
-        feedUrls: feeds
+        feedUrls: feeds,
       });
     } else {
       console.error("Service worker is not active or not controlled.");
@@ -150,13 +148,14 @@ async function loadSubscribedFeeds() {
   }
 }
 
-async function renderFeed(feeditems) {
+async function renderFeed(feeditems, feedDetails) {
   feedsCache = feeditems;
+
   const feedContainer = document.getElementById("feed-container");
   const fragment = document.createDocumentFragment();
 
   for (const item of feeditems) {
-    const card = await createCard(item, item.thumbnailUrl);
+    const card = await createCard(item, feedDetails);
 
     if (card instanceof Node) {
       fragment.appendChild(card);
@@ -164,7 +163,7 @@ async function renderFeed(feeditems) {
       console.error("Card is not a valid DOM Node:", card);
     }
   }
-  hideLoadingState();
+  // hideLoadingState();
 
   feedContainer.appendChild(fragment);
   cacheRenderedCards(feedContainer.innerHTML);
@@ -178,17 +177,17 @@ async function renderFeed(feeditems) {
 //parallax effect for image container
 
 function setupParallaxEffect() {
-  document.querySelectorAll('.card').forEach(card => {
-    const imageContainer = card.querySelector('.thumbnail-image');
+  document.querySelectorAll(".card").forEach((card) => {
+    const imageContainer = card.querySelector(".thumbnail-image");
 
-    card.addEventListener('mouseover', () => {
+    card.addEventListener("mouseover", () => {
       // Zoom in effect
-      imageContainer.style.transition = 'transform 0.25s ease-in';
-      imageContainer.style.transform = 'scale(1.1)';
+      imageContainer.style.transition = "transform 0.25s ease-in";
+      imageContainer.style.transform = "scale(1.1)";
       // imageContainer.style.backgroundPosition = 'center center';
     });
 
-    card.addEventListener('mousemove', (e) => {
+    card.addEventListener("mousemove", (e) => {
       const cardRect = card.getBoundingClientRect();
       const xVal = (e.clientX - cardRect.left) / cardRect.width;
       const yVal = (e.clientY - cardRect.top) / cardRect.height;
@@ -199,23 +198,21 @@ function setupParallaxEffect() {
 
       // Apply the effect to the image container's background
       if (imageContainer) {
-        imageContainer.style.backgroundPosition = `${50 + xOffset}% ${50 + yOffset}%`;
+        imageContainer.style.backgroundPosition = `${50 + xOffset}% ${
+          50 + yOffset
+        }%`;
       }
     });
 
-    card.addEventListener('mouseleave', () => {
+    card.addEventListener("mouseleave", () => {
       // Reset the background position when the mouse leaves the card
       if (imageContainer) {
-        imageContainer.style.transform = 'scale(1)';
-        imageContainer.style.backgroundPosition = 'center center';
+        imageContainer.style.transform = "scale(1)";
+        imageContainer.style.backgroundPosition = "center center";
       }
     });
   });
 }
-
-
-
-
 
 function cacheRenderedCards(htmlContent) {
   try {
@@ -231,14 +228,17 @@ navigator.serviceWorker.addEventListener("message", function (event) {
     // console.log("rendering feed");
     // hideLoadingState();
     let response = JSON.parse(event.data.rssData);
-    let feedItems = response.items;
+    const { feedDetails, feedItems } = processRSSData(response);
+    console.log(`feed details: ${feedDetails}`);
+    console.log(`feed items: ${feedItems}`);
     // Broadcast the feeds to other tabs
     channel.postMessage({
       action: "shareFeeds",
-      feeds: feedItems,
-      lastRefreshed
+      feedsItems: feedItems,
+      feedDetails: feedDetails,
+      lastRefreshed,
     });
-    renderFeed(feedItems).catch((error) => {
+    renderFeed(feedItems, feedDetails).catch((error) => {
       console.error("Error rendering the feed:", error);
     });
   }
@@ -253,21 +253,66 @@ channel.addEventListener("message", (event) => {
       // Refresh the feed
       loadSubscribedFeeds();
     } else {
-      renderFeed(event.data.feeds);
+      const { feedDetails, feedItems } = processRSSData(response);
+      renderFeed(feedDetails, feedItems);
       setLastRefreshedTimestamp(new Date(event.data.lastRefreshed));
     }
   }
 });
 
-async function showLoadingState() {
-  const feedContainer = document.getElementById("feed-container");
-  feedContainer.style.opacity = "1"; // Fade-out effect
-  feedContainer.innerHTML = '<div class="spinner"></div>';
-}
+function processRSSData(rssData) {
+  // Initialize arrays to hold the processed feed details and items
+  let feedDetails = [];
+  let feedItems = [];
+  //print rssData JSON object to console, convert to string before logging
+ 
+  // Check if the rssData object has the 'feedDetails' and 'items' arrays
+  if (rssData && rssData.feedDetails && rssData.items) {
+    // Process the feed details
+    feedDetails = rssData.feedDetails.map((feed) => ({
+      siteTitle: feed.siteTitle,
+      feedTitle: feed.feedTitle,
+      feedUrl: feed.feedUrl, // Assuming 'feedUrl' should be the 'link' from the feed details
+      description: feed.description,
+      author: feed.author,
+      lastUpdated: feed.lastUpdated,
+      lastRefreshed: feed.lastRefreshed,
+      favicon: feed.favicon,
+    }));
 
-function hideLoadingState() {
-  const feedContainer = document.getElementById("feed-container");
-  feedContainer.innerHTML = "";
+    // Process the feed items
+    feedItems = rssData.items.map((item) => ({
+      id: item.id,
+      title: item.title,
+      thumbnail: item.thumbnail,
+      link: item.link,
+      author: item.author,
+      published: new Date(item.published).toISOString(), // Convert timestamp to ISO string
+      created: new Date(item.created).toISOString(), // Convert timestamp to ISO string
+      category: item.category,
+      content: item.content,
+      media: item.media,
+      enclosures: item.enclosures,
+      podcastInfo: item.podcastInfo,
+    }));
+    
+    feedItems.forEach((item) => {
+      console.log(`item.published: ${new Date(item.published)}`);
+      
+    });
+    feedItems.sort((a, b) => b.created - a.published);
+  
+  }
+  console.log(`sorted feed details: ${JSON.stringify(feedItems)}`);
+
+  //sort the feedItems by published date and time
+
+  // Debug Log the processed data
+  // console.log(`feed details: ${JSON.stringify(feedDetails)}`);
+  // console.log(`feed items: ${JSON.stringify(feedItems)}`);
+
+  // Return the processed data
+  return { feedDetails, feedItems };
 }
 
 function setupSubscriptionForm() {
@@ -292,35 +337,58 @@ function setupBackButton() {
   });
 }
 
-async function createCard(item, thumbnailURL ) {
+
+async function createCard(item, feedDetails) {
   const card = document.createElement("div");
   card.className = "card";
-  var website_title = await getWebsiteTitle(item.link);
-  //create imageContainer for parallax effect
-  const imageContainer = document.createElement('div');
-  const thumbnailImage = document.createElement('div');
-  thumbnailImage.className = 'thumbnail-image';
-  imageContainer.className = 'image-container';
-  const cardbg = document.createElement('div');
-  cardbg.className = 'card-bg';
-  if (thumbnailURL) {
-    
-    thumbnailImage.style.backgroundImage = `url(${thumbnailURL})`;
-    cardbg.style.backgroundImage = `url(${thumbnailURL})`;
+  
+  const itemDomain = new URL(item.link).hostname;
+
+  // Find the matching feedDetail
+  const feedDetail = feedDetails.find(fd => new URL(fd.feedUrl).hostname === itemDomain);
+  if (!feedDetail) {
+    console.error('No matching feed detail found for:', itemDomain);
+    return null;  // Or handle this scenario appropriately
   }
+  const website_title = feedDetail.siteTitle;
+  const faviconURL = feedDetail.favicon;
+  // Create image container for parallax effect
+  const imageContainer = document.createElement("div");
+  const thumbnailImage = document.createElement("div");
+  thumbnailImage.className = "thumbnail-image";
+  imageContainer.className = "image-container";
+  const cardbg = document.createElement("div");
+  cardbg.className = "card-bg";
+
+ // If a thumbnail URL is provided, use it for both the image container and card background
+let thumbnailUrl;
+if (item.thumbnail) {
+  if (Array.isArray(item.thumbnail)) {
+    // If thumbnail is an array, use the url property of the first object
+    thumbnailUrl = item.thumbnail[0].url;
+  } else {
+    // If thumbnail is not an array, use it directly
+    thumbnailUrl = item.thumbnail;
+  }
+
+  thumbnailImage.style.backgroundImage = `url('${thumbnailUrl}')`; // Ensure the URL is enclosed in quotes
+  cardbg.style.backgroundImage = `url('${thumbnailUrl}')`; // Same here
+}
   imageContainer.appendChild(thumbnailImage);
   card.appendChild(imageContainer);
   card.appendChild(cardbg);
+
+  // Create text content container
   const textContentDiv = document.createElement("div");
   textContentDiv.classList.add("text-content");
+
   // Add website name and favicon
   const websiteInfoDiv = document.createElement("div");
   websiteInfoDiv.className = "website-info";
 
   const favicon = document.createElement("img");
-  const mainDomain = new URL(item.link).hostname;
-  favicon.src = `https://icon.horse/icon/${mainDomain}`;
-  favicon.alt = `${mainDomain} Favicon`;
+  favicon.src = faviconURL;
+  favicon.alt = `${website_title} Favicon`;
   favicon.className = "site-favicon";
   websiteInfoDiv.appendChild(favicon);
 
@@ -330,10 +398,12 @@ async function createCard(item, thumbnailURL ) {
 
   textContentDiv.appendChild(websiteInfoDiv);
 
+  // Create title element
   const title = document.createElement("h3");
   title.textContent = item.title;
   textContentDiv.appendChild(title);
 
+  // Add content snippet if available
   if (item.contentSnippet) {
     const snippet = document.createElement("p");
     snippet.className = "description";
@@ -341,35 +411,35 @@ async function createCard(item, thumbnailURL ) {
     textContentDiv.appendChild(snippet);
   }
 
-  if (item.link) {
-    const date = new Date(item.pubDate);
-    const dateString = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+  // Add publication date and time
+  const date = new Date(item.published);
+  const dateString = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+  const details = document.createElement("div");
+  console.log(`dateString: ${dateString}`);
+  details.className = "date";
+  details.textContent = dateString;
+  textContentDiv.appendChild(details);
 
-    const details = document.createElement("div");
-    details.className = "date";
-    details.textContent = `${dateString}`;
-    textContentDiv.appendChild(details);
-
-    if (!thumbnailURL) {
-      const description = document.createElement("div");
-      description.className = "description long-description";
-      const plainTextDescription = item.description.replace(
-        /(<([^>]+)>)/gi,
-        ""
-      ); // Remove HTML tags
-      description.innerText = plainTextDescription;
-      textContentDiv.appendChild(description);
-    }
-
-    const readMoreLink = document.createElement("a");
-    readMoreLink.href = item.link;
-    readMoreLink.target = "_blank";
-    readMoreLink.textContent = "Read more";
-    readMoreLink.className = "read-more-link";
-    textContentDiv.appendChild(readMoreLink);
+  // Add description if thumbnail URL is not provided
+  if (!item.thumbnail && item.description) {
+    const description = document.createElement("div");
+    description.className = "description long-description";
+    description.textContent = item.description;
+    textContentDiv.appendChild(description);
   }
 
+  // Add read more link
+  const readMoreLink = document.createElement("a");
+  readMoreLink.href = item.link;
+  readMoreLink.target = "_blank";
+  readMoreLink.textContent = "Read more";
+  readMoreLink.className = "read-more-link";
+  textContentDiv.appendChild(readMoreLink);
+
+  // Append all content to the card
   card.appendChild(textContentDiv);
+
+  // Event listener for card click
   card.addEventListener("click", (e) => {
     if (e.target.tagName.toLowerCase() !== "a") {
       showReaderView(item.link);
@@ -378,7 +448,6 @@ async function createCard(item, thumbnailURL ) {
 
   return card;
 }
-
 
 async function getWebsiteTitle(url) {
   try {
@@ -706,7 +775,6 @@ function createMostVisitedSiteCard(site) {
   return siteCard;
 }
 
-
 function fetchMostVisitedSites() {
   if (!mostVisitedSitesCache) {
     console.error("Most visited sites cache is not initialized");
@@ -786,8 +854,7 @@ async function fetchBingImageOfTheDay() {
 }
 
 window.addEventListener("scroll", () => {
-  const scrollPosition =
-    window.scrollY || document.documentElement.scrollTop;
+  const scrollPosition = window.scrollY || document.documentElement.scrollTop;
   const blurIntensity = Math.min(scrollPosition / 100, 10);
   const darkIntensity = Math.min(scrollPosition / 1000, 0.1); // Adjust the values as per your preference
   // const bgContainer = document.querySelector(".background-image-container");

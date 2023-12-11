@@ -12,30 +12,61 @@ self.addEventListener("message", function(event) {
 
 
 async function fetchRSSFeedAndUpdateCache(feedUrls) {
-  //   console.log(typeof feedUrls);
-  //   console.log(feedUrls);
-
-  // Use Promise.all to fetch all feeds in parallel and wait for all of them to complete
-  Promise.all(feedUrls.map(url => fetchRSSFeed(url)))
+  fetchRSSFeed(feedUrls)
     .then(allFeedsData => {
-      // Extract all items from each RSS feed
-      const allItems = allFeedsData.flatMap(feedData => feedData.items || []);
+      // Initialize the arrays for feed details and items
+      const feedDetails = [];
+      const items = [];
 
-        // Add thumbnailUrl to each item && cache the images locally
-        allItems.forEach(item => {
-            item.thumbnailUrl = extractThumbnailURL(item);
+      // Iterate over each feed in the feeds array
+      for (const feed of allFeedsData.feeds) {
+        // Collect feed details
+        feedDetails.push({
+          siteTitle: feed.siteTitle,
+          feedTitle: feed.feedTitle,
+          feedUrl: feed.feedUrl,
+          description: feed.description,
+          author: feed.podcastInfo ? feed.podcastInfo.author : '',
+          lastUpdated: feed.lastUpdated,
+          lastRefreshed: feed.lastRefreshed,
+          favicon: feed.favicon
+        });
+
+        // Collect items and add additional required fields
+        for (const item of feed.items) {
+          items.push({
+            id: item.id,
+            title: item.title,
+            thumbnail: item.thumbnail,
+            link: item.link,
+            author: item.author,
+            published: item.published,
+            created: item.created,
+            category: item.category,
+            content: item.content,
+            media: item.media,
+            enclosures: item.enclosures,
+            podcastInfo: {
+              author: item.podcastInfo ? item.podcastInfo.author : '',
+              image: item.podcastInfo ? item.podcastInfo.image : '',
+              categories: item.podcastInfo ? item.podcastInfo.categories : []
+            }
           });
+        }
+      }
 
-      // Sort items chronologically by pubDate
-      allItems.sort((a, b) => {
-        const dateA = new Date(a.pubDate);
-        const dateB = new Date(b.pubDate);
-        return dateB - dateA; // Sort in descending order for most recent items first
-      });
+      // Sort items chronologically by published date
+      items.sort((a, b) => new Date(b.published) - new Date(a.published));
 
-      // Convert the sorted items to a JSON string
-      const combinedDataString = JSON.stringify({ items: allItems });
-      // console.log("sending rss data to client: ", combinedDataString);
+      // Combine feed details and items into a single object
+      const combinedData = {
+        feedDetails,
+        items
+      };
+
+      // Convert the combined data object to a JSON string
+      const combinedDataString = JSON.stringify(combinedData);
+      // console.log("combinedDataString: ", combinedDataString);
 
       // Send the sorted items to the client
       sendUpdateToClient(combinedDataString);
@@ -44,6 +75,9 @@ async function fetchRSSFeedAndUpdateCache(feedUrls) {
       console.error("Error fetching one or more feeds:", error);
     });
 }
+
+// Continue with the fetchRSSFeed function as defined previously...
+
 
 
 function sendUpdateToClient(data) {
@@ -56,33 +90,76 @@ function sendUpdateToClient(data) {
     }
   });
 }
+//old fetchRSSFeed function for backup
 
-async function fetchRSSFeed(feedUrl) {
-  const rss2jsonApiKey = "exr1uihphn0zohhpeaqesbn4bb1pqzxm3xoe8cuj"; // Replace with your API key from rss2json.com
-  const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(
-    feedUrl
-  )}&api_key=${rss2jsonApiKey}`;
+// async function fetchRSSFeed(feedUrl) {
+//   const rss2jsonApiKey = "exr1uihphn0zohhpeaqesbn4bb1pqzxm3xoe8cuj"; // Replace with your API key from rss2json.com
+//   const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(
+//     feedUrl
+//   )}&api_key=${rss2jsonApiKey}`;
 
-  console.log("fetching rss feed: ", apiUrl);
+//   console.log("fetching rss feed: ", apiUrl);
 
-  return fetch(apiUrl)
-    .then(response => {
-      if (response.ok) {
-        return response.json();
-      } else {
-        throw new Error("Failed to fetch RSS feed");
-      }
-    })
-    .then(data => {
-      if (data.status === "ok") {
-        return data;
-      } else {
-        throw new Error("Failed to parse RSS feed");
-      }
-    });
-}
+//   return fetch(apiUrl)
+//     .then(response => {
+//       if (response.ok) {
+//         return response.json();
+//       } else {
+//         throw new Error("Failed to fetch RSS feed");
+//       }
+//     })
+//     .then(data => {
+//       if (data.status === "ok") {
+//         return data;
+//       } else {
+//         throw new Error("Failed to parse RSS feed");
+//       }
+//     });
+// }
+
+
+
 
 //Get thumbnailUrl from the feed items and cache the images
+async function fetchRSSFeed(feedUrls) {
+  const apiUrl = `https://rss.bumpyclock.com/parse`;
+  
+  // console.log("fetching rss feeds: ", feedUrls);
+
+  const requestOptions = {
+    method: 'POST', // Using POST method
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ urls: feedUrls }) // Sending the urls in the body
+  };
+
+  // console.log("API call: ", apiUrl, requestOptions);
+
+  return fetch(apiUrl, requestOptions)
+  .then(response => {
+    const fetchedFeedData = response.json();
+
+    // console.log("API response: ", fetchedFeedData);
+    if (response.ok) {
+            return fetchedFeedData;
+    } else {
+      throw new Error("Failed to fetch RSS feeds");
+    }
+  });
+
+  //put the status check back in after debugging, also need to update api endpoint to send back status
+  // .then(data => {
+  //   // Assuming the new API returns data in a similar format
+  //   if (data.status === "ok") {
+  //     return data;
+  //   } else {
+  //     throw new Error("Failed to parse RSS feeds");
+  //   }
+  // });
+}
+
+
 function extractThumbnailURL(item) {
   const imgRegex = /<img[^>]+src="([^">]+)"/;
   const imageUrlRegex = /\.(jpeg|jpg|png|gif|bmp)$/i;
