@@ -338,72 +338,190 @@ function setupBackButton() {
 }
 
 
+// async function createCard(item, feedDetails) {
+//   const card = document.createElement("div");
+//   card.className = "card";
+  
+//   const itemDomain = new URL(item.link).hostname;
+
+//   // Find the matching feedDetail
+//   const feedDetail = feedDetails.find(fd => new URL(fd.feedUrl).hostname === itemDomain);
+//   if (!feedDetail) {
+//     console.error('No matching feed detail found for:', itemDomain);
+//     return null;  // Or handle this scenario appropriately
+//   }
+//   const website_title = feedDetail.siteTitle;
+//   const faviconURL = feedDetail.favicon;
+//   // Create image container for parallax effect
+//   const imageContainer = document.createElement("div");
+//   const thumbnailImage = document.createElement("div");
+//   thumbnailImage.className = "thumbnail-image";
+//   imageContainer.className = "image-container";
+//   const cardbg = document.createElement("div");
+//   cardbg.className = "card-bg";
+
+//  // If a thumbnail URL is provided, use it for both the image container and card background
+// let thumbnailUrl;
+// if (item.thumbnail) {
+//   if (Array.isArray(item.thumbnail)) {
+//     // If thumbnail is an array, use the url property of the first object
+//     thumbnailUrl = item.thumbnail[0].url;
+//   } else {
+//     // If thumbnail is not an array, use it directly
+//     thumbnailUrl = item.thumbnail;
+//   }
+
+//   thumbnailImage.style.backgroundImage = `url('${thumbnailUrl}')`; // Ensure the URL is enclosed in quotes
+//   cardbg.style.backgroundImage = `url('${thumbnailUrl}')`; // Same here
+// }
+//   imageContainer.appendChild(thumbnailImage);
+//   card.appendChild(imageContainer);
+//   card.appendChild(cardbg);
+
+//   // Create text content container
+//   const textContentDiv = document.createElement("div");
+//   textContentDiv.classList.add("text-content");
+
+//   // Add website name and favicon
+//   const websiteInfoDiv = document.createElement("div");
+//   websiteInfoDiv.className = "website-info";
+
+//   const favicon = document.createElement("img");
+//   favicon.src = faviconURL;
+//   favicon.alt = `${website_title} Favicon`;
+//   favicon.className = "site-favicon";
+//   websiteInfoDiv.appendChild(favicon);
+
+//   const websiteName = document.createElement("span");
+//   websiteName.textContent = website_title;
+//   websiteInfoDiv.appendChild(websiteName);
+
+//   textContentDiv.appendChild(websiteInfoDiv);
+
+//   // Create title element
+//   const title = document.createElement("h3");
+//   title.textContent = item.title;
+//   textContentDiv.appendChild(title);
+
+//   // Add content snippet if available
+//   if (item.contentSnippet) {
+//     const snippet = document.createElement("p");
+//     snippet.className = "description";
+//     snippet.textContent = item.contentSnippet;
+//     textContentDiv.appendChild(snippet);
+//   }
+
+//   // Add publication date and time
+//   const date = new Date(item.published);
+//   const dateString = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+//   const details = document.createElement("div");
+//   console.log(`dateString: ${dateString}`);
+//   details.className = "date";
+//   details.textContent = dateString;
+//   textContentDiv.appendChild(details);
+
+//   // Add description if thumbnail URL is not provided
+//   if (!item.thumbnail && item.description) {
+//     const description = document.createElement("div");
+//     description.className = "description long-description";
+//     description.textContent = item.description;
+//     textContentDiv.appendChild(description);
+//   }
+
+//   // Add read more link
+//   const readMoreLink = document.createElement("a");
+//   readMoreLink.href = item.link;
+//   readMoreLink.target = "_blank";
+//   readMoreLink.textContent = "Read more";
+//   readMoreLink.className = "read-more-link";
+//   textContentDiv.appendChild(readMoreLink);
+
+//   // Append all content to the card
+//   card.appendChild(textContentDiv);
+
+//   // Event listener for card click
+//   card.addEventListener("click", (e) => {
+//     if (e.target.tagName.toLowerCase() !== "a") {
+//       showReaderView(item.link);
+//     }
+//   });
+
+//   return card;
+// }
+
 async function createCard(item, feedDetails) {
+  const docFrag = document.createDocumentFragment();
+
+  // Card container
   const card = document.createElement("div");
   card.className = "card";
   
+  // Extract domain from item's link
   const itemDomain = new URL(item.link).hostname;
 
-  // Find the matching feedDetail
+  // Find the corresponding feed detail
   const feedDetail = feedDetails.find(fd => new URL(fd.feedUrl).hostname === itemDomain);
   if (!feedDetail) {
     console.error('No matching feed detail found for:', itemDomain);
-    return null;  // Or handle this scenario appropriately
+    return null;
   }
+
+  // Website title and favicon URL
   const website_title = feedDetail.siteTitle;
   const faviconURL = feedDetail.favicon;
-  // Create image container for parallax effect
+
+  // Image container
   const imageContainer = document.createElement("div");
+  imageContainer.className = "image-container";
+
+  // Thumbnail image
   const thumbnailImage = document.createElement("div");
   thumbnailImage.className = "thumbnail-image";
-  imageContainer.className = "image-container";
+
+  // Card background
   const cardbg = document.createElement("div");
   cardbg.className = "card-bg";
 
- // If a thumbnail URL is provided, use it for both the image container and card background
-let thumbnailUrl;
-if (item.thumbnail) {
-  if (Array.isArray(item.thumbnail)) {
-    // If thumbnail is an array, use the url property of the first object
-    thumbnailUrl = item.thumbnail[0].url;
-  } else {
-    // If thumbnail is not an array, use it directly
-    thumbnailUrl = item.thumbnail;
+  // Set thumbnail URL
+  let thumbnailUrl;
+  if (item.thumbnail) {
+    thumbnailUrl = Array.isArray(item.thumbnail) ? item.thumbnail[0].url : item.thumbnail;
+    thumbnailImage.style.backgroundImage = `url('${thumbnailUrl}')`;
+    cardbg.style.backgroundImage = `url('${thumbnailUrl}')`;
   }
 
-  thumbnailImage.style.backgroundImage = `url('${thumbnailUrl}')`; // Ensure the URL is enclosed in quotes
-  cardbg.style.backgroundImage = `url('${thumbnailUrl}')`; // Same here
-}
   imageContainer.appendChild(thumbnailImage);
-  card.appendChild(imageContainer);
-  card.appendChild(cardbg);
+  docFrag.appendChild(imageContainer);
+  docFrag.appendChild(cardbg);
 
-  // Create text content container
+  // Text content container
   const textContentDiv = document.createElement("div");
   textContentDiv.classList.add("text-content");
 
-  // Add website name and favicon
+  // Website information
   const websiteInfoDiv = document.createElement("div");
   websiteInfoDiv.className = "website-info";
 
+  // Favicon
   const favicon = document.createElement("img");
   favicon.src = faviconURL;
   favicon.alt = `${website_title} Favicon`;
   favicon.className = "site-favicon";
   websiteInfoDiv.appendChild(favicon);
 
+  // Website name
   const websiteName = document.createElement("span");
   websiteName.textContent = website_title;
   websiteInfoDiv.appendChild(websiteName);
 
   textContentDiv.appendChild(websiteInfoDiv);
 
-  // Create title element
+  // Title
   const title = document.createElement("h3");
   title.textContent = item.title;
   textContentDiv.appendChild(title);
 
-  // Add content snippet if available
+  // Content snippet
   if (item.contentSnippet) {
     const snippet = document.createElement("p");
     snippet.className = "description";
@@ -411,16 +529,15 @@ if (item.thumbnail) {
     textContentDiv.appendChild(snippet);
   }
 
-  // Add publication date and time
+  // Publication date and time
   const date = new Date(item.published);
   const dateString = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
   const details = document.createElement("div");
-  console.log(`dateString: ${dateString}`);
   details.className = "date";
   details.textContent = dateString;
   textContentDiv.appendChild(details);
 
-  // Add description if thumbnail URL is not provided
+  // Description
   if (!item.thumbnail && item.description) {
     const description = document.createElement("div");
     description.className = "description long-description";
@@ -428,7 +545,7 @@ if (item.thumbnail) {
     textContentDiv.appendChild(description);
   }
 
-  // Add read more link
+  // Read more link
   const readMoreLink = document.createElement("a");
   readMoreLink.href = item.link;
   readMoreLink.target = "_blank";
@@ -436,8 +553,9 @@ if (item.thumbnail) {
   readMoreLink.className = "read-more-link";
   textContentDiv.appendChild(readMoreLink);
 
-  // Append all content to the card
-  card.appendChild(textContentDiv);
+  // Append text content to the card
+  docFrag.appendChild(textContentDiv);
+  // card.appendChild(textContentDiv);
 
   // Event listener for card click
   card.addEventListener("click", (e) => {
@@ -446,8 +564,12 @@ if (item.thumbnail) {
     }
   });
 
+  // Append the document fragment to the card
+  card.appendChild(docFrag);
+
   return card;
 }
+
 
 async function getWebsiteTitle(url) {
   try {
