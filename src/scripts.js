@@ -2,11 +2,7 @@
 const SUBSCRIBED_FEEDS_KEY = "subscribedFeeds";
 
 // default feed url array
-const DEFAULT_FEED_URLS = [
-  "https://www.vox.com/rss/index.xml",
-  "https://www.theverge.com/rss/index.xml",
-  "https://www.wired.com/feed/rss"
-];
+const DEFAULT_FEED_URLS = ["http://www.theverge.com/rss/index.xml"];
 
 // Register service worker
 if ("serviceWorker" in navigator) {
@@ -51,16 +47,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   const setGreeting = () => {
     const greeting = getGreeting();
     document.title = `${greeting} - New Tab`;
+    //set the tab icon
+    const tabIcon = document.getElementById("tab-icon");
+    tabIcon.href = "icons/icon128.png";
+    console.log("tab icon set", tabIcon);
   };
 
-  setGreeting(); 
-
+  setGreeting();
+  await fetchBingImageOfTheDay();
   if (document.querySelector("#feed-container")) {
     // Main page
-    const cachedContent = await getCachedRenderedCards();
-    if (cachedContent && shouldRefreshFeeds()) {
+    cachedCards = await getCachedRenderedCards();
+    if (cachedCards) {
       const feedContainer = document.getElementById("feed-container");
-      feedContainer.innerHTML = cachedContent;
+      feedContainer.innerHTML = cachedCards;
       feedContainer.style.opacity = "1"; // apply the fade-in effect
     } else {
       loadSubscribedFeeds();
@@ -72,7 +72,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     displaySubscribedFeeds();
     setupBackButton();
   }
-
+  // await  showLoadingState();
   if (document.querySelector("#settings-button")) {
     document.getElementById("settings-button").addEventListener("click", () => {
       window.location.href = "settings.html";
@@ -80,6 +80,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   setInterval(autoRefreshFeed, 15 * 60 * 1000);
+});
+
+// on exit, clear old caches
+window.addEventListener("unload", async () => {
+  cachedCards = [];
+  localStorage.removeItem("renderedCards");
 });
 
 function shouldRefreshFeeds() {
@@ -112,7 +118,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 function getSubscribedFeeds() {
   return (
     JSON.parse(localStorage.getItem(SUBSCRIBED_FEEDS_KEY)) || [
-      DEFAULT_FEED_URLS
+      DEFAULT_FEED_URLS,
     ]
   );
 }
@@ -131,11 +137,12 @@ async function clearOldCaches() {
 }
 
 async function loadSubscribedFeeds() {
-  await showLoadingState();
-
+  // await showLoadingState();
+  const feedContainer = document.getElementById("feed-container");
+  feedContainer.innerHTML = "";
   if (!shouldRefreshFeeds() && feedsCache) {
     // Use cached feeds if available and no need to refresh
-    renderFeed(feedsCache);
+    renderFeed(cachedCards);
     setLastRefreshedTimestamp(new Date(lastRefreshed));
   } else {
     const feeds = getSubscribedFeeds();
@@ -144,21 +151,37 @@ async function loadSubscribedFeeds() {
       lastRefreshed = new Date().getTime();
       serviceWorker.postMessage({
         action: "fetchRSS",
-        feedUrls: feeds
+        feedUrls: feeds,
       });
     } else {
       console.error("Service worker is not active or not controlled.");
     }
   }
 }
+function updateDisplayOnNewTab() {
+  const cachedCards = getCachedRenderedCards();
+  if (cachedCards) {
+    renderFeed(cachedCards);
+  } else {
+    loadSubscribedFeeds();
+  }
+}
 
-async function renderFeed(feeditems) {
+async function renderFeed(cachedCards) {
+  const feedContainer = document.getElementById("feed-container");
+  feedContainer.innerHTML = cachedCards;
+  feedContainer.style.opacity = "1"; // apply the fade-in effect
+  setLastRefreshedTimestamp(new Date(lastRefreshed));
+}
+
+async function renderFeed(feeditems, feedDetails) {
   feedsCache = feeditems;
+
   const feedContainer = document.getElementById("feed-container");
   const fragment = document.createDocumentFragment();
 
   for (const item of feeditems) {
-    const card = await createCard(item, item.thumbnailUrl);
+    const card = await createCard(item, feedDetails);
 
     if (card instanceof Node) {
       fragment.appendChild(card);
@@ -166,13 +189,55 @@ async function renderFeed(feeditems) {
       console.error("Card is not a valid DOM Node:", card);
     }
   }
-  hideLoadingState();
+  // hideLoadingState();
 
   feedContainer.appendChild(fragment);
   cacheRenderedCards(feedContainer.innerHTML);
   setLastRefreshedTimestamp();
   // Fade-in effect
   feedContainer.style.opacity = "1";
+  // Setup parallax effect for each card
+  setupParallaxEffect();
+}
+
+//parallax effect for image container
+
+function setupParallaxEffect() {
+  document.querySelectorAll(".card").forEach((card) => {
+    const imageContainer = card.querySelector(".thumbnail-image");
+
+    card.addEventListener("mouseover", () => {
+      // Zoom in effect
+      imageContainer.style.transition = "transform 0.25s ease-in";
+      imageContainer.style.transform = "scale(1.1)";
+      // imageContainer.style.backgroundPosition = 'center center';
+    });
+
+    card.addEventListener("mousemove", (e) => {
+      const cardRect = card.getBoundingClientRect();
+      const xVal = (e.clientX - cardRect.left) / cardRect.width;
+      const yVal = (e.clientY - cardRect.top) / cardRect.height;
+
+      // Translate this into a percentage-based position
+      const xOffset = -(xVal - 0.5) * 20; // Adjust for desired effect strength
+      const yOffset = -(yVal - 0.5) * 20;
+
+      // Apply the effect to the image container's background
+      if (imageContainer) {
+        imageContainer.style.backgroundPosition = `${50 + xOffset}% ${
+          50 + yOffset
+        }%`;
+      }
+    });
+
+    card.addEventListener("mouseleave", () => {
+      // Reset the background position when the mouse leaves the card
+      if (imageContainer) {
+        imageContainer.style.transform = "scale(1)";
+        imageContainer.style.backgroundPosition = "center center";
+      }
+    });
+  });
 }
 
 function cacheRenderedCards(htmlContent) {
@@ -185,18 +250,10 @@ function cacheRenderedCards(htmlContent) {
 
 navigator.serviceWorker.addEventListener("message", function (event) {
   if (event.data.action === "rssUpdate") {
-    // console.log("Received RSS Data:", event.data.rssData);
-    // console.log("rendering feed");
     // hideLoadingState();
     let response = JSON.parse(event.data.rssData);
-    let feedItems = response.items;
-    // Broadcast the feeds to other tabs
-    channel.postMessage({
-      action: "shareFeeds",
-      feeds: feedItems,
-      lastRefreshed
-    });
-    renderFeed(feedItems).catch((error) => {
+    const { feedDetails, feedItems } = processRSSData(response);
+       renderFeed(feedItems, feedDetails).catch((error) => {
       console.error("Error rendering the feed:", error);
     });
   }
@@ -211,20 +268,68 @@ channel.addEventListener("message", (event) => {
       // Refresh the feed
       loadSubscribedFeeds();
     } else {
-      renderFeed(event.data.feeds);
+      const { feedDetails, feedItems } = processRSSData(response);
+      renderFeed(feedDetails, feedItems);
       setLastRefreshedTimestamp(new Date(event.data.lastRefreshed));
     }
   }
 });
 
-function showLoadingState() {
-  const feedContainer = document.getElementById("feed-container");
-  feedContainer.innerHTML = '<div class="spinner"></div>';
-}
+function processRSSData(rssData) {
+  // Initialize arrays to hold the processed feed details and items
+  let feedDetails = [];
+  let feedItems = [];
+  //print rssData JSON object to console, convert to string before logging
 
-function hideLoadingState() {
-  const feedContainer = document.getElementById("feed-container");
-  feedContainer.innerHTML = "";
+  // Check if the rssData object has the 'feedDetails' and 'items' arrays
+  if (rssData && rssData.feedDetails && rssData.items) {
+    // Process the feed details
+    feedDetails = rssData.feedDetails.map((feed) => ({
+      siteTitle: feed.siteTitle,
+      feedTitle: feed.feedTitle,
+      feedUrl: feed.feedUrl, // Assuming 'feedUrl' should be the 'link' from the feed details
+      description: feed.description,
+      author: feed.author,
+      lastUpdated: feed.lastUpdated,
+      lastRefreshed: feed.lastRefreshed,
+      favicon: feed.favicon,
+    }));
+
+    // Process the feed items
+    feedItems = rssData.items.map((item) => ({
+      id: item.id,
+      title: item.title,
+      thumbnail: item.thumbnail,
+      link: item.link,
+      author: item.author,
+      published: item.published, // Convert timestamp to ISO string
+      created: item.created, // Convert timestamp to ISO string
+      category: item.category,
+      content: item.content,
+      media: item.media,
+      enclosures: item.enclosures,
+      podcastInfo: item.podcastInfo,
+    }));
+
+    feedItems.forEach((item) => {
+      if (item.published) {
+        item.published = new Date(item.published).toISOString();
+        // console.log(`item.published: ${item.published} converts to ${new Date(item.published)}`);
+      }
+      if (item.created) {
+        item.created = new Date(item.created).toISOString();
+      }
+      if (!item.published) {
+        item.published = item.created;
+      }
+    });
+    if (feedItems.length > 0) {
+      feedItems.sort((a, b) => new Date(b.published) - new Date(a.published));
+    }
+  }
+
+  // Return the processed data
+  return { feedDetails, feedItems };
 }
 
 function setupSubscriptionForm() {
@@ -249,39 +354,83 @@ function setupBackButton() {
   });
 }
 
-async function createCard(item, thumbnailURL = null) {
+async function createCard(item, feedDetails) {
+  const docFrag = document.createDocumentFragment();
+
+  // Card container
   const card = document.createElement("div");
   card.className = "card";
-  var website_title = await getWebsiteTitle(item.link);
-  if (thumbnailURL) {
-    const img = document.createElement("img");
-    img.src = thumbnailURL;
-    card.appendChild(img);
+
+  // Extract domain from item's link
+  const itemDomain = new URL(item.link).hostname;
+
+  // Find the corresponding feed detail
+  const feedDetail = feedDetails.find(
+    (fd) => new URL(fd.feedUrl).hostname === itemDomain
+  );
+  if (!feedDetail) {
+    console.error("No matching feed detail found for:", itemDomain);
+    return null;
   }
 
+  // Website title and favicon URL
+  const website_title = feedDetail.siteTitle;
+  const faviconURL = feedDetail.favicon;
+
+  // Image container
+  const imageContainer = document.createElement("div");
+  imageContainer.className = "image-container";
+
+  // Thumbnail image
+  const thumbnailImage = document.createElement("div");
+  thumbnailImage.className = "thumbnail-image";
+
+  // Card background
+  const cardbg = document.createElement("div");
+  cardbg.className = "card-bg";
+
+  // Set thumbnail URL
+  let thumbnailUrl;
+  if (item.thumbnail) {
+    thumbnailUrl = Array.isArray(item.thumbnail)
+      ? item.thumbnail[0].url
+      : item.thumbnail;
+    thumbnailImage.style.backgroundImage = `url('${thumbnailUrl}')`;
+    cardbg.style.backgroundImage = `url('${thumbnailUrl}')`;
+  }
+
+  imageContainer.appendChild(thumbnailImage);
+  docFrag.appendChild(imageContainer);
+  docFrag.appendChild(cardbg);
+
+  // Text content container
   const textContentDiv = document.createElement("div");
   textContentDiv.classList.add("text-content");
-  // Add website name and favicon
+
+  // Website information
   const websiteInfoDiv = document.createElement("div");
   websiteInfoDiv.className = "website-info";
 
+  // Favicon
   const favicon = document.createElement("img");
-  const mainDomain = new URL(item.link).hostname;
-  favicon.src = `https://icon.horse/icon/${mainDomain}`;
-  favicon.alt = `${mainDomain} Favicon`;
+  favicon.src = faviconURL;
+  favicon.alt = `${website_title} Favicon`;
   favicon.className = "site-favicon";
   websiteInfoDiv.appendChild(favicon);
 
+  // Website name
   const websiteName = document.createElement("span");
   websiteName.textContent = website_title;
   websiteInfoDiv.appendChild(websiteName);
 
   textContentDiv.appendChild(websiteInfoDiv);
 
+  // Title
   const title = document.createElement("h3");
   title.textContent = item.title;
   textContentDiv.appendChild(title);
 
+  // Content snippet
   if (item.contentSnippet) {
     const snippet = document.createElement("p");
     snippet.className = "description";
@@ -289,39 +438,55 @@ async function createCard(item, thumbnailURL = null) {
     textContentDiv.appendChild(snippet);
   }
 
-  if (item.link) {
-    const date = new Date(item.pubDate);
-    const dateString = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+  // Publication date and time
+  const date = new Date(item.published);
+  const dateString = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+  const details = document.createElement("div");
+  details.className = "date";
+  details.textContent = dateString;
+  textContentDiv.appendChild(details);
 
-    const details = document.createElement("p");
-    details.textContent = `${dateString}`;
-    textContentDiv.appendChild(details);
+  // Description
+  if (!item.thumbnail && item.description) {
+    const description = document.createElement("div");
+    description.className = "description long-description";
+    description.textContent = item.description;
+    textContentDiv.appendChild(description);
+  }
 
-    if (!thumbnailURL) {
-      const description = document.createElement("div");
-      description.className = "description long-description";
-      const plainTextDescription = item.description.replace(
-        /(<([^>]+)>)/gi,
-        ""
-      ); // Remove HTML tags
-      description.innerText = plainTextDescription;
-      textContentDiv.appendChild(description);
-    }
+  // Read more link , check if it undefined or it contains engadget
 
+  if (
+    item.link !== null &&
+    item.link !== undefined &&
+    !item.link.includes("engadget")
+  ) {
     const readMoreLink = document.createElement("a");
     readMoreLink.href = item.link;
     readMoreLink.target = "_blank";
     readMoreLink.textContent = "Read more";
     readMoreLink.className = "read-more-link";
     textContentDiv.appendChild(readMoreLink);
-  }
 
-  card.appendChild(textContentDiv);
-  card.addEventListener("click", (e) => {
-    if (e.target.tagName.toLowerCase() !== "a") {
-      showReaderView(item.link);
-    }
-  });
+    // card.appendChild(textContentDiv);
+
+    // Event listener for card click
+    card.addEventListener("click", (e) => {
+      if (e.target.tagName.toLowerCase() !== "a") {
+        showReaderView(item.link);
+      }
+    });
+  } else if (item.link.includes("engadget")) {
+    //add event listener for card click to open the link in a new tab
+    card.addEventListener("click", () => {
+      window.open(item.link, "_blank");
+    });
+  }
+  // Append text content to the card
+  docFrag.appendChild(textContentDiv);
+
+  // Append the document fragment to the card
+  card.appendChild(docFrag);
 
   return card;
 }
@@ -595,7 +760,7 @@ async function displaySubscribedFeeds() {
       const favicon = document.createElement("img");
 
       const mainDomain = new URL(feedURL).hostname;
-      favicon.src = `https://icon.horse/icon/${mainDomain}`;
+      favicon.src = await getsiteFavicon(mainDomain);
       favicon.alt = `${mainDomain} Favicon`;
       favicon.className = "site-favicon";
       listItem.appendChild(favicon);
@@ -637,18 +802,43 @@ async function initializeMostVisitedSitesCache() {
   fetchMostVisitedSites();
 }
 
-function createMostVisitedSiteCard(site) {
+async function createMostVisitedSiteCard(site) {
   const siteUrl = new URL(site.url);
   const mainDomain = siteUrl.hostname;
   const siteCard = document.createElement("div");
   siteCard.className = "site-card";
+  const sitefaviconUrl = await getsiteFavicon(mainDomain);
+  //send a get request to get the favicon url from http://192.168.1.51:3000/get-favicon?url=${mainDomain}
   siteCard.innerHTML = `
     <a href="${site.url}" class="site-link">
-      <img src="https://icon.horse/icon/${mainDomain}" alt="${site.title} Favicon" class="site-favicon">
-      <div class="site-title">${site.title}</div>
+      <div class="background-image-container" style="background-image: url('https://www.google.com/s2/favicons?domain=${mainDomain}&sz=256');"></div>
+      <img src="${sitefaviconUrl}" alt="${site.title} Favicon" class="site-favicon">
+      <div class="site-title"><p>${site.title}</p></div>
     </a>
   `;
   return siteCard;
+}
+
+async function getsiteFavicon(mainDomain) {
+  try {
+    const response = await fetch(`https://www.google.com/s2/favicons?domain=${mainDomain}&sz=256`);
+    if (!response.ok) { // if HTTP-status is 404-599
+      throw new Error(response.statusText);
+    }
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+  } catch (error) {
+    try {
+      const response = await fetch(`https://icon.horse/icon/${mainDomain}`);
+      if (!response.ok) { 
+        throw new Error(response.statusText);
+      }
+      const blob = await response.blob();
+      return URL.createObjectURL(blob);
+    } catch (error) {
+      console.log("Error fetching favicon from both sources");
+    }
+  }
 }
 
 function fetchMostVisitedSites() {
@@ -670,14 +860,8 @@ function fetchMostVisitedSites() {
 
 //cache favicons for improve perf
 async function cacheFavicon(domain) {
-  const response = await fetch(`https://icon.horse/icon/${domain}`);
-  const blob = await response.blob();
-  const dataURL = await new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result);
-    reader.readAsDataURL(blob);
-  });
-  localStorage.setItem(`favicon-${domain}`, dataURL);
+  const response = await getsiteFavicon(domain);
+  localStorage.setItem(`favicon-${domain}`, response.url);
   return dataURL;
 }
 
@@ -689,19 +873,8 @@ function setLastRefreshedTimestamp() {
   timestampDiv.textContent = `Last refreshed: ${now.toLocaleTimeString()}`;
 }
 
-async function getFavicon(domain) {
-  const cachedFavicon = localStorage.getItem(`favicon-${domain}`);
-  if (cachedFavicon) {
-    return cachedFavicon;
-  } else {
-    const fetchedFavicon = await cacheFavicon(domain);
-    return fetchedFavicon;
-  }
-}
-
 // Call the fetchMostVisitedSites function when the DOM is loaded
 //document.addEventListener("DOMContentLoaded", initializeMostVisitedSitesCache);
-document.addEventListener("DOMContentLoaded", fetchBingImageOfTheDay);
 
 async function fetchBingImageOfTheDay() {
   try {
@@ -730,8 +903,7 @@ async function fetchBingImageOfTheDay() {
 }
 
 window.addEventListener("scroll", () => {
-  const scrollPosition =
-    window.pageYOffset || document.documentElement.scrollTop;
+  const scrollPosition = window.scrollY || document.documentElement.scrollTop;
   const blurIntensity = Math.min(scrollPosition / 100, 10);
   const darkIntensity = Math.min(scrollPosition / 1000, 0.1); // Adjust the values as per your preference
   // const bgContainer = document.querySelector(".background-image-container");
