@@ -47,15 +47,19 @@ document.addEventListener("DOMContentLoaded", async () => {
   const setGreeting = () => {
     const greeting = getGreeting();
     document.title = `${greeting} - New Tab`;
+    //set the tab icon
+  const tabIcon = document.getElementById("tab-icon");
+  tabIcon.href = "icons/icon128.png";
+  console.log("tab icon set", tabIcon);
   };
 
   setGreeting();
-
+await  fetchBingImageOfTheDay();
   if (document.querySelector("#feed-container")) {
+   
     // Main page
     cachedCards = await getCachedRenderedCards();
     if (cachedCards) {
-      console.log(`cachedCards: ${cachedCards}`);
       const feedContainer = document.getElementById("feed-container");
       feedContainer.innerHTML = cachedCards;
       feedContainer.style.opacity = "1"; // apply the fade-in effect
@@ -76,6 +80,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  
   setInterval(autoRefreshFeed, 15 * 60 * 1000);
 });
 
@@ -180,10 +185,7 @@ async function renderFeed(feeditems, feedDetails) {
   const feedContainer = document.getElementById("feed-container");
   const fragment = document.createDocumentFragment();
 
-  //check if cachedCards is not empty
-  console.log(`cachedCards: ${cachedCards}`);
-
-  for (const item of feeditems) {
+   for (const item of feeditems) {
     const card = await createCard(item, feedDetails);
 
     if (card instanceof Node) {
@@ -330,7 +332,7 @@ function processRSSData(rssData) {
       }
       if (item.created) {
         item.created = new Date(item.created).toISOString();
-        // console.log(`item.created: ${item.created} converts to ${new Date(item.created)}`);
+       
 
       }
       if (!item.published) {
@@ -341,7 +343,6 @@ function processRSSData(rssData) {
     });
     if (feedItems.length > 0) {
       feedItems.sort((a, b) => new Date(b.published) - new Date(a.published));
-      // console.log(`sorting feed...`);
     }
   
   }
@@ -373,117 +374,6 @@ function setupBackButton() {
   });
 }
 
-
-// async function createCard(item, feedDetails) {
-//   const card = document.createElement("div");
-//   card.className = "card";
-  
-//   const itemDomain = new URL(item.link).hostname;
-
-//   // Find the matching feedDetail
-//   const feedDetail = feedDetails.find(fd => new URL(fd.feedUrl).hostname === itemDomain);
-//   if (!feedDetail) {
-//     console.error('No matching feed detail found for:', itemDomain);
-//     return null;  // Or handle this scenario appropriately
-//   }
-//   const website_title = feedDetail.siteTitle;
-//   const faviconURL = feedDetail.favicon;
-//   // Create image container for parallax effect
-//   const imageContainer = document.createElement("div");
-//   const thumbnailImage = document.createElement("div");
-//   thumbnailImage.className = "thumbnail-image";
-//   imageContainer.className = "image-container";
-//   const cardbg = document.createElement("div");
-//   cardbg.className = "card-bg";
-
-//  // If a thumbnail URL is provided, use it for both the image container and card background
-// let thumbnailUrl;
-// if (item.thumbnail) {
-//   if (Array.isArray(item.thumbnail)) {
-//     // If thumbnail is an array, use the url property of the first object
-//     thumbnailUrl = item.thumbnail[0].url;
-//   } else {
-//     // If thumbnail is not an array, use it directly
-//     thumbnailUrl = item.thumbnail;
-//   }
-
-//   thumbnailImage.style.backgroundImage = `url('${thumbnailUrl}')`; // Ensure the URL is enclosed in quotes
-//   cardbg.style.backgroundImage = `url('${thumbnailUrl}')`; // Same here
-// }
-//   imageContainer.appendChild(thumbnailImage);
-//   card.appendChild(imageContainer);
-//   card.appendChild(cardbg);
-
-//   // Create text content container
-//   const textContentDiv = document.createElement("div");
-//   textContentDiv.classList.add("text-content");
-
-//   // Add website name and favicon
-//   const websiteInfoDiv = document.createElement("div");
-//   websiteInfoDiv.className = "website-info";
-
-//   const favicon = document.createElement("img");
-//   favicon.src = faviconURL;
-//   favicon.alt = `${website_title} Favicon`;
-//   favicon.className = "site-favicon";
-//   websiteInfoDiv.appendChild(favicon);
-
-//   const websiteName = document.createElement("span");
-//   websiteName.textContent = website_title;
-//   websiteInfoDiv.appendChild(websiteName);
-
-//   textContentDiv.appendChild(websiteInfoDiv);
-
-//   // Create title element
-//   const title = document.createElement("h3");
-//   title.textContent = item.title;
-//   textContentDiv.appendChild(title);
-
-//   // Add content snippet if available
-//   if (item.contentSnippet) {
-//     const snippet = document.createElement("p");
-//     snippet.className = "description";
-//     snippet.textContent = item.contentSnippet;
-//     textContentDiv.appendChild(snippet);
-//   }
-
-//   // Add publication date and time
-//   const date = new Date(item.published);
-//   const dateString = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-//   const details = document.createElement("div");
-//   console.log(`dateString: ${dateString}`);
-//   details.className = "date";
-//   details.textContent = dateString;
-//   textContentDiv.appendChild(details);
-
-//   // Add description if thumbnail URL is not provided
-//   if (!item.thumbnail && item.description) {
-//     const description = document.createElement("div");
-//     description.className = "description long-description";
-//     description.textContent = item.description;
-//     textContentDiv.appendChild(description);
-//   }
-
-//   // Add read more link
-//   const readMoreLink = document.createElement("a");
-//   readMoreLink.href = item.link;
-//   readMoreLink.target = "_blank";
-//   readMoreLink.textContent = "Read more";
-//   readMoreLink.className = "read-more-link";
-//   textContentDiv.appendChild(readMoreLink);
-
-//   // Append all content to the card
-//   card.appendChild(textContentDiv);
-
-//   // Event listener for card click
-//   card.addEventListener("click", (e) => {
-//     if (e.target.tagName.toLowerCase() !== "a") {
-//       showReaderView(item.link);
-//     }
-//   });
-
-//   return card;
-// }
 
 async function createCard(item, feedDetails) {
   const docFrag = document.createDocumentFragment();
@@ -581,7 +471,10 @@ async function createCard(item, feedDetails) {
     textContentDiv.appendChild(description);
   }
 
-  // Read more link
+  // Read more link , check if it undefined or it contains engadget
+
+  if(item.link !== null && item.link !== undefined && !item.link.includes("engadget"))
+  {
   const readMoreLink = document.createElement("a");
   readMoreLink.href = item.link;
   readMoreLink.target = "_blank";
@@ -589,8 +482,7 @@ async function createCard(item, feedDetails) {
   readMoreLink.className = "read-more-link";
   textContentDiv.appendChild(readMoreLink);
 
-  // Append text content to the card
-  docFrag.appendChild(textContentDiv);
+  
   // card.appendChild(textContentDiv);
 
   // Event listener for card click
@@ -598,7 +490,17 @@ async function createCard(item, feedDetails) {
     if (e.target.tagName.toLowerCase() !== "a") {
       showReaderView(item.link);
     }
-  });
+  });}
+  else if ( item.link.includes("engadget"))
+  {
+    //add event listener for card click to open the link in a new tab
+    card.addEventListener("click", () => {
+      window.open(item.link, '_blank');
+    });
+
+  }
+  // Append text content to the card
+  docFrag.appendChild(textContentDiv);
 
   // Append the document fragment to the card
   card.appendChild(docFrag);
@@ -918,23 +820,37 @@ async function initializeMostVisitedSitesCache() {
   fetchMostVisitedSites();
 }
 
-function createMostVisitedSiteCard(site) {
+async function createMostVisitedSiteCard(site) {
   const siteUrl = new URL(site.url);
   const mainDomain = siteUrl.hostname;
   const siteCard = document.createElement("div");
   siteCard.className = "site-card";
+  const sitefaviconUrl= await getsiteFavicon(mainDomain);
   //send a get request to get the favicon url from http://192.168.1.51:3000/get-favicon?url=${mainDomain}
-
-
-
   siteCard.innerHTML = `
     <a href="${site.url}" class="site-link">
       <div class="background-image-container" style="background-image: url('https://www.google.com/s2/favicons?domain=${mainDomain}&sz=256');"></div>
-      <img src="https://www.google.com/s2/favicons?domain=${mainDomain}&sz=256" alt="${site.title} Favicon" class="site-favicon">
+      <img src="${sitefaviconUrl}" alt="${site.title} Favicon" class="site-favicon">
       <div class="site-title"><p>${site.title}</p></div>
     </a>
   `;
   return siteCard;
+}
+
+async function getsiteFavicon (mainDomain){
+  const response = await fetch(`https://www.google.com/s2/favicons?domain=${mainDomain}&sz=256`);
+  if (response.ok) {
+    return response.url;
+  }
+  else {
+    const response = await fetch(`https://icon.horse/icon/${mainDomain}`);
+    if (response.ok) {
+      return response.url;
+    }
+    else {
+      console.log("Error fetching favicon");
+    }
+  }
 }
 
 function fetchMostVisitedSites() {
@@ -956,14 +872,9 @@ function fetchMostVisitedSites() {
 
 //cache favicons for improve perf
 async function cacheFavicon(domain) {
-  const response = await fetch(`https://icon.horse/icon/${domain}`);
-  const blob = await response.blob();
-  const dataURL = await new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result);
-    reader.readAsDataURL(blob);
-  });
-  localStorage.setItem(`favicon-${domain}`, dataURL);
+
+  const response = await getsiteFavicon(domain);
+  localStorage.setItem(`favicon-${domain}`, response.url);
   return dataURL;
 }
 
@@ -975,19 +886,8 @@ function setLastRefreshedTimestamp() {
   timestampDiv.textContent = `Last refreshed: ${now.toLocaleTimeString()}`;
 }
 
-async function getFavicon(domain) {
-  const cachedFavicon = localStorage.getItem(`favicon-${domain}`);
-  if (cachedFavicon) {
-    return cachedFavicon;
-  } else {
-    const fetchedFavicon = await cacheFavicon(domain);
-    return fetchedFavicon;
-  }
-}
-
 // Call the fetchMostVisitedSites function when the DOM is loaded
 //document.addEventListener("DOMContentLoaded", initializeMostVisitedSitesCache);
-document.addEventListener("DOMContentLoaded", fetchBingImageOfTheDay);
 
 async function fetchBingImageOfTheDay() {
   try {
