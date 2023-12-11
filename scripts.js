@@ -253,14 +253,7 @@ navigator.serviceWorker.addEventListener("message", function (event) {
     // hideLoadingState();
     let response = JSON.parse(event.data.rssData);
     const { feedDetails, feedItems } = processRSSData(response);
-    // Broadcast the feeds to other tabs
-    // channel.postMessage({
-    //   action: "shareFeeds",
-    //   feedsItems: feedItems,
-    //   feedDetails: feedDetails,
-    //   lastRefreshed,
-    // });
-    renderFeed(feedItems, feedDetails).catch((error) => {
+       renderFeed(feedItems, feedDetails).catch((error) => {
       console.error("Error rendering the feed:", error);
     });
   }
