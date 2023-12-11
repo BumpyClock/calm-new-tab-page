@@ -125,9 +125,15 @@ body {
   filter: dim(0.5);
   background-repeat: no-repeat;
   background-size: cover;
+<<<<<<< HEAD:src/styles.css
   transition: all 0.1s linear;
   /* -webkit-filter: grayscale(100%); 
   filter: grayscale(100%); */
+=======
+  transition: all 0.1s ease-in-out;
+  /* -webkit-filter: grayscale(100%);  */
+  /* filter: grayscale(100%); */
+>>>>>>> 49a7b824cd716b470752db0cd0da1367108d4beb:styles.css
 }
 
 /* Add this to ensure the content is placed above the background image */
