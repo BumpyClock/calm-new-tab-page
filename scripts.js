@@ -830,7 +830,7 @@ async function getsiteFavicon(mainDomain) {
   } catch (error) {
     try {
       const response = await fetch(`https://icon.horse/icon/${mainDomain}`);
-      if (!response.ok) { // if HTTP-status is 404-599
+      if (!response.ok) { 
         throw new Error(response.statusText);
       }
       const blob = await response.blob();
