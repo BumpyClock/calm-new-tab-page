@@ -202,11 +202,13 @@ body > *:not(.background-image-container) {
   z-index: -1;
   opacity: 0.4;
   transition: var(--transition-slow);
+  
 }
 
 .card:hover .card-bg {
-  filter: blur(90px);
-  opacity: .5;
+  filter: blur(90px) brightness(1.5);
+  opacity: .7;
+  
 }
 
 .card:hover {
@@ -249,6 +251,10 @@ body > *:not(.background-image-container) {
 
 .card .text-content {
   padding: 8px 24px 12px 24px;
+}
+
+.card:hover .text-content {
+ filter: brightness(1.2);
 }
 
 .card h3 {
@@ -662,6 +668,7 @@ a {
   padding: 0;
   max-width: 600px;
   margin: 1rem auto;
+  transition: all .25s ease-in-out;
 }
 
 #subscribed-feeds-list li {
@@ -680,6 +687,14 @@ a {
   
   width: -webkit-fill-available;
 }
+.website-info span {
+  font-family: var(--font-family);
+  font-size: 14px;
+  font-weight: 600;
+
+  width: -webkit-fill-available;
+}
+
 
 #subscribed-feeds-list li img {
   width: 48px;
@@ -885,6 +900,7 @@ a {
   cursor: pointer;
   box-shadow: var(--box-shadow-hover);
   background-color: var(--background-color-hover);
+  filter: brightness(1.1);
 }
 
 .site-card:active {
@@ -920,6 +936,19 @@ a {
   padding: 4px 12px 0px 12px;
   text-overflow: ellipsis;
   height: 40px;
+  max-width: 120px;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  -webkit-line-clamp: 2;
+}
+
+.site-title p {
+  color: var(--color);
+  font-size: 12px;
+  text-align: center;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  height: 32px;
   max-width: 120px;
   text-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   -webkit-line-clamp: 2;
