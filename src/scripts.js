@@ -58,14 +58,23 @@ const getGreeting = () => {
 };
 
 async function doInitialLoad(){
+
+  if(document.querySelector("#feed-container")) {
   await initializeMostVisitedSitesCache();
 await loadSubscribedFeeds();
 await fetchBingImageOfTheDay();
 // hideSearch();
-initialLoad=false;
+  }
 }
 
-doInitialLoad();
+doInitialLoad().then(()=>{
+  
+  if (document.querySelector("#feed-container")) {
+    initialLoad=false;
+  console.log("initial load done")
+  }
+
+});
 
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -94,7 +103,7 @@ document.addEventListener("DOMContentLoaded", async () => {
      await loadSubscribedFeeds();
     }
   
-  } else if (document.querySelector("#settings-container")) {
+  } else{
     // Settings page
     setupSubscriptionForm();
     await displaySubscribedFeeds();

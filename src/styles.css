@@ -149,16 +149,31 @@ body > *:not(.background-image-container) {
   padding: 10px;
   color: white;
   font-size: 12px;
-  z-index: 2;
+  z-index: 3;
   line-height: 1.2;
+  opacity: .75;
+
+}
+.attribution-container:hover {
+  opacity: 1;
 }
 
 .attribution-title {
   font-weight: bold;
+  opacity: .75;
 }
+.attribution-title:hover {
+  opacity: 1;
+}
+
+
 
 .attribution-copyright {
   font-style: italic;
+  opacity: 1;
+}
+.attribution-copyright:hover {
+  opacity: 1;
 }
 
 .greeting {
@@ -520,7 +535,7 @@ body > *:not(.background-image-container) {
   backdrop-filter: blur(10px); */
   transition: opacity 0.125s ease-in;
   max-width: 2200px;
-
+z-index: 4;
 }
 .feedsContainer {
  

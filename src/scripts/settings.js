@@ -1,16 +1,15 @@
+
 function setupSubscriptionForm() {
     const form = document.getElementById("subscription-form");
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
-  
-      const feedURL = form.elements["feed-url"].value;
+       const feedURL = form.elements["feed-url"].value;
       const feeds = getSubscribedFeeds();
       // console.log(feeds);
       feeds.subscribedFeeds.push(feedURL);
+      console.log(`Settings: New feed added: ${feeds.subscribedFeeds}`);
       console.log(feeds.subscribedFeeds);
       setSubscribedFeeds(feeds.subscribedFeeds);
-      refreshFeeds();
-  
       form.reset();
       displaySubscribedFeeds();
     });
@@ -24,11 +23,11 @@ function setupSubscriptionForm() {
     });
   }
 
-  // Modify displaySubscribedFeeds function
   async function displaySubscribedFeeds() {
     const { subscribedFeeds:feeds, feedDetails: feedDetails } = getSubscribedFeeds();
     const list = document.getElementById("subscribed-feeds-list");
     const listfragment = document.createDocumentFragment();
+    console.log(list);
     list.innerHTML = ""; // Clear the list
     list.style.visibility = "hidden";
     list.style.height = "0px";
@@ -77,3 +76,6 @@ function setupSubscriptionForm() {
     });
   }
   
+  displaySubscribedFeeds();
+  
+  setupSubscriptionForm();
