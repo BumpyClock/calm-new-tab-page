@@ -133,13 +133,6 @@ function sendUpdateToClient(data) {
 //Get thumbnailUrl from the feed items and cache the images
 async function fetchRSSFeed(feedUrls) {
 
-  if(Array.isArray(feedUrls)) {
-
-  console.log("fetching rss feeds: ", feedUrls);
-  }
-  else {
-    console.log("feedurls is not an array");
-  }
   const apiUrl = `https://rss.bumpyclock.com/parse`;
   // const apiUrl = `http://192.168.1.51:3000/parse`;
   const urlsForPostRequest = { 
@@ -158,6 +151,7 @@ async function fetchRSSFeed(feedUrls) {
   return fetch(apiUrl, requestOptions)
   .then(response => {
     const fetchedFeedData = response.json();
+    console.log("fetchedFeedData: ", fetchedFeedData);
 
     if (response.ok) {
             return fetchedFeedData;

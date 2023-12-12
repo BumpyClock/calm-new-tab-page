@@ -105,6 +105,14 @@ body {
   font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 48;
 }
 
+.material-symbols-outlined {
+  font-variation-settings:
+  'FILL' 0,
+  'wght' 400,
+  'GRAD' 0,
+  'opsz' 48
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -117,8 +125,8 @@ body {
 
 .background-image-container {
   position: fixed;
-  top: 0;
-  left: 0;
+  top: -12px;
+  left: -12px;
   width: 100vw;
   height: 100vh;
   z-index: -1;
@@ -585,6 +593,7 @@ a {
 .settings-container h1,
 .settings-container h2 {
   margin-bottom: 1rem;
+  font-family: var(--font-family);
 }
 
 .settings-container ul {
@@ -668,12 +677,7 @@ a {
 }
 
 #subscribed-feeds-list li span {
-  word-wrap: break-word;
-  max-width: 90%;
-  overflow-wrap: break-word;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1.33;
+  
   width: -webkit-fill-available;
 }
 

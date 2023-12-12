@@ -53,18 +53,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   const setGreeting = () => {
     const greeting = getGreeting();
     document.title = `${greeting} - New Tab`;
-    //set the tab icon
-    const tabIcon = document.getElementById("tab-icon");
-    tabIcon.href = "icons/icon128.png";
-    console.log("tab icon set", tabIcon);
+    
   };
 
   setGreeting();
-  await fetchBingImageOfTheDay();
   //load most visited sites from cache
-initializeMostVisitedSitesCache();
   if (document.querySelector("#feed-container")) {
     // Main page
+    await initializeMostVisitedSitesCache();
+
+    await fetchBingImageOfTheDay();
+
     cachedCards = await getCachedRenderedCards();
     if (cachedCards) {
       const feedContainer = document.getElementById("feed-container");
@@ -124,15 +123,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 function getSubscribedFeeds() {
-  console.log("feedList.subscribedFeeds", feedList.subscribedFeeds);
-  return (
-    console.log("feedList.subscribedFeeds", feedList.subscribedFeeds),
-    JSON.parse(localStorage.getItem(SUBSCRIBED_FEEDS_KEY)) || feedList.subscribedFeeds
-  );
+  if (!localStorage.getItem(SUBSCRIBED_FEEDS_KEY)) {
+    setSubscribedFeeds(feedList.subscribedFeeds);
+  return feedList.subscribedFeeds;
+  }
+  else {
+    return JSON.parse(localStorage.getItem(SUBSCRIBED_FEEDS_KEY));
+  }
+   
 }
 
 function setSubscribedFeeds(feeds) {
-  localStorage.setItem(SUBSCRIBED_FEEDS_KEY, feedList.subscribedFeeds);
+  feedList.subscribedFeeds = feeds;
+  localStorage.setItem(SUBSCRIBED_FEEDS_KEY, JSON.stringify(feeds));
 }
 
 async function clearOldCaches() {
@@ -149,14 +152,22 @@ async function loadSubscribedFeeds() {
   const feedContainer = document.getElementById("feed-container");
   feedContainer.innerHTML = "";
   if (!shouldRefreshFeeds() && feedsCache) {
+    console.log("Using cached feeds");
     // Use cached feeds if available and no need to refresh
     renderFeed(cachedCards);
     setLastRefreshedTimestamp(new Date(lastRefreshed));
   } else {
-    const feeds = getSubscribedFeeds();
+    await refreshFeeds();
+    
+  }
+}
+
+async function refreshFeeds() {
+  feedList.subscribedFeeds = getSubscribedFeeds();
     const serviceWorker = navigator.serviceWorker.controller;
     if (serviceWorker) {
       lastRefreshed = new Date().getTime();
+      console.log("Sending message to service worker to fetch feeds", feedList.subscribedFeeds);
       serviceWorker.postMessage({
         action: "fetchRSS",
         feedUrls: feedList.subscribedFeeds,
@@ -164,7 +175,6 @@ async function loadSubscribedFeeds() {
     } else {
       console.error("Service worker is not active or not controlled.");
     }
-  }
 }
 function updateDisplayOnNewTab() {
   const cachedCards = getCachedRenderedCards();
@@ -258,6 +268,7 @@ function cacheRenderedCards(htmlContent) {
 
 navigator.serviceWorker.addEventListener("message", function (event) {
   if (event.data.action === "rssUpdate") {
+    console.log("Received RSS update from service worker,rendering feed");
     // hideLoadingState();
     let response = JSON.parse(event.data.rssData);
     const { feedDetails, feedItems } = processRSSData(response);
@@ -348,9 +359,10 @@ function setupSubscriptionForm() {
     const feedURL = form.elements["feed-url"].value;
     const feeds = getSubscribedFeeds();
     feeds.push(feedURL);
+    console.log(feeds);
     setSubscribedFeeds(feeds);
+    refreshFeeds();
 
-    await loadFeed(feedURL);
     form.reset();
   });
 }
@@ -359,6 +371,8 @@ function setupBackButton() {
   const backButton = document.getElementById("back-to-main");
   backButton.addEventListener("click", () => {
     window.location.href = "newtab.html";
+    //refresh the feeds
+    
   });
 }
 
@@ -780,11 +794,15 @@ async function displaySubscribedFeeds() {
       listItem.appendChild(websiteName);
 
       const removeButton = document.createElement("button");
-      removeButton.textContent = "X";
+      const removeButtonSpan = document.createElement("span");
+      removeButtonSpan.textContent = "\nclose\n";
+      removeButtonSpan.className = "material-symbols-outlined";
+      removeButton.appendChild(removeButtonSpan);
       removeButton.className = "remove-feed-button";
       removeButton.addEventListener("click", () => {
         removeFeed(feedURL);
       });
+      
       listItem.appendChild(removeButton);
 
       list.appendChild(listItem);
