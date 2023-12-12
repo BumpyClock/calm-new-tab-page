@@ -73,7 +73,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (cachedCards) {
       const feedContainer = document.getElementById("feed-container");
       feedContainer.innerHTML = cachedCards;
+      setupParallaxEffect();
       initializeMasonry();
+      reapplyEventHandlersToCachedCards();
       feedContainer.style.opacity = "1"; // apply the fade-in effect
     } else {
       loadSubscribedFeeds();
@@ -173,7 +175,8 @@ async function loadSubscribedFeeds() {
 
 async function refreshFeeds() {
   const {subscribedFeeds: tempFeedList, feedDetails: tempFeedDetails} = getSubscribedFeeds();
-  feedList.subscribedFeeds = tempFeedList
+  feedList.subscribedFeeds = tempFeedList;
+  console.log(feedList.subscribedFeeds);
   const serviceWorker = navigator.serviceWorker.controller;
   if (serviceWorker) {
     lastRefreshed = new Date().getTime();
@@ -190,6 +193,7 @@ function updateDisplayOnNewTab() {
   const cachedCards = getCachedRenderedCards();
   if (cachedCards) {
     renderFeed(cachedCards);
+    setupParallaxEffect();
   } else {
     loadSubscribedFeeds();
   }
@@ -263,6 +267,7 @@ async function renderFeed(feeditems, feedDetails) {
 //parallax effect for image container
 
 function setupParallaxEffect() {
+  console.log("setting up parallax effect");
   document.querySelectorAll(".card").forEach((card) => {
     const imageContainer = card.querySelector(".thumbnail-image");
 
@@ -543,23 +548,11 @@ async function createCard(item, feedDetails) {
   readMoreLink.textContent = "Read more";
   readMoreLink.className = "read-more-link";
   textContentDiv.appendChild(readMoreLink);
-  if (item.link !== null && item.link !== undefined && !item.link.includes("engadget")) {
+  if (item.link !== null && item.link !== undefined ) {
     
+    applyCardEventHandlers(card, item.link); // Apply event handlers to the card
 
-    // card.appendChild(textContentDiv);
-
-    // Event listener for card click
-    card.addEventListener("click", (e) => {
-      if (e.target.tagName.toLowerCase() !== "a") {
-        showReaderView(linkURL);
-      }
-    });
-  } else if (item.link.includes("engadget")) {
-    //add event listener for card click to open the link in a new tab
-    card.addEventListener("click", () => {
-      window.open(linkURL, "_blank");
-    });
-  }
+  } 
   // Append text content to the card
   docFrag.appendChild(textContentDiv);
 
@@ -567,6 +560,35 @@ async function createCard(item, feedDetails) {
   card.appendChild(docFrag);
 
   return card;
+}
+
+function applyCardEventHandlers(card, linkURL) {
+  // Event listener for card click
+  if (linkURL.includes("engadget")) {
+    card.addEventListener("click", () => {
+      window.open(linkURL, "_blank");
+    });
+  } else {
+  card.addEventListener("click", (e) => {
+    if (e.target.tagName.toLowerCase() !== "a") {
+      showReaderView(linkURL);
+    }
+  });
+  }
+}
+
+function reapplyEventHandlersToCachedCards() {
+  console.log("reapplying event handlers to cached cards");
+  let eventHandlersRestored = 0;
+  const feedContainer = document.getElementById("feed-container");
+  const cards = feedContainer.querySelectorAll('.card');
+  cards.forEach(card => {
+
+    const linkURL = card.querySelector('a').href; // Example: getting the URL from the card's read more link
+    applyCardEventHandlers(card, linkURL);
+    eventHandlersRestored++;
+  });
+  console.log(`Restored ${eventHandlersRestored} event handlers`);
 }
 
 async function getWebsiteTitle(url) {
@@ -747,6 +769,8 @@ function createReaderViewModal(article) {
   return modal;
 }
 
+
+
 //Reading progress indicator code
 
 function createCircularProgressIndicator() {
@@ -915,11 +939,11 @@ async function fetchBingImageOfTheDay() {
 window.addEventListener("scroll", () => {
   const scrollPosition = window.scrollY || document.documentElement.scrollTop;
   const blurIntensity = Math.min(scrollPosition / 100, 10);
-  const darkIntensity = Math.min(scrollPosition / 1000, 0.1); // Adjust the values as per your preference
+  const darkIntensity = Math.min( scrollPosition /100 , 0.5); // Adjust the values as per your preference
   // const bgContainer = document.querySelector(".background-image-container");
   // bgContainer.style.filter = `blur(${blurIntensity}px) brightness(${
   //   1 - darkIntensity
   // }) grayscale(100%)`;
   const bgContainer = document.querySelector(".background-image-container");
-  bgContainer.style.filter = `blur(${blurIntensity}px)`;
+  bgContainer.style.filter = `brightness(${1- darkIntensity})`;
 });

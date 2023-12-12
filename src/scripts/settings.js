@@ -5,9 +5,10 @@ function setupSubscriptionForm() {
   
       const feedURL = form.elements["feed-url"].value;
       const feeds = getSubscribedFeeds();
-      feeds.push(feedURL);
-      console.log(feeds);
-      setSubscribedFeeds(feeds);
+      // console.log(feeds);
+      feeds.subscribedFeeds.push(feedURL);
+      console.log(feeds.subscribedFeeds);
+      setSubscribedFeeds(feeds.subscribedFeeds);
       refreshFeeds();
   
       form.reset();

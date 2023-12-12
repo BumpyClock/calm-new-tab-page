@@ -309,6 +309,15 @@ body > *:not(.background-image-container) {
   font-kerning: none;
   gap: 8px;
   margin-bottom: 8px;
+  
+}
+
+.website-info span{
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+
 }
 
 .website-info .site-favicon {
@@ -990,6 +999,8 @@ a {
   max-width: 120px;
   text-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   -webkit-line-clamp: 2;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
 }
 
 .site-title p {
