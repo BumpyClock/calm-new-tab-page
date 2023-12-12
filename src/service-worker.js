@@ -132,28 +132,31 @@ function sendUpdateToClient(data) {
 
 //Get thumbnailUrl from the feed items and cache the images
 async function fetchRSSFeed(feedUrls) {
+
   const apiUrl = `https://rss.bumpyclock.com/parse`;
   // const apiUrl = `http://192.168.1.51:3000/parse`;
-  console.log("fetching rss feeds: ", feedUrls);
-
+  const urlsForPostRequest = { 
+    "urls": feedUrls}
+  
+  
   const requestOptions = {
     method: 'POST', // Using POST method
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ urls: feedUrls }) // Sending the urls in the body
+    body: JSON.stringify(urlsForPostRequest) // Sending the urls in the body
   };
 
-  // console.log("API call: ", apiUrl, requestOptions);
 
   return fetch(apiUrl, requestOptions)
   .then(response => {
     const fetchedFeedData = response.json();
+    console.log("fetchedFeedData: ", fetchedFeedData);
 
-    // console.log("API response: ", fetchedFeedData);
     if (response.ok) {
             return fetchedFeedData;
     } else {
+      console.log("API response: ", JSON.stringify(fetchedFeedData));
       throw new Error("Failed to fetch RSS feeds");
     }
   });
