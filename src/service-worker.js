@@ -13,6 +13,7 @@ self.addEventListener("message", function(event) {
 
 
 async function fetchRSSFeedAndUpdateCache(feedUrls) {
+  console.log("fetching rss feeds", feedUrls );
   fetchRSSFeed(feedUrls)
     .then(allFeedsData => {
       // Initialize the arrays for feed details and items
