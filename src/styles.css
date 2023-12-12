@@ -183,7 +183,7 @@ body > *:not(.background-image-container) {
   overflow: hidden;
   height: auto;
   max-width: 400px;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
   break-inside: avoid;
   -webkit-backdrop-filter: var(--blur);
   backdrop-filter: var(--blur);
@@ -466,13 +466,34 @@ body > *:not(.background-image-container) {
 /* 2 columns */
 .grid-item--width2 { width: 40%; }
 
-@media screen and (min-width: 768px) {
+@media screen and (min-width: 600px) {
   /* 5 columns for larger screens */
-  .grid-sizer { width: 20%; 
-  max-width: 320px;}
-  .card {
-    max-width: 360px;
-  }
+  .grid-sizer { width: 20%; max-width: 320px;}
+  .card { max-width: 90%;
+  min-width: 240px; }
+  .site-card { min-width: 112px;
+  min-height: 112px;}
+}
+
+@media screen and (min-width: 720px) {
+  /* 5 columns for larger screens */
+  .grid-sizer { width: 20%; max-width: 45%;}
+  .card { max-width: 45%;
+  min-width: 320px; }
+  .gutter { width: 2%; }
+}
+@media screen and (min-width: 900px) {
+  /* 5 columns for larger screens */
+  .grid-sizer { width: 20%; max-width: 35%;}
+  .card { max-width: 30%;
+  min-width: 280px; }
+}
+
+@media screen and (min-width: 1124px) {
+  /* 5 columns for larger screens */
+  .grid-sizer { width: 10%; max-width: 20%;}
+  .card { max-width: 15%;
+  min-width:340px ; }
 }
 
 
@@ -486,8 +507,10 @@ body > *:not(.background-image-container) {
   /* background: rgba(210, 210, 210, .45);
   backdrop-filter: blur(10px); */
   transition: opacity 0.125s ease-in;
+  max-width: 2200px;
+
 }
-.feedsContainer {margin:auto;
+.feedsContainer {
  
 
 }
@@ -948,8 +971,8 @@ a {
 
 .site-favicon {
   max-width: 48px;
-  width: 5vw;
-  height: 5vw;
+  width: 50%;
+  height: 50%;
   max-height: 48px;
   margin: 12px;
   border-radius: 4px;

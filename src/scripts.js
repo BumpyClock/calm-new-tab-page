@@ -73,6 +73,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (cachedCards) {
       const feedContainer = document.getElementById("feed-container");
       feedContainer.innerHTML = cachedCards;
+      initializeMasonry();
       feedContainer.style.opacity = "1"; // apply the fade-in effect
     } else {
       loadSubscribedFeeds();
@@ -201,8 +202,8 @@ function initializeMasonry() {
     // options
     itemSelector: '.card', // Use your card's class
     columnWidth: '.card', // The width of each column, you can set this as needed
-    gutter: 24, // Space between items, you can set this as needed
-    percentPosition: true
+    gutter: 12, // Space between items, you can set this as needed
+    fitWidth: true
   });
   // msnry.imagesloaded().progress( function() {
   //   msnry.layout();
@@ -219,6 +220,7 @@ function insertGridSizer() {
 }
 
 async function renderFeed(cachedCards) {
+  console.log("rendering feed from cache");
   const feedContainer = document.getElementById("feed-container");
   feedContainer.innerHTML = cachedCards;
   
