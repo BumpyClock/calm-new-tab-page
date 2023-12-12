@@ -204,9 +204,9 @@ function initializeMasonry() {
     gutter: 24, // Space between items, you can set this as needed
     percentPosition: true
   });
-  msnry.imagesloaded().progress( function() {
-    msnry.layout();
-  });
+  // msnry.imagesloaded().progress( function() {
+  //   msnry.layout();
+  // });
 }
 function insertGridSizer() {
   const feedContainer = document.getElementById("feed-container");
@@ -535,14 +535,14 @@ async function createCard(item, feedDetails) {
   }
 
   // Read more link , check if it undefined or it contains engadget
-
-  if (item.link !== null && item.link !== undefined ) {
-    const readMoreLink = document.createElement("a");
-    readMoreLink.href = item.link;
-    readMoreLink.target = "_blank";
-    readMoreLink.textContent = "Read more";
-    readMoreLink.className = "read-more-link";
-    textContentDiv.appendChild(readMoreLink);
+  const readMoreLink = document.createElement("a");
+  readMoreLink.href = item.link;
+  readMoreLink.target = "_blank";
+  readMoreLink.textContent = "Read more";
+  readMoreLink.className = "read-more-link";
+  textContentDiv.appendChild(readMoreLink);
+  if (item.link !== null && item.link !== undefined && !item.link.includes("engadget")) {
+    
 
     // card.appendChild(textContentDiv);
 
@@ -614,7 +614,6 @@ function removeFeed(feedURL) {
 }
 
 async function showReaderView(url) {
-  console.log("Fetching readable content for:", url);
   try {
     const response = await fetch(url);
     const html = await response.text();
@@ -665,11 +664,11 @@ async function showReaderView(url) {
 
 function createReaderViewModal(article) {
   const modal = document.createElement("div");
-  modal.className = "reader-view-modal light";
+  modal.className = "reader-view-modal";
   modal.innerHTML = `
     <div class="reader-view-content ">
       
-      <div class="reader-view-page-content light ">
+      <div class="reader-view-page-content">
         <div class="reader-view-header">
           <span class="reader-view-close material-symbols-rounded">close</span>
           <h1 class="reader-view-title"><span id="website-info-placeholder"></span>${article.title}</h1>
@@ -697,7 +696,7 @@ function createReaderViewModal(article) {
 
   const themeDropdown = modal.querySelector("#theme-select");
   themeDropdown.addEventListener("change", (event) => {
-    const selectedTheme = event.target.value;
+    const selectedTheme = "";
     const readerViewPageText = modal.querySelector(".reader-view-page-content");
     const readerViewSettingsPane = modal.querySelector(".reader-view-settings-pane");
     const readerViewContent = modal.querySelector(".reader-view-content");

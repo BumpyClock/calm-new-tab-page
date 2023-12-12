@@ -151,7 +151,7 @@ async function fetchRSSFeed(feedUrls) {
   return fetch(apiUrl, requestOptions)
   .then(response => {
     const fetchedFeedData = response.json();
-    console.log("fetchedFeedData: ", fetchedFeedData);
+    // console.log("fetchedFeedData: ", fetchedFeedData);
 
     if (response.ok) {
             return fetchedFeedData;
