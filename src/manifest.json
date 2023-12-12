@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Calm New Tab Page",
-  "version": "0.0.5.1",
+  "version": "0.0.6",
   "description": "A Clean New Tab Page with a focus on privacy, simplicity and customizability.",
   "action": {
     
@@ -26,7 +26,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["readability.js", "./scripts/settings.js"],
+      "js": ["./scripts/utils/readability.js", "./scripts/settings.js","./scripts/utils/masonry.pkgd.js"],
       "all_frames": true
     }],
 
