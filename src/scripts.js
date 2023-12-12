@@ -7,6 +7,7 @@ let feedList = {
   suggestedFeeds: [],
 };
 const DEFAULT_FEED_URLS = ["http://www.theverge.com/rss/index.xml", "https://www.vox.com/rss/index.xml"];
+const refreshTimer = 15 * 60 * 1000; //fifteen minutes
 
 // Register service worker
 if ("serviceWorker" in navigator) {
@@ -31,8 +32,8 @@ navigator.serviceWorker.addEventListener('controllerchange', function() {
 
 //Create an empty feedcache object. Store feeds here once received for the first time
 let feedsCache = null;
-let cachedCards = []; // Store the cards in an array to avoid re-creating them for every new tab
-
+let cachedCards = null; // Store the cards in an array to avoid re-creating them for every new tab
+let initialLoad=true;
 // Create a BroadcastChannel object
 const channel = new BroadcastChannel("rss_feeds_channel");
 const CARD_CACHE_NAME = "card-items-cache";
@@ -56,6 +57,17 @@ const getGreeting = () => {
   }
 };
 
+async function doInitialLoad(){
+  await initializeMostVisitedSitesCache();
+await loadSubscribedFeeds();
+await fetchBingImageOfTheDay();
+// hideSearch();
+initialLoad=false;
+}
+
+doInitialLoad();
+
+
 document.addEventListener("DOMContentLoaded", async () => {
   const setGreeting = () => {
     const greeting = getGreeting();
@@ -65,24 +77,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   //load most visited sites from cache
   if (document.querySelector("#feed-container")) {
     // Main page
-    hideSearch();
+    // hideSearch();
 
     await initializeMostVisitedSitesCache();
     await fetchBingImageOfTheDay();
-    cachedCards = getCachedRenderedCards();
-    if (cachedCards) {
+    cachedCards = await getCachedRenderedCards();
+    if (cachedCards !== null) {
       const feedContainer = document.getElementById("feed-container");
       feedContainer.innerHTML = cachedCards;
       initializeMasonry();
       feedContainer.style.opacity = "1"; // apply the fade-in effect
     } else {
-      loadSubscribedFeeds();
+      console.log("rendering feed from scratch");
+     await loadSubscribedFeeds();
     }
   
-  } else {
+  } else if (document.querySelector("#settings-container")) {
     // Settings page
     setupSubscriptionForm();
-    displaySubscribedFeeds();
+    await displaySubscribedFeeds();
     setupBackButton();
   }
   // await  showLoadingState();
@@ -92,7 +105,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  setInterval(autoRefreshFeed, 15 * 60 * 1000);
+  setInterval(autoRefreshFeed, refreshTimer);
 });
 
 function hideSearch() {
@@ -109,14 +122,15 @@ function showSearch() {
 window.addEventListener("unload", async () => {
   cachedCards = [];
   localStorage.removeItem("renderedCards");
+  localStorage.removeItem("mostVisitedSitesCache");
+  
 });
 
 function shouldRefreshFeeds() {
   const currentTimestamp = new Date().getTime();
-  const fifteenMinutes = 15 * 60 * 1000;
 
   // If lastRefreshed isn't set or is older than 15 minutes, refresh
-  if (!lastRefreshed || currentTimestamp - lastRefreshed > fifteenMinutes) {
+  if (!lastRefreshed || currentTimestamp - lastRefreshed > refreshTimer) {
     return true;
   }
   return false;
@@ -124,12 +138,10 @@ function shouldRefreshFeeds() {
 
 async function autoRefreshFeed() {
   // Assuming loadSubscribedFeeds is the function that fetches and renders the feed
-  await loadSubscribedFeeds();
+  console.log("AutoRefresh triggered auto Refreshing Feeds");
+  await refreshFeeds();
 }
 
-function getCachedRenderedCards() {
-  return localStorage.getItem("renderedCards");
-}
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "readableContentFetched") {
@@ -186,8 +198,8 @@ async function refreshFeeds() {
     console.error("Service worker is not active or not controlled.");
   }
 }
-function updateDisplayOnNewTab() {
-  const cachedCards = getCachedRenderedCards();
+async function updateDisplayOnNewTab() {
+  const cachedCards = await getCachedRenderedCards();
   if (cachedCards) {
     renderFeed(cachedCards);
   } else {
@@ -223,16 +235,16 @@ async function renderFeed(cachedCards) {
   console.log("rendering feed from cache");
   const feedContainer = document.getElementById("feed-container");
   feedContainer.innerHTML = cachedCards;
-  
-  console.log("calling initializeMasonry");
-
   initializeMasonry();
+  await cacheRenderedCards(feedContainer.innerHTML);
   feedContainer.style.opacity = "1"; // apply the fade-in effect
   setLastRefreshedTimestamp(new Date(lastRefreshed));
 }
 
 async function renderFeed(feeditems, feedDetails) {
   feedsCache = feeditems;
+  let cardCount = 0;
+
   const feedContainer = document.getElementById("feed-container");
   const fragment = document.createDocumentFragment();
 
@@ -241,20 +253,24 @@ async function renderFeed(feeditems, feedDetails) {
 
     if (card instanceof Node) {
       fragment.appendChild(card);
+      cardCount++;
     } else {
       console.error("Card is not a valid DOM Node:", card);
     }
   }
+  console.log(`rendered ${cardCount} cards`);
   // hideLoadingState();
+  //create a refresh animation here to show that feed has been refreshed
+  feedContainer.innerHTML = "";
+
 
   feedContainer.appendChild(fragment);
-  cacheRenderedCards(feedContainer.innerHTML);
+  await cacheRenderedCards(feedContainer.innerHTML);
   setLastRefreshedTimestamp();
   // Fade-in effect
   feedContainer.style.opacity = "1";
   // Setup parallax effect for each card
   setupParallaxEffect();
-  console.log("calling initializeMasonry");
   insertGridSizer();
   initializeMasonry();
 
@@ -298,7 +314,7 @@ function setupParallaxEffect() {
   });
 }
 
-function cacheRenderedCards(htmlContent) {
+async function cacheRenderedCards(htmlContent) {
   try {
     localStorage.setItem("renderedCards", htmlContent);
   } catch (error) {
@@ -306,9 +322,22 @@ function cacheRenderedCards(htmlContent) {
   }
 }
 
+async function getCachedRenderedCards() {
+  try {
+    console.log("Loading rendered cards from cache" );
+    if (localStorage.getItem("renderedCards")) {
+    return localStorage.getItem("renderedCards");}
+    else {
+      return null;
+    }
+  } catch (error) { 
+    console.error("Error getting cards from local storage:", error);
+  }
+}
+
 navigator.serviceWorker.addEventListener("message", function (event) {
   if (event.data.action === "rssUpdate") {
-    console.log("Received RSS update from service worker,rendering feed");
+    // console.log("Received RSS update from service worker,rendering feed");
     // hideLoadingState();
     let response = JSON.parse(event.data.rssData);
     const { feedDetails, feedItems } = processRSSData(response);
@@ -809,6 +838,8 @@ async function initializeMostVisitedSitesCache() {
           return siteCard;
         })
       );
+      setTopSitesCache(siteCards);
+      mostVisitedSitesCache = siteCards;
       resolve(siteCards);
     });
   });
@@ -817,6 +848,17 @@ async function initializeMostVisitedSitesCache() {
   fetchMostVisitedSites();
 }
 
+function setTopSitesCache (sitecards){
+  // console.log(sitecards);
+  localStorage.setItem("mostVisitedSites", JSON.stringify(sitecards));
+}
+function getTopSitesCache (){
+  if (!localStorage.getItem("mostVisitedSites")) {
+    return null;
+  } else {
+    return JSON.parse(localStorage.getItem("mostVisitedSites"));
+  }
+}
 async function createMostVisitedSiteCard(site) {
   const siteUrl = new URL(site.url);
   const mainDomain = siteUrl.hostname;
@@ -857,7 +899,7 @@ async function getsiteFavicon(mainDomain) {
   }
 }
 
-function fetchMostVisitedSites() {
+function fetchMostVisitedSites(siteCards) {
   if (!mostVisitedSitesCache) {
     console.error("Most visited sites cache is not initialized");
     initializeMostVisitedSitesCache();
@@ -866,10 +908,16 @@ function fetchMostVisitedSites() {
   }
 
   const mostVisitedSitesContainer = document.querySelector(".most-visited-sites-container");
+  mostVisitedSitesContainer.innerHTML = "";
+  const fragment = document.createDocumentFragment();
+  for (const siteCard of mostVisitedSitesCache) {
+    fragment.appendChild(siteCard);
+  }
+  mostVisitedSitesContainer.appendChild(fragment);
 
-  mostVisitedSitesCache.forEach((siteCard) => {
-    mostVisitedSitesContainer.appendChild(siteCard.cloneNode(true));
-  });
+  // mostVisitedSitesCache.forEach((siteCard) => {
+  //   mostVisitedSitesContainer.appendChild(siteCard.cloneNode(true));
+  // });
 }
 
 //cache favicons for improve perf
