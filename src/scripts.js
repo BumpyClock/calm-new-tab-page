@@ -1,9 +1,9 @@
 // Path: scripts.js
 const SUBSCRIBED_FEEDS_KEY = "subscribedFeeds";
-
+defaultFeeds = ["http://www.theverge.com/rss/index.xml", "https://www.vox.com/rss/index.xml"];
 // JSON array for holding default feeds url array
 let feedList = {
-  subscribedFeeds: ["http://www.theverge.com/rss/index.xml", "https://www.vox.com/rss/index.xml"],
+  subscribedFeeds: [],
   suggestedFeeds: [],
 };
 const DEFAULT_FEED_URLS = ["http://www.theverge.com/rss/index.xml", "https://www.vox.com/rss/index.xml"];
@@ -73,6 +73,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (cachedCards) {
       const feedContainer = document.getElementById("feed-container");
       feedContainer.innerHTML = cachedCards;
+      initializeMasonry();
       feedContainer.style.opacity = "1"; // apply the fade-in effect
     } else {
       loadSubscribedFeeds();
@@ -139,10 +140,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 function getSubscribedFeeds() {
   if (!localStorage.getItem(SUBSCRIBED_FEEDS_KEY)) {
-    setSubscribedFeeds(feedList.subscribedFeeds);
-    return feedList.subscribedFeeds;
+    setSubscribedFeeds(defaultFeeds);
+    return { subscribedFeeds: defaultFeeds, feedDetails: JSON.parse(localStorage.getItem("feedDetails")) || []};
   } else {
-    return JSON.parse(localStorage.getItem(SUBSCRIBED_FEEDS_KEY));
+    return {subscribedFeeds: JSON.parse(localStorage.getItem(SUBSCRIBED_FEEDS_KEY)), feedDetails: JSON.parse(localStorage.getItem("feedDetails")) || []};
   }
 }
 
@@ -171,7 +172,8 @@ async function loadSubscribedFeeds() {
 }
 
 async function refreshFeeds() {
-  feedList.subscribedFeeds = getSubscribedFeeds();
+  const {subscribedFeeds: tempFeedList, feedDetails: tempFeedDetails} = getSubscribedFeeds();
+  feedList.subscribedFeeds = tempFeedList
   const serviceWorker = navigator.serviceWorker.controller;
   if (serviceWorker) {
     lastRefreshed = new Date().getTime();
@@ -193,16 +195,44 @@ function updateDisplayOnNewTab() {
   }
 }
 
+function initializeMasonry() {
+  // Initialize Masonry after all cards are loaded
+  var feedContainer = document.querySelector('#feed-container');
+  var msnry = new Masonry(feedContainer, {
+    // options
+    itemSelector: '.card', // Use your card's class
+    columnWidth: '.card', // The width of each column, you can set this as needed
+    gutter: 12, // Space between items, you can set this as needed
+    fitWidth: true
+  });
+  // msnry.imagesloaded().progress( function() {
+  //   msnry.layout();
+  // });
+}
+function insertGridSizer() {
+  const feedContainer = document.getElementById("feed-container");
+  const gridSizer = document.createElement("div");
+  gridSizer.className = "grid-sizer";
+  const gridItem = document.createElement("div");
+  gridItem.className = "card grid-item ";
+  // feedContainer.insertBefore(gridItem, feedContainer.firstChild);
+  // feedContainer.insertBefore(gridSizer, feedContainer.firstChild);
+}
+
 async function renderFeed(cachedCards) {
+  console.log("rendering feed from cache");
   const feedContainer = document.getElementById("feed-container");
   feedContainer.innerHTML = cachedCards;
+  
+  console.log("calling initializeMasonry");
+
+  initializeMasonry();
   feedContainer.style.opacity = "1"; // apply the fade-in effect
   setLastRefreshedTimestamp(new Date(lastRefreshed));
 }
 
 async function renderFeed(feeditems, feedDetails) {
   feedsCache = feeditems;
-
   const feedContainer = document.getElementById("feed-container");
   const fragment = document.createDocumentFragment();
 
@@ -224,6 +254,10 @@ async function renderFeed(feeditems, feedDetails) {
   feedContainer.style.opacity = "1";
   // Setup parallax effect for each card
   setupParallaxEffect();
+  console.log("calling initializeMasonry");
+  insertGridSizer();
+  initializeMasonry();
+
 }
 
 //parallax effect for image container
@@ -235,7 +269,7 @@ function setupParallaxEffect() {
     card.addEventListener("mouseover", () => {
       // Zoom in effect
       imageContainer.style.transition = "transform 0.25s ease-in";
-      imageContainer.style.transform = "scale(1.1)";
+      imageContainer.style.transform = "scale(1.05)";
       // imageContainer.style.backgroundPosition = 'center center';
     });
 
@@ -278,6 +312,8 @@ navigator.serviceWorker.addEventListener("message", function (event) {
     // hideLoadingState();
     let response = JSON.parse(event.data.rssData);
     const { feedDetails, feedItems } = processRSSData(response);
+    localStorage.setItem("feedDetails", JSON.stringify(feedDetails));
+    localStorage.setItem("feedItems", JSON.stringify(feedItems));
     renderFeed(feedItems, feedDetails).catch((error) => {
       console.error("Error rendering the feed:", error);
     });
@@ -364,9 +400,10 @@ async function createCard(item, feedDetails) {
   const card = document.createElement("div");
   card.className = "card";
   let itemDomain;
-  let linkURL;
+  let linkURL; 
+  let tempElement;
+  tempElement = document.createElement("div");
   let feedDetail;
-console.log(JSON.stringify(item));
   // Helper function to find feed detail by hostname
   const findFeedDetailByHostname = (hostname) => {
     return feedDetails.find(fd => new URL(fd.feedUrl).hostname === hostname);
@@ -387,12 +424,17 @@ console.log(JSON.stringify(item));
       }
     } else {
       // Single link case, ensure it's not an "alternate" link
-      if (item.link.rel !== "alternate") {
+      if (item.link.url && item.link.rel !== "alternate") {
          linkURL = new URL(item.link.href || item.link);
+        itemDomain = linkURL.hostname;
+        feedDetail = findFeedDetailByHostname(itemDomain);
+      } else if (item.link && !item.link.href && item.link.rel !== "alternate") {
+        linkURL = new URL(item.link);
         itemDomain = linkURL.hostname;
         feedDetail = findFeedDetailByHostname(itemDomain);
       }
     }
+    
   } catch (error) {
     console.error(`Error processing link for item:`, item, error);
     return null; // Exit the function if link processing fails
@@ -404,7 +446,6 @@ console.log(JSON.stringify(item));
   }
 
   // Website title and favicon URL
-  const website_title = feedDetail.siteTitle;
   const faviconURL = feedDetail.favicon;
 
   // Image container
@@ -449,26 +490,33 @@ console.log(JSON.stringify(item));
   // Favicon
   const favicon = document.createElement("img");
   favicon.src = faviconURL;
-  favicon.alt = `${website_title} Favicon`;
+  favicon.alt = `${feedDetail.siteTitle} Favicon`;
   favicon.className = "site-favicon";
   websiteInfoDiv.appendChild(favicon);
 
   // Website name
   const websiteName = document.createElement("span");
-  websiteName.textContent = website_title;
+  tempElement.innerHTML = feedDetail.siteTitle;
+  websiteName.textContent = tempElement.textContent;
   websiteInfoDiv.appendChild(websiteName);
   textContentDiv.appendChild(websiteInfoDiv);
 
   // Title
   const title = document.createElement("h3");
-  title.textContent = item.title;
+  tempElement.innerHTML = item.title;
+  title.textContent = tempElement.textContent;
   textContentDiv.appendChild(title);
 
   // Content snippet
-  if (!thumbnailUrl && item.content) {
+  if ( item.content) {
     const snippet = document.createElement("p");
     snippet.className = "description";
-    snippet.innerHTML = item.content;
+
+  // Create a temporary DOM element and set its innerHTML to the HTML content
+  tempElement.innerHTML = item.content;
+
+  // Get the text content of the temporary DOM element
+  snippet.textContent = tempElement.textContent;
     textContentDiv.appendChild(snippet);
   }
 
@@ -489,14 +537,14 @@ console.log(JSON.stringify(item));
   }
 
   // Read more link , check if it undefined or it contains engadget
-
+  const readMoreLink = document.createElement("a");
+  readMoreLink.href = item.link;
+  readMoreLink.target = "_blank";
+  readMoreLink.textContent = "Read more";
+  readMoreLink.className = "read-more-link";
+  textContentDiv.appendChild(readMoreLink);
   if (item.link !== null && item.link !== undefined && !item.link.includes("engadget")) {
-    const readMoreLink = document.createElement("a");
-    readMoreLink.href = item.link;
-    readMoreLink.target = "_blank";
-    readMoreLink.textContent = "Read more";
-    readMoreLink.className = "read-more-link";
-    textContentDiv.appendChild(readMoreLink);
+    
 
     // card.appendChild(textContentDiv);
 
@@ -526,10 +574,12 @@ async function getWebsiteTitle(url) {
     const parsedUrl = new URL(url);
     const rootDomain = `${parsedUrl.protocol}//${parsedUrl.host}`;
     const response = await fetch(rootDomain);
-
+    const tempElement = document.createElement("div");
     const text = await response.text();
     const matches = text.match(/<title>(.*?)<\/title>/i);
-    return matches && matches[1] ? matches[1] : url;
+    tempElement.innerHTML = matches && matches[1] ? matches[1] : url;
+
+    return tempElement.textContent;
   } catch (e) {
     console.error("Failed to get website title:", e);
     return url;
@@ -566,7 +616,6 @@ function removeFeed(feedURL) {
 }
 
 async function showReaderView(url) {
-  console.log("Fetching readable content for:", url);
   try {
     const response = await fetch(url);
     const html = await response.text();
@@ -617,11 +666,11 @@ async function showReaderView(url) {
 
 function createReaderViewModal(article) {
   const modal = document.createElement("div");
-  modal.className = "reader-view-modal light";
+  modal.className = "reader-view-modal";
   modal.innerHTML = `
     <div class="reader-view-content ">
       
-      <div class="reader-view-page-content light ">
+      <div class="reader-view-page-content">
         <div class="reader-view-header">
           <span class="reader-view-close material-symbols-rounded">close</span>
           <h1 class="reader-view-title"><span id="website-info-placeholder"></span>${article.title}</h1>
@@ -649,7 +698,7 @@ function createReaderViewModal(article) {
 
   const themeDropdown = modal.querySelector("#theme-select");
   themeDropdown.addEventListener("change", (event) => {
-    const selectedTheme = event.target.value;
+    const selectedTheme = "";
     const readerViewPageText = modal.querySelector(".reader-view-page-content");
     const readerViewSettingsPane = modal.querySelector(".reader-view-settings-pane");
     const readerViewContent = modal.querySelector(".reader-view-content");
