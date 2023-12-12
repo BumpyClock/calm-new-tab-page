@@ -19,6 +19,7 @@ async function fetchRSSFeedAndUpdateCache(feedUrls) {
       // Initialize the arrays for feed details and items
       const feedDetails = [];
       const items = [];
+      console.log(`SW: refreshing ${feedUrls.length} feeds at ${new Date().toLocaleTimeString()}`);
 
       // Iterate over each feed in the feeds array
       for (const feed of allFeedsData.feeds) {
@@ -76,11 +77,12 @@ async function fetchRSSFeedAndUpdateCache(feedUrls) {
       // Convert the combined data object to a JSON string
       const combinedDataString = JSON.stringify(combinedData);
       // console.log("combinedDataString: ", combinedDataString);
+      console.log(`SW: Successfully refreshed ${feedUrls.length} feeds at ${new Date().toLocaleTimeString()}`);
 
       // Send the sorted items to the client
       sendUpdateToClient(combinedDataString);
       const channel = new BroadcastChannel('rss_feeds_channel');
-    channel.postMessage({ action: 'rssUpdate', rssData: combinedDataString });
+    channel.postMessage({ action: 'shareFeeds', rssData: combinedDataString });
     })
     .catch(error => {
       console.error("Error fetching one or more feeds:", error);
