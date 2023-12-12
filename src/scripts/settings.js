@@ -11,6 +11,7 @@ function setupSubscriptionForm() {
       refreshFeeds();
   
       form.reset();
+      displaySubscribedFeeds();
     });
   }
   

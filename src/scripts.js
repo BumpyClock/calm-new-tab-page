@@ -361,19 +361,46 @@ function processRSSData(rssData) {
 
 async function createCard(item, feedDetails) {
   const docFrag = document.createDocumentFragment();
-
-  // Card container
   const card = document.createElement("div");
   card.className = "card";
-
-  // Extract domain from item's link
-  const itemDomain = new URL(item.link).hostname;
-
-  // Find the corresponding feed detail
-  const feedDetail = feedDetails.find((fd) => new URL(fd.feedUrl).hostname === itemDomain);
+  let itemDomain;
+  let linkURL;
+  let feedDetail;
+console.log(JSON.stringify(item));
+  // Helper function to find feed detail by hostname
+  const findFeedDetailByHostname = (hostname) => {
+    return feedDetails.find(fd => new URL(fd.feedUrl).hostname === hostname);
+  };
+  
+  // Find domain and feedDetail
+  try {
+    if (Array.isArray(item.link)) {
+      // Find the first matching domain from the array of links
+      // Skip any link where rel is "alternate"
+      const matchingLink = item.link.find(linkObj => {
+        return linkObj.rel !== "alternate" && findFeedDetailByHostname(new URL(linkObj.href).hostname);
+      });
+      if (matchingLink) {
+        linkURL = matchingLink.href;
+        itemDomain = new URL(matchingLink.href).hostname;
+        feedDetail = findFeedDetailByHostname(itemDomain);
+      }
+    } else {
+      // Single link case, ensure it's not an "alternate" link
+      if (item.link.rel !== "alternate") {
+         linkURL = new URL(item.link.href || item.link);
+        itemDomain = linkURL.hostname;
+        feedDetail = findFeedDetailByHostname(itemDomain);
+      }
+    }
+  } catch (error) {
+    console.error(`Error processing link for item:`, item, error);
+    return null; // Exit the function if link processing fails
+  }
+  
   if (!feedDetail) {
-    console.error("No matching feed detail found for:", itemDomain);
-    return null;
+    console.error(`No matching feed detail found for domain: ${itemDomain}`);
+    return null; // Exit the function if no matching feed detail is found
   }
 
   // Website title and favicon URL
@@ -396,13 +423,17 @@ async function createCard(item, feedDetails) {
   let thumbnailUrl;
   if (item.thumbnail) {
     thumbnailUrl = Array.isArray(item.thumbnail) ? item.thumbnail[0].url : item.thumbnail;
-    thumbnailImage.style.backgroundImage = `url('${thumbnailUrl}')`;
-    cardbg.style.backgroundImage = `url('${thumbnailUrl}')`;
-  }
-
-  imageContainer.appendChild(thumbnailImage);
+    if (thumbnailUrl) {
+      thumbnailImage.style.backgroundImage = `url('${thumbnailUrl}')`;
+      cardbg.style.backgroundImage = `url('${thumbnailUrl}')`;
+      imageContainer.appendChild(thumbnailImage);
   docFrag.appendChild(imageContainer);
   docFrag.appendChild(cardbg);
+    }
+    
+  }
+
+  
 
   // Text content container
   const textContentDiv = document.createElement("div");
@@ -411,6 +442,9 @@ async function createCard(item, feedDetails) {
   // Website information
   const websiteInfoDiv = document.createElement("div");
   websiteInfoDiv.className = "website-info";
+  if (!thumbnailUrl) {
+    websiteInfoDiv.style.marginTop = "12px";
+  }
 
   // Favicon
   const favicon = document.createElement("img");
@@ -423,7 +457,6 @@ async function createCard(item, feedDetails) {
   const websiteName = document.createElement("span");
   websiteName.textContent = website_title;
   websiteInfoDiv.appendChild(websiteName);
-
   textContentDiv.appendChild(websiteInfoDiv);
 
   // Title
@@ -432,10 +465,10 @@ async function createCard(item, feedDetails) {
   textContentDiv.appendChild(title);
 
   // Content snippet
-  if (item.contentSnippet) {
+  if (!thumbnailUrl && item.content) {
     const snippet = document.createElement("p");
     snippet.className = "description";
-    snippet.textContent = item.contentSnippet;
+    snippet.innerHTML = item.content;
     textContentDiv.appendChild(snippet);
   }
 
@@ -470,13 +503,13 @@ async function createCard(item, feedDetails) {
     // Event listener for card click
     card.addEventListener("click", (e) => {
       if (e.target.tagName.toLowerCase() !== "a") {
-        showReaderView(item.link);
+        showReaderView(linkURL);
       }
     });
   } else if (item.link.includes("engadget")) {
     //add event listener for card click to open the link in a new tab
     card.addEventListener("click", () => {
-      window.open(item.link, "_blank");
+      window.open(linkURL, "_blank");
     });
   }
   // Append text content to the card
@@ -533,6 +566,7 @@ function removeFeed(feedURL) {
 }
 
 async function showReaderView(url) {
+  console.log("Fetching readable content for:", url);
   try {
     const response = await fetch(url);
     const html = await response.text();
