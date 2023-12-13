@@ -7,17 +7,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Settings - Calm New Tab Page</title>
   <link rel="stylesheet" href="styles.css">
-  <script src="scripts.js"></script>
-  <script src="./scripts/settings.js"></script>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Sans&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 </head>
-<body>
+<body >
   <div class="settings-container">
     <h1>Settings</h1>
     <h2>Subscribed Feeds</h2>
-    <ul id="subscribed-feeds-list" class="subscribed-feeds-list"></ul>
+    <div id="subscribed-feeds-list" class="subscribed-feeds-list"></div>
 
     <h2>Add a new feed</h2>
     <form id="subscription-form" class="subscription-form">
@@ -25,15 +26,37 @@
       <button type="submit">Subscribe</button>
     </form>
 <!-- ... -->
+<div id="feed-preferences-container" class="feed-preferences-container">
 <h2>Display Preferences</h2>
 <div>
-  <label for="showSearchBox">Show search box:</label>
-  <input type="checkbox" id="showSearchBox">
+  <label id="show-search-box-pref" for="showSearchBox">Show search box:</label>
+  <input type="checkbox" id="search-preference-toggle">
 </div>
+<h2>Feed Discovery</h2>
+<div id="feed-discovery-prefs-container" class="feed-discovery-toggle-container">
+  <label for="feed-discovery-toggle">Automatically discover and subscribe to your most visited sites?</label>
+  <input type="checkbox" id="feed-discovery-toggle" />
+</div>
+</div>
+<div id="credits-container" class="credits-container">
+<h2>Credits</h2>
+<div id="credits-container" class="credits-container">
+<h3>Extension dependencies</h3>
+<p>This extension is only possible due to the following projects </p>
+<h4>Readability.js</h4>
+<h4>masonry.js</h4>
+</div>
+<div id="credits-container" class="credits-container">
+<h3>Backend dependencies</h3>
+<h4>rss-to-json</h4>
+</div>
+
 <!-- ... -->
 
     <button id="back-to-main">Back to Main</button>
   </div>
+  <script src="scripts.js"></script>
+
 
 
 </body>
