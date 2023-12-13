@@ -18,7 +18,7 @@ let feedList = {
 const refreshTimer = 15 * 60 * 1000; //fifteen minutes
 
 chrome.runtime.onInstalled.addListener((details) => {
-  if (details.reason === 'install') {
+  if (details.reason === "install") {
     setFeedDiscovery(true);
     setSearchPreference(false);
     getSubscribedFeeds();
@@ -93,12 +93,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const greeting = getGreeting();
     document.title = `${greeting} - New Tab`;
   };
-  setGreeting();
-  //load most visited sites from cache
+  // setGreeting();
   if (document.querySelector("#feed-container")) {
     // Main page
-    // hideSearch();
-     setupSearch();
+    setupSearch();
 
     await initializeMostVisitedSitesCache();
     await fetchBingImageOfTheDay();
@@ -111,7 +109,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       reapplyEventHandlersToCachedCards();
       feedContainer.style.opacity = "1"; // apply the fade-in effect
       bgImageScrollHandler();
-      
     } else {
       console.log("rendering feed from scratch");
       await loadSubscribedFeeds();
@@ -119,8 +116,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   } else {
     // Settings page
     setupSettingsPage();
-
-  
   }
   // await  showLoadingState();
   if (document.querySelector("#settings-button")) {
@@ -148,19 +143,18 @@ function showSearch() {
   handleSearch();
 }
 
-async function setupSearch(){
+async function setupSearch() {
   const searchPref = getSearchPreference();
   // console.log(`searchPref:  ${searchPref}`);
- try{
-  // console.log("searchPref: ", searchPref);
-
- } catch(error){
+  try {
+    // console.log("searchPref: ", searchPref);
+  } catch (error) {
     console.error("Error getting search preference: ", error);
-  } 
-  if(searchPref){
+  }
+  if (searchPref) {
     console.log("searchPref is true, showing search");
     showSearch();
-  }else{
+  } else {
     hideSearch();
   }
 }
@@ -402,7 +396,7 @@ navigator.serviceWorker.addEventListener("message", async function (event) {
     let response = JSON.parse(event.data.rssData);
     console.log(`feed refresh from service worker: ${response}`);
     const { feedDetails, feedItems } = processRSSData(response);
-    
+
     localStorage.setItem("feedDetails", JSON.stringify(feedDetails));
     localStorage.setItem("feedItems", JSON.stringify(feedItems));
     await renderFeed(feedItems, feedDetails).catch((error) => {
@@ -412,7 +406,7 @@ navigator.serviceWorker.addEventListener("message", async function (event) {
 });
 async function getWebsiteTitle(url) {
   try {
-    console.log("getting website title for;" + url)
+    console.log("getting website title for;" + url);
     const parsedUrl = new URL(url);
     const rootDomain = `${parsedUrl.protocol}//${parsedUrl.host}`;
 
@@ -509,8 +503,6 @@ function processRSSData(rssData) {
   return { feedDetails, feedItems };
 }
 
-
-
 async function createCard(item) {
   const docFrag = document.createDocumentFragment();
   const card = document.createElement("div");
@@ -528,7 +520,7 @@ async function createCard(item) {
   // Set thumbnail URL
   let thumbnailUrl = item.thumbnail;
 
-  if(Array.isArray(item.thumbnail)){
+  if (Array.isArray(item.thumbnail)) {
     //parse the array and get the first item that has a url or link property
     for (const thumbnail of item.thumbnail) {
       if (thumbnail.url) {
@@ -576,26 +568,28 @@ async function createCard(item) {
   title.textContent = item.title;
   textContentDiv.appendChild(title);
 
-  // Content snippet
-  // Content snippet
-  if ( item.content) {
+  // Description
+  if (item.content) {
     try {
-    const snippet = document.createElement("p");
-    snippet.className = "description";
+      const snippet = document.createElement("p");
+      snippet.className = "description";
 
+      // Sanitize item.content
       const sanitizedContent = DOMPurify.sanitize(item.content);
-      tempElement.innerHTML = sanitizedContent;
-    
-  // Create a temporary DOM element and set its innerHTML to the HTML content
 
-  // Get the text content of the temporary DOM element
-  snippet.textContent = tempElement.textContent;
-    textContentDiv.appendChild(snippet);
+      // Check sanitizedContent for SVG elements before setting it as the innerHTML of tempElement
+      const svgRegex = /<svg.*?>.*?<\/svg>|<path.*?>.*?<\/path>/g;
+      if (svgRegex.test(sanitizedContent)) {
+        tempElement.textContent = "";
+      } else {
+        tempElement.innerHTML = sanitizedContent;
+        snippet.textContent = tempElement.textContent;
+        textContentDiv.appendChild(snippet);
+      }
+    } catch (error) {
+      console.log(`Error creating content snippet for : ${item.content} `, error);
+    }
   }
-  catch(error){
-    console.log(`Error creating content snippet for : ${item.content} `, error);
-  }
-}
 
   // Publication date and time
   const date = new Date(item.published);
@@ -633,7 +627,6 @@ async function createCard(item) {
   return card;
 }
 
-
 function applyCardEventHandlers(card, item) {
   // Event listener for card click
   if (item.link.includes("engadget")) {
@@ -661,8 +654,6 @@ function reapplyEventHandlersToCachedCards() {
   });
   console.log(`Restored ${eventHandlersRestored} event handlers`);
 }
-
-
 
 // Search code
 
@@ -910,10 +901,13 @@ async function initializeMostVisitedSitesCache() {
   mostVisitedSitesCache = await new Promise((resolve) => {
     chrome.topSites.get(async (sites) => {
       const siteCards = await Promise.all(
-        sites.slice(0, 10).map(async (site) => {
-          const siteCard = await createMostVisitedSiteCard(site);
-          return siteCard;
-        })
+        sites
+          .filter((site) => !site.url.startsWith("chrome-extension://"))
+          .slice(0, 10)
+          .map(async (site) => {
+            const siteCard = await createMostVisitedSiteCard(site);
+            return siteCard;
+          })
       );
       setTopSitesCache(siteCards);
       mostVisitedSitesCache = siteCards;
@@ -941,7 +935,7 @@ async function createMostVisitedSiteCard(site) {
   const mainDomain = siteUrl.hostname;
   const siteCard = document.createElement("div");
   siteCard.className = "site-card";
-  const sitefaviconUrl = await getsiteFavicon(mainDomain);
+  const sitefaviconUrl = await getSiteFavicon(mainDomain);
   //send a get request to get the favicon url from http://192.168.1.51:3000/get-favicon?url=${mainDomain}
   siteCard.innerHTML = `
     <a href="${site.url}" class="site-link">
@@ -953,13 +947,34 @@ async function createMostVisitedSiteCard(site) {
   return siteCard;
 }
 
-async function getsiteFavicon(mainDomain) {
+async function getSiteFavicon(mainDomain) {
+  // Add http:// to the start of the URL if it's not already there
+  if (!mainDomain.startsWith("http://") && !mainDomain.startsWith("https://")) {
+    mainDomain = "http://" + mainDomain;
+  }
+
+  try {
+    // Check if mainDomain is a valid URL
+    new URL(mainDomain);
+  } catch (_) {
+    console.log("Invalid URL:", mainDomain);
+    // If it's not a valid URL, return an empty string
+    return "";
+  }
+
+  // Check if mainDomain ends with a valid domain extension
+  const domainPattern = /\.[a-z]{2,}$/i;
+  if (!domainPattern.test(mainDomain)) {
+    console.log("Invalid domain:", mainDomain);
+    // If it doesn't end with a valid domain extension, return an empty string
+    return "";
+  }
+
   try {
     const response = await fetch(
       `https://www.google.com/s2/favicons?domain=${mainDomain}&sz=256`
     );
     if (!response.ok) {
-      // if HTTP-status is 404-599
       throw new Error(response.statusText);
     }
     const blob = await response.blob();
@@ -1003,7 +1018,7 @@ function fetchMostVisitedSites(siteCards) {
 
 //cache favicons for improve perf
 async function cacheFavicon(domain) {
-  const response = await getsiteFavicon(domain);
+  const response = await getSiteFavicon(domain);
   localStorage.setItem(`favicon-${domain}`, response.url);
   return dataURL;
 }
@@ -1015,9 +1030,6 @@ function setLastRefreshedTimestamp() {
   const now = new Date();
   timestampDiv.textContent = `Last refreshed: ${now.toLocaleTimeString()}`;
 }
-
-// Call the fetchMostVisitedSites function when the DOM is loaded
-//document.addEventListener("DOMContentLoaded", initializeMostVisitedSitesCache);
 
 async function fetchBingImageOfTheDay() {
   try {
@@ -1032,31 +1044,31 @@ async function fetchBingImageOfTheDay() {
     const title = data.images[0].title;
     const copyright = data.images[0].copyright;
     const bgContainer = document.querySelector(".background-image-container");
-    bgContainer.innerHTML = `<img id="background-image-container" data-src="${imageUrl}"  alt="${title}" class="background-image-container lazyload" style>`
+    bgContainer.innerHTML = `<img id="background-image-container" data-src="${imageUrl}"  alt="${title}" class="background-image-container extension-bg lazyload" style>`;
     // bgContainer.style.backgroundImage = `url(${imageUrl})`;
-    const attributionContainer = document.createElement( "div");
+    const attributionContainer = document.createElement("div");
     attributionContainer.className = "attribution-container";
-         attributionContainer.innerHTML = `
+    attributionContainer.innerHTML = `
         <p class="attribution-title">${title}</p>
         <p class="attribution-copyright">${copyright} | Bing & Microsoft</p>
       `;
-      bgContainer.appendChild(attributionContainer);
+    bgContainer.appendChild(attributionContainer);
   } catch (error) {
     console.error("Failed to fetch Bing image of the day:", error);
   }
 }
 
-
-function bgImageScrollHandler () {
+function bgImageScrollHandler() {
+  console.log(`adding bg-scroll event handler`);
   window.addEventListener("scroll", () => {
     const scrollPosition = window.scrollY || document.documentElement.scrollTop;
     const blurIntensity = Math.min(scrollPosition / 100, 10);
     const darkIntensity = Math.min(scrollPosition / 100, 0.5); // Adjust the values as per your preference
-    // const bgContainer = document.querySelector(".background-image-container");
+    const bgContainer = document.querySelector(".background-image-container");
     // bgContainer.style.filter = `blur(${blurIntensity}px) brightness(${
     //   1 - darkIntensity
     // }) grayscale(100%)`;
-    const bgContainer = document.getElementById(".background-image-container");
+    // const bgContainer = document.getElementById(".background-image-container");
     bgContainer.style.filter = `brightness(${1 - darkIntensity})`;
   });
 }
@@ -1076,7 +1088,7 @@ async function setupSubscriptionForm() {
     setSubscribedFeeds(feeds.subscribedFeeds);
     form.reset();
     await refreshFeeds();
-   await displaySubscribedFeeds();
+    await displaySubscribedFeeds();
   });
 }
 
@@ -1110,7 +1122,7 @@ async function displaySubscribedFeeds() {
       // Use details from feedDetails array
       const favicon = document.createElement("img");
       favicon.src =
-        detail.favicon || (await getsiteFavicon(new URL(feedURL).hostname)); // Use the favicon from feedDetails if available
+        detail.favicon || (await getSiteFavicon(new URL(feedURL).hostname)); // Use the favicon from feedDetails if available
       favicon.alt = `${detail.siteTitle} Favicon`;
       favicon.className = "site-favicon";
       listItem.appendChild(favicon);
@@ -1149,16 +1161,16 @@ async function displaySubscribedFeeds() {
 
 // Function to get the current state of feed discovery
 function getFeedDiscovery() {
-  try{
-  if (!localStorage.getItem(FEED_DISCOVERY_KEY)) {
-    console.log("Feed discovery is not set, setting it to true");
-    setFeedDiscovery(true);
-    return true;
-  }}
-  catch(error){
+  try {
+    if (!localStorage.getItem(FEED_DISCOVERY_KEY)) {
+      console.log("Feed discovery is not set, setting it to true");
+      setFeedDiscovery(true);
+      return true;
+    }
+  } catch (error) {
     console.log(error);
   }
-  return localStorage.getItem(FEED_DISCOVERY_KEY) === 'true';
+  return localStorage.getItem(FEED_DISCOVERY_KEY) === "true";
 }
 
 // Function to set the state of feed discovery
@@ -1166,30 +1178,28 @@ function setFeedDiscovery(state) {
   localStorage.setItem(FEED_DISCOVERY_KEY, state);
 }
 
-
-function getSearchPreference(){
-  try{
-    if(!localStorage.getItem(SEARCH_PREFERENCE_KEY)){
+function getSearchPreference() {
+  try {
+    if (!localStorage.getItem(SEARCH_PREFERENCE_KEY)) {
       console.log("Search preference is not set, setting it to false");
       setSearchPreference(false);
       return false;
-    } 
-
-} catch(error){
-  console.log(error);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+  return localStorage.getItem(SEARCH_PREFERENCE_KEY) === "true";
 }
-return localStorage.getItem(SEARCH_PREFERENCE_KEY) === 'true';
-} 
 
-function setSearchPreference(state){
+function setSearchPreference(state) {
   localStorage.setItem(SEARCH_PREFERENCE_KEY, state);
-  console.log(`Search preference set to ${localStorage.getItem(SEARCH_PREFERENCE_KEY)}`);
+  console.log(
+    `Search preference set to ${localStorage.getItem(SEARCH_PREFERENCE_KEY)}`
+  );
 }
 
 function setupFeedDiscoveryToggle() {
-  const feedDiscoveryToggle = document.getElementById(
-    "feed-discovery-toggle"
-  );
+  const feedDiscoveryToggle = document.getElementById("feed-discovery-toggle");
 
   // Initialize the toggle state based on stored value
   feedDiscoveryToggle.checked = getFeedDiscovery();
@@ -1201,7 +1211,7 @@ function setupFeedDiscoveryToggle() {
   });
 }
 
-function setupSearchPreferenceToggle(){
+function setupSearchPreferenceToggle() {
   const searchPreferenceToggle = document.getElementById(
     "search-preference-toggle"
   );
@@ -1217,13 +1227,11 @@ function setupSearchPreferenceToggle(){
   });
 }
 
-
-async function setupSettingsPage (){
+async function setupSettingsPage() {
   await displaySubscribedFeeds();
 
   setupSubscriptionForm();
   setupBackButton();
   setupFeedDiscoveryToggle();
   setupSearchPreferenceToggle();
-  
 }
