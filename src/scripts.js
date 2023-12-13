@@ -150,9 +150,9 @@ function showSearch() {
 
 async function setupSearch(){
   const searchPref = getSearchPreference();
-  console.log(`searchPref:  ${searchPref}`);
+  // console.log(`searchPref:  ${searchPref}`);
  try{
-  console.log("searchPref: ", searchPref);
+  // console.log("searchPref: ", searchPref);
 
  } catch(error){
     console.error("Error getting search preference: ", error);
@@ -342,37 +342,35 @@ function setupParallaxEffect() {
   document.querySelectorAll(".card").forEach((card) => {
     const imageContainer = card.querySelector(".thumbnail-image");
 
-    card.addEventListener("mouseover", () => {
-      // Zoom in effect
-      imageContainer.style.transition = "transform 0.25s ease-in";
-      imageContainer.style.transform = "scale(1.05)";
-      // imageContainer.style.backgroundPosition = 'center center';
-    });
+    if (imageContainer) {
+      card.addEventListener("mouseover", () => {
+        // Zoom in effect
+        imageContainer.style.transition = "transform 0.25s ease-in";
+        imageContainer.style.transform = "scale(1.05)";
+        // imageContainer.style.backgroundPosition = 'center center';
+      });
 
-    card.addEventListener("mousemove", (e) => {
-      const cardRect = card.getBoundingClientRect();
-      const xVal = (e.clientX - cardRect.left) / cardRect.width;
-      const yVal = (e.clientY - cardRect.top) / cardRect.height;
+      card.addEventListener("mousemove", (e) => {
+        const cardRect = card.getBoundingClientRect();
+        const xVal = (e.clientX - cardRect.left) / cardRect.width;
+        const yVal = (e.clientY - cardRect.top) / cardRect.height;
 
-      // Translate this into a percentage-based position
-      const xOffset = -(xVal - 0.5) * 20; // Adjust for desired effect strength
-      const yOffset = -(yVal - 0.5) * 20;
+        // Translate this into a percentage-based position
+        const xOffset = -(xVal - 0.5) * 20; // Adjust for desired effect strength
+        const yOffset = -(yVal - 0.5) * 20;
 
-      // Apply the effect to the image container's background
-      if (imageContainer) {
+        // Apply the effect to the image container's background
         imageContainer.style.backgroundPosition = `${50 + xOffset}% ${
           50 + yOffset
         }%`;
-      }
-    });
+      });
 
-    card.addEventListener("mouseleave", () => {
-      // Reset the background position when the mouse leaves the card
-      if (imageContainer) {
+      card.addEventListener("mouseleave", () => {
+        // Reset the background position when the mouse leaves the card
         imageContainer.style.transform = "scale(1)";
         imageContainer.style.backgroundPosition = "center center";
-      }
-    });
+      });
+    }
   });
 }
 
@@ -386,7 +384,7 @@ async function cacheRenderedCards(htmlContent) {
 
 async function getCachedRenderedCards() {
   try {
-    console.log("Loading rendered cards from cache");
+    console.log("Checking cache for rendered cards");
     if (localStorage.getItem("renderedCards")) {
       return localStorage.getItem("renderedCards");
     } else {
@@ -402,7 +400,9 @@ navigator.serviceWorker.addEventListener("message", async function (event) {
     // console.log("Received RSS update from service worker,rendering feed");
     // hideLoadingState();
     let response = JSON.parse(event.data.rssData);
+    console.log(`feed refresh from service worker: ${response}`);
     const { feedDetails, feedItems } = processRSSData(response);
+    
     localStorage.setItem("feedDetails", JSON.stringify(feedDetails));
     localStorage.setItem("feedItems", JSON.stringify(feedItems));
     await renderFeed(feedItems, feedDetails).catch((error) => {
@@ -410,6 +410,28 @@ navigator.serviceWorker.addEventListener("message", async function (event) {
     });
   }
 });
+async function getWebsiteTitle(url) {
+  try {
+    console.log("getting website title for;" + url)
+    const parsedUrl = new URL(url);
+    const rootDomain = `${parsedUrl.protocol}//${parsedUrl.host}`;
+
+    const response = await fetch(rootDomain);
+    const tempElement = document.createElement("div");
+    const text = await response.text();
+    console.log("text: ", text);
+    // const matches = text.match(/<title>(.*?)<\/title>/i);
+    const matches = text.match(/<title>(.*?)<\/title>/is);
+    // console.log("matches: ", matches);
+    tempElement.innerHTML = matches && matches[1] ? matches[1] : rootDomain;
+    // console.log(`Website title for ${url}: ${tempElement.textContent}`);
+
+    return tempElement.textContent;
+  } catch (e) {
+    console.error("Failed to get website title:", url, e);
+    return url;
+  }
+}
 
 //listen for messages from broadcast channel
 channel.addEventListener("message", (event) => {
@@ -451,6 +473,10 @@ function processRSSData(rssData) {
     feedItems = rssData.items.map((item) => ({
       id: item.id,
       title: item.title,
+      siteTitle: item.siteTitle,
+      feedUrl: item.feedUrl,
+      feedTitle: item.feedTitle,
+      favicon: item.favicon,
       thumbnail: item.thumbnail,
       link: item.link,
       author: item.author,
@@ -479,102 +505,46 @@ function processRSSData(rssData) {
       feedItems.sort((a, b) => new Date(b.published) - new Date(a.published));
     }
   }
-
   // Return the processed data
   return { feedDetails, feedItems };
 }
 
-async function createCard(item, feedDetails) {
+
+
+async function createCard(item) {
   const docFrag = document.createDocumentFragment();
   const card = document.createElement("div");
+  var tempElement = document.createElement("div");
   card.className = "card";
-  let itemDomain;
-  let linkURL;
-  let tempElement;
-  tempElement = document.createElement("div");
-  let feedDetail;
-  // Helper function to find feed detail by hostname
-  const findFeedDetailByHostname = (hostname) => {
-    return feedDetails.find((fd) => new URL(fd.feedUrl).hostname === hostname);
-  };
-
-  // Find domain and feedDetail
-  try {
-    if (Array.isArray(item.link)) {
-      // Find the first matching domain from the array of links
-      // Skip any link where rel is "alternate"
-      const matchingLink = item.link.find((linkObj) => {
-        return (
-          linkObj.rel !== "alternate" &&
-          findFeedDetailByHostname(new URL(linkObj.href).hostname)
-        );
-      });
-      if (matchingLink) {
-        linkURL = matchingLink.href;
-        itemDomain = new URL(matchingLink.href).hostname;
-        feedDetail = findFeedDetailByHostname(itemDomain);
-      }
-    } else {
-      // Single link case, ensure it's not an "alternate" link
-      if (item.link.url && item.link.rel !== "alternate") {
-        linkURL = new URL(item.link.href || item.link);
-        itemDomain = linkURL.hostname;
-        feedDetail = findFeedDetailByHostname(itemDomain);
-      } else if (
-        item.link &&
-        !item.link.href &&
-        item.link.rel !== "alternate"
-      ) {
-        linkURL = new URL(item.link);
-        itemDomain = linkURL.hostname;
-        feedDetail = findFeedDetailByHostname(itemDomain);
-      }
-    }
-  } catch (error) {
-    console.error(`Error processing link for item:`, item, error);
-    return null; // Exit the function if link processing fails
-  }
-
-  if (!feedDetail) {
-    console.error(`No matching feed detail found for domain: ${itemDomain} for ${JSON.stringify(item)}`);
-    console.log(`refreshing feeds`);
-    await refreshFeeds();
-    //exit this function
-    
-    return null; // Exit the function if no matching feed detail is found
-  }
-
-  // Website title and favicon URL
-  const faviconURL = feedDetail.favicon;
 
   // Image container
   const imageContainer = document.createElement("div");
   imageContainer.className = "image-container";
 
-  // Thumbnail image
-  // const thumbnailImage = document.createElement("div");
-  // thumbnailImage.className = "thumbnail-image";
-
   // Card background
   const cardbg = document.createElement("div");
   cardbg.className = "card-bg";
 
-
   // Set thumbnail URL
-  let thumbnailUrl;
-  if (item.thumbnail) {
-    thumbnailUrl = Array.isArray(item.thumbnail)
-      ? item.thumbnail[0].url
-      : item.thumbnail;
-    if (thumbnailUrl) {
-      // thumbnailImage.style.backgroundImage = `url('${thumbnailUrl}')`;
-      imageContainer.innerHTML= `<img data-src="${thumbnailUrl}" alt="${feedDetail.siteTitle} Thumbnail" class="thumbnail-image lazyload">`;
-      // cardbg.style.backgroundImage = `url('${thumbnailUrl}')`;
-      cardbg.innerHTML= `<img data-src="${thumbnailUrl}" alt="${feedDetail.siteTitle} Thumbnail" class="card-bg lazyload">`;
-      // imageContainer.appendChild(thumbnailImage);
-      docFrag.appendChild(imageContainer);
-      docFrag.appendChild(cardbg);
+  let thumbnailUrl = item.thumbnail;
+
+  if(Array.isArray(item.thumbnail)){
+    //parse the array and get the first item that has a url or link property
+    for (const thumbnail of item.thumbnail) {
+      if (thumbnail.url) {
+        thumbnailUrl = thumbnail.url;
+        break;
+      } else if (thumbnail.link) {
+        thumbnailUrl = thumbnail.link;
+        break;
+      }
     }
+  }
+  if (thumbnailUrl) {
+    imageContainer.innerHTML = `<img data-src="${thumbnailUrl}" alt="${item.siteTitle} Thumbnail" class="thumbnail-image lazyload">`;
+    cardbg.innerHTML = `<img data-src="${thumbnailUrl}" alt="${item.siteTitle} Thumbnail" class="card-bg lazyload">`;
+    docFrag.appendChild(imageContainer);
+    docFrag.appendChild(cardbg);
   }
 
   // Text content container
@@ -589,38 +559,43 @@ async function createCard(item, feedDetails) {
   }
 
   // Favicon
-  
   const favicon = document.createElement("img");
-  favicon.src = faviconURL;
-  favicon.alt = `${feedDetail.siteTitle} Favicon`;
+  favicon.src = item.favicon;
+  favicon.alt = `${item.siteTitle} Favicon`;
   favicon.className = "site-favicon";
   websiteInfoDiv.appendChild(favicon);
 
   // Website name
   const websiteName = document.createElement("span");
-  tempElement.innerHTML = feedDetail.siteTitle;
-  websiteName.textContent = tempElement.textContent;
+  websiteName.textContent = item.feedTitle || item.siteTitle;
   websiteInfoDiv.appendChild(websiteName);
   textContentDiv.appendChild(websiteInfoDiv);
 
   // Title
   const title = document.createElement("h3");
-  tempElement.innerHTML = item.title;
-  title.textContent = tempElement.textContent;
+  title.textContent = item.title;
   textContentDiv.appendChild(title);
 
   // Content snippet
-  if (item.content) {
+  // Content snippet
+  if ( item.content) {
+    try {
     const snippet = document.createElement("p");
     snippet.className = "description";
 
-    // Create a temporary DOM element and set its innerHTML to the HTML content
-    tempElement.innerHTML = item.content;
+      const sanitizedContent = DOMPurify.sanitize(item.content);
+      tempElement.innerHTML = sanitizedContent;
+    
+  // Create a temporary DOM element and set its innerHTML to the HTML content
 
-    // Get the text content of the temporary DOM element
-    snippet.textContent = tempElement.textContent;
+  // Get the text content of the temporary DOM element
+  snippet.textContent = tempElement.textContent;
     textContentDiv.appendChild(snippet);
   }
+  catch(error){
+    console.log(`Error creating content snippet for : ${item.content} `, error);
+  }
+}
 
   // Publication date and time
   const date = new Date(item.published);
@@ -631,23 +606,24 @@ async function createCard(item, feedDetails) {
   textContentDiv.appendChild(details);
 
   // Description
-  if (!item.thumbnail && item.description) {
+  if (!thumbnailUrl && item.description) {
     const description = document.createElement("div");
     description.className = "description long-description";
     description.textContent = item.description;
     textContentDiv.appendChild(description);
   }
 
-  // Read more link , check if it undefined or it contains engadget
+  // Read more link
   const readMoreLink = document.createElement("a");
   readMoreLink.href = item.link;
   readMoreLink.target = "_blank";
   readMoreLink.textContent = "Read more";
   readMoreLink.className = "read-more-link";
   textContentDiv.appendChild(readMoreLink);
-  if (item.link !== null && item.link !== undefined) {
-    applyCardEventHandlers(card, item.link); // Apply event handlers to the card
-  }
+
+  // Event handler for card click
+  applyCardEventHandlers(card, item);
+
   // Append text content to the card
   docFrag.appendChild(textContentDiv);
 
@@ -657,16 +633,17 @@ async function createCard(item, feedDetails) {
   return card;
 }
 
-function applyCardEventHandlers(card, linkURL) {
+
+function applyCardEventHandlers(card, item) {
   // Event listener for card click
-  if (linkURL.includes("engadget")) {
+  if (item.link.includes("engadget")) {
     card.addEventListener("click", () => {
-      window.open(linkURL, "_blank");
+      window.open(item.link, "_blank");
     });
   } else {
     card.addEventListener("click", (e) => {
       if (e.target.tagName.toLowerCase() !== "a") {
-        showReaderView(linkURL);
+        showReaderView(item);
       }
     });
   }
@@ -685,22 +662,7 @@ function reapplyEventHandlersToCachedCards() {
   console.log(`Restored ${eventHandlersRestored} event handlers`);
 }
 
-async function getWebsiteTitle(url) {
-  try {
-    const parsedUrl = new URL(url);
-    const rootDomain = `${parsedUrl.protocol}//${parsedUrl.host}`;
-    const response = await fetch(rootDomain);
-    const tempElement = document.createElement("div");
-    const text = await response.text();
-    const matches = text.match(/<title>(.*?)<\/title>/i);
-    tempElement.innerHTML = matches && matches[1] ? matches[1] : url;
 
-    return tempElement.textContent;
-  } catch (e) {
-    console.error("Failed to get website title:", e);
-    return url;
-  }
-}
 
 // Search code
 
@@ -731,10 +693,12 @@ function removeFeed(feedURL) {
   displaySubscribedFeeds();
 }
 
-async function showReaderView(url) {
+async function showReaderView(item) {
+  const url = item.link;
   try {
     const response = await fetch(url);
     const html = await response.text();
+    const pure = DOMPurify.sanitize(html);
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, "text/html");
     const reader = new Readability(doc);
@@ -754,13 +718,14 @@ async function showReaderView(url) {
 
       const favicon = document.createElement("img");
       const mainDomain = new URL(url).hostname;
-      favicon.src = await getsiteFavicon(mainDomain);
+      favicon.src = item.favicon;
       favicon.alt = `${mainDomain} Favicon`;
       favicon.className = "site-favicon";
       websiteInfoDiv.appendChild(favicon);
 
       const websiteName = document.createElement("span");
-      websiteName.textContent = await getWebsiteTitle(url);
+      websiteName.textContent = item.siteTitle;
+      console.log("website name: ", websiteName.textContent);
       websiteInfoDiv.appendChild(websiteName);
 
       readerViewModal
