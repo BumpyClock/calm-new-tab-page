@@ -564,9 +564,9 @@ async function createCard(item, feedDetails) {
       : item.thumbnail;
     if (thumbnailUrl) {
       // thumbnailImage.style.backgroundImage = `url('${thumbnailUrl}')`;
-      imageContainer.innerHTML= `<img src="${thumbnailUrl}" alt="${feedDetail.siteTitle} Thumbnail" class="thumbnail-image lazyload">`;
+      imageContainer.innerHTML= `<img data-src="${thumbnailUrl}" alt="${feedDetail.siteTitle} Thumbnail" class="thumbnail-image lazyload">`;
       // cardbg.style.backgroundImage = `url('${thumbnailUrl}')`;
-      cardbg.innerHTML= `<img src="${thumbnailUrl}" alt="${feedDetail.siteTitle} Thumbnail" class="card-bg lazyload">`;
+      cardbg.innerHTML= `<img data-src="${thumbnailUrl}" alt="${feedDetail.siteTitle} Thumbnail" class="card-bg lazyload">`;
       // imageContainer.appendChild(thumbnailImage);
       docFrag.appendChild(imageContainer);
       docFrag.appendChild(cardbg);
@@ -585,6 +585,7 @@ async function createCard(item, feedDetails) {
   }
 
   // Favicon
+  
   const favicon = document.createElement("img");
   favicon.src = faviconURL;
   favicon.alt = `${feedDetail.siteTitle} Favicon`;
@@ -1062,14 +1063,15 @@ async function fetchBingImageOfTheDay() {
     const title = data.images[0].title;
     const copyright = data.images[0].copyright;
     const bgContainer = document.querySelector(".background-image-container");
+    bgContainer.innerHTML = `<img id="background-image-container" data-src="${imageUrl}"  alt="${title}" class="background-image-container lazyload">`
     bgContainer.style.backgroundImage = `url(${imageUrl})`;
-    const attributionContainer = document.querySelector(
-      ".attribution-container"
-    );
-    attributionContainer.innerHTML = `
+    const attributionContainer = document.createElement( "div");
+    attributionContainer.className = "attribution-container";
+         attributionContainer.innerHTML = `
         <p class="attribution-title">${title}</p>
         <p class="attribution-copyright">${copyright} | Bing & Microsoft</p>
       `;
+      bgContainer.appendChild(attributionContainer);
   } catch (error) {
     console.error("Failed to fetch Bing image of the day:", error);
   }
@@ -1085,7 +1087,7 @@ function bgImageScrollHandler () {
     // bgContainer.style.filter = `blur(${blurIntensity}px) brightness(${
     //   1 - darkIntensity
     // }) grayscale(100%)`;
-    const bgContainer = document.querySelector(".background-image-container");
+    const bgContainer = document.getElementById(".background-image-container");
     bgContainer.style.filter = `brightness(${1 - darkIntensity})`;
   });
 }

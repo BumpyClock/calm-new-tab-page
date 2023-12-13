@@ -1182,3 +1182,13 @@ filter: brightness(1.7);
   transition: all 0.25s ease-in-out;
 }
 
+.lazyload,
+.lazyloading {
+	opacity: 0;
+}
+
+.lazyloaded {
+	opacity: 1;
+	transition: opacity 300ms ease-in-out;
+}
+
