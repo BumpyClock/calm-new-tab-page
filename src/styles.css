@@ -106,7 +106,6 @@ body {
   color: var(--color);
   transition: var(--transition-standard);
   margin: 0;
-  padding: 2rem;
   overflow-x: hidden;
 }
 
@@ -134,12 +133,11 @@ body {
   box-sizing: border-box;
 }
 
-.background-image-container {
+.background-image-container img {
   position: fixed;
-  top: -12px;
-  left: -12px;
-  width: 100vw;
-  height: 100vh;
+  
+  width: 100%;
+  height: 100%;
   z-index: -2;
   filter: dim(0.5);
   background-repeat: no-repeat;
@@ -1187,7 +1185,7 @@ filter: brightness(1.7);
 	opacity: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(-45deg, #eee 25%, #ddd 50%, #eee 75%);
+  background: linear-gradient(-45deg, #ff0808 25%, #ddd 50%, #eee 75%);
   background-size: 400% 400%;
   animation: shimmer 1.5s infinite ease-in-out;
 }

@@ -397,7 +397,7 @@ async function getCachedRenderedCards() {
   }
 }
 
-navigator.serviceWorker.addEventListener("message", function (event) {
+navigator.serviceWorker.addEventListener("message", async function (event) {
   if (event.data.action === "rssUpdate") {
     // console.log("Received RSS update from service worker,rendering feed");
     // hideLoadingState();
@@ -405,7 +405,7 @@ navigator.serviceWorker.addEventListener("message", function (event) {
     const { feedDetails, feedItems } = processRSSData(response);
     localStorage.setItem("feedDetails", JSON.stringify(feedDetails));
     localStorage.setItem("feedItems", JSON.stringify(feedItems));
-    renderFeed(feedItems, feedDetails).catch((error) => {
+    await renderFeed(feedItems, feedDetails).catch((error) => {
       console.error("Error rendering the feed:", error);
     });
   }
@@ -536,7 +536,11 @@ async function createCard(item, feedDetails) {
   }
 
   if (!feedDetail) {
-    console.error(`No matching feed detail found for domain: ${itemDomain}`);
+    console.error(`No matching feed detail found for domain: ${itemDomain} for ${JSON.stringify(item)}`);
+    console.log(`refreshing feeds`);
+    await refreshFeeds();
+    //exit this function
+    
     return null; // Exit the function if no matching feed detail is found
   }
 
@@ -1063,8 +1067,8 @@ async function fetchBingImageOfTheDay() {
     const title = data.images[0].title;
     const copyright = data.images[0].copyright;
     const bgContainer = document.querySelector(".background-image-container");
-    bgContainer.innerHTML = `<img id="background-image-container" data-src="${imageUrl}"  alt="${title}" class="background-image-container lazyload">`
-    bgContainer.style.backgroundImage = `url(${imageUrl})`;
+    bgContainer.innerHTML = `<img id="background-image-container" data-src="${imageUrl}"  alt="${title}" class="background-image-container lazyload" style>`
+    // bgContainer.style.backgroundImage = `url(${imageUrl})`;
     const attributionContainer = document.createElement( "div");
     attributionContainer.className = "attribution-container";
          attributionContainer.innerHTML = `
@@ -1094,7 +1098,7 @@ function bgImageScrollHandler () {
 
 //Settings page code
 
-function setupSubscriptionForm() {
+async function setupSubscriptionForm() {
   const form = document.getElementById("subscription-form");
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -1106,7 +1110,8 @@ function setupSubscriptionForm() {
     console.log(feeds.subscribedFeeds);
     setSubscribedFeeds(feeds.subscribedFeeds);
     form.reset();
-    displaySubscribedFeeds();
+    await refreshFeeds();
+   await displaySubscribedFeeds();
   });
 }
 
@@ -1123,7 +1128,6 @@ async function displaySubscribedFeeds() {
     getSubscribedFeeds();
   const list = document.getElementById("subscribed-feeds-list");
   const listfragment = document.createDocumentFragment();
-  console.log(list);
   if (list !== null) {
     list.innerHTML = ""; // Clear the list
     list.style.visibility = "hidden";
