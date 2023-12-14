@@ -662,12 +662,13 @@ function handleSearch() {
 
   searchButton.addEventListener("click", () => {
     const query = searchInput.value;
-    const searchEngineURL = searchEngineSelect.value;
+    // const searchEngineURL = searchEngineSelect.value;
+    const searchEngineURL = "https://www.google.com/search?q=";
     const searchURL = searchEngineURL + encodeURIComponent(query);
     window.open(searchURL, "_blank");
   });
 
-  searchInput.addEventListener("keydown", (event) => {
+  searchInput.addEventListener("keyup", (event) => {
     if (event.key === "Enter") {
       searchButton.click();
     }

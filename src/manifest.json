@@ -28,7 +28,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["./scripts/utils/readability.js","./scripts/utils/masonry.pkgd.js","./scripts/utils/lazysizes.min.js","./scripts/utils/purify.min.js"],
+      "js": ["./scripts/utils/readability.js","./scripts/utils/masonry.pkgd.js","./scripts/utils/lazysizes.min.js","./scripts/utils/purify.min.js","./scripts/utils/imagesloaded.pkgd.min.js"],
       "all_frames": true
     }],
 
