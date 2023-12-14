@@ -33,7 +33,7 @@ function debounce(func, wait) {
 
 const debouncedLayout = debounce(() => {
   msnry.layout();
-}, 200);
+},300);
 
 window.addEventListener('resize', debouncedLayout);
 
