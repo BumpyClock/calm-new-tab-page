@@ -702,7 +702,7 @@ async function showReaderView(url) {
     const html = await response.text();
     const pure = DOMPurify.sanitize(html);
     const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
+    const doc = parser.parseFromString(pure, "text/html");
     const reader = new Readability(doc);
     const article = reader.parse();
     const item = findItemFromUrl(getFeedItems(), url);

@@ -95,6 +95,8 @@
     --reading-progress-color: var(--dark-accent-color);
     --progress-background: var(--dark-background-color);
   }
+
+  
 }
 
 @media (prefers-color-scheme: light) {
@@ -259,6 +261,12 @@ body > *:not(.background-image-container)::selection {
   opacity: 0.7;
   transform: scale(1.4);
   transition: var(--transition-slow);
+}
+
+@media screen and (prefers-color-scheme: dark) {
+  .card .card-bg img {
+    filter: blur(60px) brightness(.5);
+  }
 }
 
 .card:hover .card-bg img {
