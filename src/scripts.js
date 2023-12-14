@@ -616,7 +616,7 @@ async function createCard(item) {
   textContentDiv.appendChild(readMoreLink);
 
   // Event handler for card click
-  applyCardEventHandlers(card, item);
+  applyCardEventHandlers(card, item.link);
 
   // Append text content to the card
   docFrag.appendChild(textContentDiv);
@@ -627,19 +627,20 @@ async function createCard(item) {
   return card;
 }
 
-function applyCardEventHandlers(card, item) {
+function applyCardEventHandlers(card, url) {
   // Event listener for card click
-  if (item.link.includes("engadget")) {
-    card.addEventListener("click", () => {
-      window.open(item.link, "_blank");
-    });
-  } else {
+  try{
+    
+   
     card.addEventListener("click", (e) => {
       if (e.target.tagName.toLowerCase() !== "a") {
-        showReaderView(item);
-      }
-    });
-  }
+        showReaderView(url);}
+     
+  
+});}
+catch(error){
+  console.log(error, "error in applyCardEventHandlers", url);
+}
 }
 
 function reapplyEventHandlersToCachedCards() {
@@ -684,8 +685,7 @@ function removeFeed(feedURL) {
   displaySubscribedFeeds();
 }
 
-async function showReaderView(item) {
-  const url = item.link;
+async function showReaderView(url) {
   try {
     const response = await fetch(url);
     const html = await response.text();
