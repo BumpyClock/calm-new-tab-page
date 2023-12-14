@@ -6,6 +6,8 @@ const SEARCH_PREFERENCE_KEY = "searchPref";
 const DEFAULT_API_URL = "https://rss.bumpyclock.com";
 const feedContainer = document.getElementById("feed-container");
 const refreshTimer = 15 * 60 * 1000; //fifteen minutes
+const NTP_PERMISSION_DEFAULT = false;
+var NTP_PERMISSON;
 
 defaultFeeds = [
   "http://www.theverge.com/rss/index.xml",
@@ -39,6 +41,7 @@ window.addEventListener('resize', debouncedLayout);
 
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {
+    chrome.tabs.create({ url: "welcome.html" });
     setFeedDiscovery(true);
     setSearchPreference(false);
     getSubscribedFeeds();
@@ -98,6 +101,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     const greeting = getGreeting();
     document.title = `${greeting} - New Tab`;
   };
+  // Welcome screen logic
+  const welcomeScreen = document.getElementById("welcome-screen");
+  if(welcomeScreen){
+  const continueButton = document.getElementById("continue-button");
+  continueButton.addEventListener("click", () => {
+    welcomeScreen.style.display = "none";
+    setGreeting();
+  });
+}
   // setGreeting();
   if (feedContainer) {
     // Main page
@@ -1324,5 +1336,28 @@ function getApiUrl() {
   } catch (error) {
     console.error('Failed to get apiUrl:', error);
     return null;
+  }
+}
+
+
+function setNtpPermission(permission) {
+  try {
+    localStorage.setItem('NTP_PERMISSION', permission);
+  } catch (error) {
+    console.error('Failed to set NTP_PERMISSION:', error);
+  }
+}
+
+function getNtpPermission() {
+  try {
+    let permission = localStorage.getItem('NTP_PERMISSION');
+    if (permission === null) {
+      permission = NTP_PERMISSION_DEFAULT;
+      setNtpPermission(permission);
+    }
+    return permission;
+  } catch (error) {
+    console.error('Failed to get NTP_PERMISSION:', error);
+    return NTP_PERMISSION_DEFAULT;
   }
 }
