@@ -1,8 +1,33 @@
+var apiUrl = "https://rss.bumpyclock.com/";
 self.addEventListener("install", function (event) {
   // RSS feed logic here or any caching logic if needed
   // console.log("installing service worker");
   // fetchRSSFeedAndUpdateCache();
 });
+
+self.addEventListener("message", function (event) {
+  if (event.data.action === "setapiUrl") {
+    console.log("apiUrl: ", event.data.apiUrl);
+    setApiUrl(event.data.apiUrl);
+  }
+});
+
+self.addEventListener("message", function (event) {
+  if (event.data.action === "getapiUrl") {
+    console.log("apiUrl: ", apiUrl);
+    event.ports[0].postMessage({
+      action: "getapiUrl",
+      apiUrl: getApiUrl(),
+    });
+  }
+});
+
+function getApiUrl() {
+  return apiUrl;
+}
+function setApiUrl(url) {
+  apiUrl = url;
+}
 
 self.addEventListener("message", function (event) {
   if (event.data.action === "fetchRSS") {
@@ -111,9 +136,11 @@ async function fetchRSSFeedAndUpdateCache(feedUrls) {
 function sendUpdateToClient(data) {
   clients.matchAll().then((clients) => {
     if (clients && clients.length) {
-      clients[0].postMessage({
-        action: "rssUpdate",
-        rssData: data,
+      clients.forEach(client => {
+        client.postMessage({
+          action: "rssUpdate",
+          rssData: data,
+        });
       });
     }
   });
@@ -121,8 +148,7 @@ function sendUpdateToClient(data) {
 
 //Get thumbnailUrl from the feed items and cache the images
 async function fetchRSSFeed(feedUrls) {
-  const apiUrl = `https://rss.bumpyclock.com/parse`;
-  // const apiUrl = `http://192.168.1.51:3000/parse`;
+  var requestUrl = apiUrl+"/parse";
   const urlsForPostRequest = {
     urls: feedUrls,
   };
