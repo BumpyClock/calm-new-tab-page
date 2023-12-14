@@ -35,7 +35,7 @@ function debounce(func, wait) {
 
 const debouncedLayout = debounce(() => {
   msnry.layout();
-}, 200);
+},300);
 
 window.addEventListener('resize', debouncedLayout);
 
@@ -525,6 +525,7 @@ async function createCard(item) {
   // Card background
   const cardbg = document.createElement("div");
   cardbg.className = "card-bg";
+  
 
   // Set thumbnail URL
   let thumbnailUrl = item.thumbnail;
@@ -543,7 +544,7 @@ async function createCard(item) {
   }
   if (thumbnailUrl) {
     imageContainer.innerHTML = `<img data-src="${thumbnailUrl}" id="thumbnail-image" alt="${item.siteTitle} Thumbnail" class="thumbnail-image lazyload masonry-item">`;
-    cardbg.innerHTML = `<img data-src="${thumbnailUrl}" alt="${item.siteTitle} Thumbnail" class="card-bg lazyload">`;
+    cardbg.innerHTML = `<div class=noise></div><img data-src="${thumbnailUrl}" alt="${item.siteTitle} Thumbnail" class="card-bg lazyload">`;
     docFrag.appendChild(imageContainer);
     docFrag.appendChild(cardbg);
   }
@@ -1317,6 +1318,7 @@ function setApiUrl(apiUrl) {
     localStorage.setItem('apiUrl', apiUrl);
 
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      console.log('Sending message to service worker to set apiUrl');
       navigator.serviceWorker.controller.postMessage({
         action: 'setApiUrl',
         apiUrl: apiUrl

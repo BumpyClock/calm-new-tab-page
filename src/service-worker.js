@@ -1,4 +1,4 @@
-var apiUrl = "https://rss.bumpyclock.com/";
+var apiUrl = "https://rss.bumpyclock.com";
 self.addEventListener("install", function (event) {
   // RSS feed logic here or any caching logic if needed
   // console.log("installing service worker");
@@ -6,9 +6,9 @@ self.addEventListener("install", function (event) {
 });
 
 self.addEventListener("message", function (event) {
-  if (event.data.action === "setapiUrl") {
-    console.log("apiUrl: ", event.data.apiUrl);
-    setApiUrl(event.data.apiUrl);
+  if (event.data.action === "setApiUrl") {
+    console.log("updating apiUrl: ", event.data.apiUrl);
+    acceptApiUrl(event.data.apiUrl);
   }
 });
 
@@ -25,7 +25,8 @@ self.addEventListener("message", function (event) {
 function getApiUrl() {
   return apiUrl;
 }
-function setApiUrl(url) {
+function acceptApiUrl(url) {
+  console.log("SW: setting apiUrl: ", url);
   apiUrl = url;
 }
 
@@ -161,7 +162,7 @@ async function fetchRSSFeed(feedUrls) {
     body: JSON.stringify(urlsForPostRequest), // Sending the urls in the body
   };
 
-  return fetch(apiUrl, requestOptions).then((response) => {
+  return fetch(requestUrl, requestOptions).then((response) => {
     const fetchedFeedData = response.json();
     // console.log("fetchedFeedData: ", fetchedFeedData);
 

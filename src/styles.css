@@ -166,6 +166,12 @@ body > *:not(.background-image-container) {
   z-index: 1;
 }
 
+body > *:not(.background-image-container)::selection {
+  background-color: lightsteelblue;
+  color:var(--color);
+  opacity: 1;
+}
+
 .attribution-container {
   position: absolute;
   top: 24px;
@@ -229,22 +235,36 @@ body > *:not(.background-image-container) {
   /* transition: var(--transition-standard); */
 }
 
-.card .card-bg {
+.card .card-bg .noise {
+  background-image: url(./images/noisy-background.jpg);
   position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 80%;
-  filter: blur(90px) brightness(1.4);
+  background-size: cover;
+  background-position: center center;
   z-index: -1;
+  top:0%;
+  width: 100%;
+  height: 100%;
+  opacity: 0.2;
+  transition: var(--transition-slow);
+}
+.card .card-bg img {
+  position: absolute;
+  bottom: -20%;
+  left: -20%;
+  width: 140%;
+  height: 120%;
+  filter: blur(60px) brightness(1.5);
+  z-index: -2;
   opacity: 0.7;
+  transform: scale(1.4);
   transition: var(--transition-slow);
 }
 
-.card:hover .card-bg {
+.card:hover .card-bg img {
   opacity: 0.5;
-  filter: blur(90px) brightness(1.1);
-  transform: scale(1.25);
+
+  filter: blur(60px) brightness(1.1);
+  transform: scale(1.7);
 }
 
 .card:hover {
@@ -465,9 +485,7 @@ body {
   background: var(--new-tab-background-color);
 }
 
-::selection {
-  background: #212129;
-}
+
 
 .search-wrapper {
     position: relative;
@@ -502,7 +520,7 @@ body {
    width:100%;
    height: 40px;
    padding:0px 70px 0 20px;
-   opacity: 0;
+   /* opacity: 0; */
    position: absolute;
    top:0px;
    left:0px;
@@ -514,10 +532,28 @@ body {
    font-size: 18px;
    font-weight: 400;
    line-height: 20px;
-   color:var(--foreground-color);
+   color:var(--color);
    transform: translate(0, 60px);
    transition: all .3s cubic-bezier(0.000, 0.105, 0.035, 1.570);
    transition-delay: 0.3s;
+}
+
+.search-wrapper .input-holder .search-input[type=text]::placeholder
+{
+  color:var(--color);
+  opacity: .6;
+}
+.search-wrapper .input-holder .search-input[type=text]:focus::placeholder
+{
+  color:var(--color);
+  opacity: .4;
+}
+
+.search-wrapper .input-holder .search-input[type=text]::selection
+{
+  background-color: lightsteelblue;
+  color:var(--color);
+  opacity: 1;
 }
 .search-wrapper .input-holder .search-input {
    opacity: 1;
@@ -1076,13 +1112,13 @@ filter: brightness(1.7);
 
 .site-card .site-card-background-image-container {
   position: fixed;
-  top:-5%;
-  left: -5%;
-  width: 110%;
-  height: 110%;
+  top:-20%;
+  left: -20%;
+  width: 140%;
+  height: 140%;
   border-radius: 7px;
   overflow: hidden;
-  filter: blur(35px) brightness(1.5);
+  filter: blur(60px) brightness(1.5);
   background-position: center center;
   background-size: cover;
   z-index: -1;
