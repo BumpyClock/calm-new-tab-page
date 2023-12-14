@@ -108,7 +108,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       initializeMasonry();
       reapplyEventHandlersToCachedCards();
       feedContainer.style.opacity = "1"; // apply the fade-in effect
-      bgImageScrollHandler();
+      // bgImageScrollHandler();
     } else {
       console.log("rendering feed from scratch");
       await loadSubscribedFeeds();
@@ -128,18 +128,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function hideSearch() {
-  const searchContainer = document.getElementById("search-container");
+  const searchContainer = document.getElementById("search-wrapper");
   searchContainer.innerHTML = "";
 }
 function showSearch() {
-  const searchContainer = document.getElementById("search-container");
-  searchContainer.innerHTML = `<input type="text" id="search-input" placeholder="Search...">
-  <select title="select search engine" id="search-engine" class="search-engine">
-    <option value="https://www.google.com/search?q=">Google</option>
-    <option value="https://www.bing.com/search?q=">Bing</option>
-    <option value="https://duckduckgo.com/?q=">DuckDuckGo</option>
-  </select>
-  <button id="search-button">Search</button>`;
+  const searchContainer = document.getElementById("search-wrapper");
+  searchContainer.innerHTML = `<div class="input-holder">
+  <input type="text" id="search-input" class="search-input" placeholder="Type to search" />
+  <button id="search-button" class="search-icon" ><span></span></button>
+</div>
+`;
   handleSearch();
 }
 
@@ -938,12 +936,13 @@ async function createMostVisitedSiteCard(site) {
   const sitefaviconUrl = await getSiteFavicon(mainDomain);
   //send a get request to get the favicon url from http://192.168.1.51:3000/get-favicon?url=${mainDomain}
   siteCard.innerHTML = `
-    <a href="${site.url}" class="site-link">
-      <div class="background-image-container" style="background-image: url('${sitefaviconUrl}');"></div>
-      <img src="${sitefaviconUrl}" alt="${site.title} Favicon" class="site-favicon">
-      <div class="site-title"><p>${site.title}</p></div>
-    </a>
-  `;
+  <a href="${site.url}" class="site-link">
+  <img src="${sitefaviconUrl}" alt="${site.title} Favicon" class="site-favicon lazyload">
+    <div class="site-title"><p>${site.title}</p></div>
+    
+  </a>      <div class="site-card-background-image-container lazyload" style="background-image: url('${sitefaviconUrl}');"></div>
+
+`;
   return siteCard;
 }
 
