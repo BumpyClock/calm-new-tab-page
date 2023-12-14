@@ -3,6 +3,9 @@ const SUBSCRIBED_FEEDS_KEY = "subscribedFeeds";
 const FEED_DISCOVERY_KEY = "feedDiscoveryPref"; // By default feed discovery is enabled
 const FEED_DETAILS_KEY = "feedDetails";
 const SEARCH_PREFERENCE_KEY = "searchPref";
+const CLOUD_SYNC_TEST_KEY = "cloudSyncTest";
+const CLOUD_SYNC_KEY = "calm-ntp-sync-store";
+const CLOUD_SYNC_PREFERENCE_KEY = "cloudSyncPref";
 
 defaultFeeds = [
   "http://www.theverge.com/rss/index.xml",
@@ -21,7 +24,7 @@ chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {
     setFeedDiscovery(true);
     setSearchPreference(false);
-    getSubscribedFeeds();
+    // getSubscribedFeeds();
   }
 });
 
@@ -77,7 +80,7 @@ async function doInitialLoad() {
   if (document.querySelector("#feed-container")) {
     await initializeMostVisitedSitesCache();
     await loadSubscribedFeeds();
-    // await fetchBingImageOfTheDay();
+    await fetchBingImageOfTheDay();
     // hideSearch();
   }
 }
@@ -96,8 +99,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   // setGreeting();
   if (document.querySelector("#feed-container")) {
     // Main page
-    setupSearch();
-
+    // setupSearch();
+    handleSearch();
+    console.log(JSON.stringify(getCloudSyncTest()));
+    // setSubscribedFeedsToCloud();
+    getUserPreferencesfromCloud();
     await initializeMostVisitedSitesCache();
     await fetchBingImageOfTheDay();
     cachedCards = await getCachedRenderedCards();
@@ -190,6 +196,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 function getSubscribedFeeds() {
+
+
   if (!localStorage.getItem(SUBSCRIBED_FEEDS_KEY)) {
     setSubscribedFeeds(defaultFeeds);
     return {
@@ -629,6 +637,7 @@ async function createCard(item) {
 
 function applyCardEventHandlers(card, item) {
   // Event listener for card click
+try{
   if (item.link.includes("engadget")) {
     card.addEventListener("click", () => {
       window.open(item.link, "_blank");
@@ -641,6 +650,9 @@ function applyCardEventHandlers(card, item) {
     });
   }
 }
+catch(e){ 
+  console.log(`error while apply event handler ${e} in ${item}`);}
+}
 
 function reapplyEventHandlersToCachedCards() {
   console.log("reapplying event handlers to cached cards");
@@ -648,7 +660,7 @@ function reapplyEventHandlersToCachedCards() {
   const feedContainer = document.getElementById("feed-container");
   const cards = feedContainer.querySelectorAll(".card");
   cards.forEach((card) => {
-    const linkURL = card.querySelector("a").href; // Example: getting the URL from the card's read more link
+    const linkURL = {link: card.querySelector("a").href}; // Example: getting the URL from the card's read more link
     applyCardEventHandlers(card, linkURL);
     eventHandlersRestored++;
   });
@@ -664,7 +676,8 @@ function handleSearch() {
 
   searchButton.addEventListener("click", () => {
     const query = searchInput.value;
-    const searchEngineURL = searchEngineSelect.value;
+    // const searchEngineURL = searchEngineSelect.value;
+    const searchEngineURL = "https://www.google.com/search?q=";
     const searchURL = searchEngineURL + encodeURIComponent(query);
     window.open(searchURL, "_blank");
   });
@@ -936,13 +949,13 @@ async function createMostVisitedSiteCard(site) {
   const siteCard = document.createElement("div");
   siteCard.className = "site-card";
   const sitefaviconUrl = await getSiteFavicon(mainDomain);
-  //send a get request to get the favicon url from http://192.168.1.51:3000/get-favicon?url=${mainDomain}
   siteCard.innerHTML = `
     <a href="${site.url}" class="site-link">
-      <div class="background-image-container" style="background-image: url('${sitefaviconUrl}');"></div>
-      <img src="${sitefaviconUrl}" alt="${site.title} Favicon" class="site-favicon">
+    <img src="${sitefaviconUrl}" alt="${site.title} Favicon" class="site-favicon lazyload">
       <div class="site-title"><p>${site.title}</p></div>
-    </a>
+      
+    </a>      <div class="site-card-background-image-container lazyload" style="background-image: url('${sitefaviconUrl}');"></div>
+
   `;
   return siteCard;
 }
@@ -1064,7 +1077,7 @@ function bgImageScrollHandler() {
     const scrollPosition = window.scrollY || document.documentElement.scrollTop;
     const blurIntensity = Math.min(scrollPosition / 100, 10);
     const darkIntensity = Math.min(scrollPosition / 100, 0.5); // Adjust the values as per your preference
-    const bgContainer = document.querySelector(".background-image-container");
+    const bgContainer = document.getElementById("#background-image-container");
     // bgContainer.style.filter = `blur(${blurIntensity}px) brightness(${
     //   1 - darkIntensity
     // }) grayscale(100%)`;
@@ -1229,9 +1242,104 @@ function setupSearchPreferenceToggle() {
 
 async function setupSettingsPage() {
   await displaySubscribedFeeds();
-
   setupSubscriptionForm();
   setupBackButton();
   setupFeedDiscoveryToggle();
   setupSearchPreferenceToggle();
 }
+
+
+
+// CLOUD SYNC CODE
+
+function getCloudSyncTest() {
+  chrome.storage.sync.get([CLOUD_SYNC_TEST_KEY], function(result) {
+    if (result[CLOUD_SYNC_TEST_KEY] === undefined) {
+      const testMessage = JSON.stringify({
+        'AddedOn': new Date().getTime().toLocaleString(),
+      });
+      console.log(`no key set setting ${CLOUD_SYNC_TEST_KEY} to test : ${testMessage}`);
+      setCloudSyncTest(testMessage);
+    } else {
+      console.log(result[CLOUD_SYNC_TEST_KEY]);
+    }
+  });
+}
+
+function setCloudSyncTest(message) {
+  let obj = {};
+  obj[CLOUD_SYNC_TEST_KEY] = message;
+  chrome.storage.sync.set(obj, function() {
+    console.log(`${CLOUD_SYNC_TEST_KEY} set`);
+  });
+}
+
+function getCloudSyncPreference() {
+  try {
+    if (!localStorage.getItem(CLOUD_SYNC_PREFERENCE_KEY)) {
+      console.log("Cloud sync preference is not set, setting it to false");
+      setCloudSyncPreference(false);
+      return false;
+    }
+  } catch (error) {
+    console.log(error);
+  }
+  return localStorage.getItem(CLOUD_SYNC_PREFERENCE_KEY) === "true";
+}
+
+function setCloudSyncPreference(state){
+  localStorage.setItem(CLOUD_SYNC_PREFERENCE_KEY, state);
+  console.log(
+    `Cloud sync preference set to ${localStorage.getItem(CLOUD_SYNC_PREFERENCE_KEY)}`
+  );
+}
+
+async function setUserPreferencesToCloud() {
+  if (getCloudSyncPreference()) {
+    let userPreferences = {
+      subscribedFeeds: getSubscribedFeeds().subscribedFeeds
+    };
+    let obj = {};
+    obj[CLOUD_SYNC_KEY] = userPreferences; // Using the variable as a key
+
+    chrome.storage.sync.set(obj, function() {
+      if (chrome.runtime.lastError) {
+        console.error('Error syncing data: ' + chrome.runtime.lastError.message);
+      } else {
+        console.log('Subscribed feeds synced to cloud:', userPreferences.subscribedFeeds);
+      }
+    });
+  }
+}
+
+async function getUserPreferencesfromCloud() {
+  const feedsKey = CLOUD_SYNC_KEY;
+
+  chrome.storage.sync.get([feedsKey], function(result) {
+    console.log(result[feedsKey]);
+    if (result[feedsKey] === undefined) {
+      console.log(`No feeds found in cloud`);
+      setSubscribedFeedsToCloud();
+    } else {
+      var userPreferences = result[feedsKey].userPreferences;
+      if (userPreferences && userPreferences.subscribedFeeds) {
+        console.log(`Feeds found in cloud: ${JSON.stringify(userPreferences.subscribedFeeds)}`);
+      } else {
+        console.log(`No subscribed feeds in cloud preferences`);
+      }
+    }
+  });
+}
+
+function isCloudFeedsValid(data) {
+  // Check if 'data' is truthy (not null, undefined, 0, "", etc.)
+  if (!data) {
+    return false;
+  }
+
+  // Check if 'subscribedFeeds' exists in 'data' and is an array
+  return Array.isArray(data.subscribedFeeds);
+}
+
+
+

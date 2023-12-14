@@ -14,6 +14,10 @@
 
   /* Light Theme Colors */
   --light-background-color: rgba(245, 245, 245, 1);
+  --light-new-tab-background-color: #F9F9FB;
+  --light-theme-search-box-color:#e0e0e05a;
+  --light-theme-search-box-color-active: #fff;
+  --light-new-tab-background-color-secondary: #FFF;
   --light-background-color-hover: rgba(245, 245, 245, 0.9);
   --light-active-color: rgba(245, 245, 245, 0.7);
   --light-foreground-color: #1a1a1a;
@@ -22,6 +26,10 @@
 
   /* Dark Theme Colors */
   --dark-background-color: rgba(0, 0, 0, 1);
+  --dark-new-tab-background-color: #2B2A33;
+  --dark-theme-search-box-color:rgba(0,0,0,0.5);
+  --dark-theme-search-box-color-active: rgba(0,0,0,0.8);;
+  --dark-new-tab-background-color-secondary: #42414d;
   --dark-background-color-hover: rgba(18, 17, 17, 0.9);
   --dark-foreground-color: rgba(255, 255, 255, 0.9);
   --dark-active-color: rgba(0, 0, 0, 0.7);
@@ -41,11 +49,12 @@
   --progress-foreground-sepia: #704214;
 
   /* transition variables */
+  --transition-fast: all .3s cubic-bezier(0.000, 0.105, 0.035, 1.570);
   --transition-standard: all 0.25s ease-in-out;
   --transition-slow: all 0.5s ease-in-out;
 }
 
-.light {
+/* .light {
   --background-color: var(--light-background-color);
   --background-color-hover: var(--light-background-color-hover);
   --color: var(--light-foreground-color);
@@ -69,16 +78,17 @@
   --color: var(--sepia-foreground-color);
   --accent-color: var(--sepia-accent-color);
   --border-color: var(--sepia-border-color);
-}
+} */
 
 @media (prefers-color-scheme: dark) {
   body {
-    background-color: rgba(245, 245, 245, 0.7);
 
-    background-image: url('./images/noisy-background.jpg');
-    --background-color: var(--dark-background-color);
+    --background-color: var(--dark-new-tab-background-color);
+    --background-color-secondary: var(--dark-new-tab-background-color-secondary);
     --background-color-hover: var(--dark-background-color-hover);
     --color: var(--dark-foreground-color);
+    --search-box-color: var(--dark-theme-search-box-color);
+    --search-box-color-active: var(--dark-theme-search-box-color-active);
     --accent-color: var(--dark-accent-color);
     --border-color: var(--dark-border-color);
     --reading-progress-container-background-color: var(--dark-background-color-hover);
@@ -89,13 +99,16 @@
 
 @media (prefers-color-scheme: light) {
   body {
-    --background-color: var(--light-background-color);
+    --background-color: var(--light-new-tab-background-color);
+    --background-color-secondary: var(--light-new-tab-background-color-secondary);
     --background-color-hover: var(--light-background-color-hover);
     --color: var(--light-foreground-color);
     --accent-color: var(--light-accent-color);
     --border-color: var(--light-border-color);
     --reading-progress-container-background-color: var(--light-background-color-hover);
     --reading-progress-color: var(--light-accent-color);
+    --search-box-color: var(--light-theme-search-box-color);  
+    --search-box-color-active: var(--light-theme-search-box-color-active);
   }
 }
 
@@ -425,54 +438,130 @@ body > *:not(.background-image-container) {
   margin: 0 auto;
   padding: 1rem;
 }
-
-#search-container {
-  display: flex;
-  align-items: center;
-  margin-bottom: 1rem;
-  justify-content: center;
+/* Search Container */
+body {
+  background: var(--new-tab-background-color);
 }
 
-#search-input {
-  font-size: 14px;
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 7px;
-  flex-grow: 1;
-  min-width: -webkit-fill-available;
-  margin-right: 8px;
-  font-weight: 400;
+::selection {
+  background: #212129;
 }
 
-#search-engine {
-  font-size: 14px;
-  padding: 12px;
-  margin-right: 8px;
-  border-radius: 7px;
-  border: 1px solid #ccc;
+.search-wrapper {
+    position: relative;
+    max-width: 800px;
+    margin: 0 auto;
+    margin-bottom: 44px;
+    padding: 0 20px;
+    box-sizing: border-box;
+    text-align: center;
+    transition: var(--transition-standard);
 }
 
-#search-engine .option {
-  font-size: 14px;
-  padding: 12px;
-  margin-right: 8px;
-  border-radius: 7px;
-  border: 1px solid #ccc;
+
+.search-wrapper .input-holder {    
+   height: 64px;
+   width:600px;
+   overflow: hidden;
+   background: var(--search-box-color);
+   border-radius:50px;
+   backdrop-filter: blur(30px);
+   position: relative;
+   transition: var(--transition-standard);
+   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+.search-wrapper:focus-within .input-holder {
+   
+   border-radius: 50px;
+   background: var(--search-box-color-active);
+   transition: var(--transition-standard);
+}
+.search-wrapper .input-holder .search-input {
+   width:100%;
+   height: 40px;
+   padding:0px 70px 0 20px;
+   opacity: 0;
+   position: absolute;
+   top:0px;
+   left:0px;
+   background: transparent;
+   box-sizing: border-box;
+   border:none;
+   outline:none;
+   font-family:var(--font-family);
+   font-size: 18px;
+   font-weight: 400;
+   line-height: 20px;
+   color:var(--foreground-color);
+   transform: translate(0, 60px);
+   transition: all .3s cubic-bezier(0.000, 0.105, 0.035, 1.570);
+   transition-delay: 0.3s;
+}
+.search-wrapper .input-holder .search-input {
+   opacity: 1;
+   transform: translate(0, 10px);
+}
+.search-wrapper .input-holder .search-icon {
+   width:70px;
+   height:40px;
+   border:none;
+   border-radius:6px;
+   background: none;
+   padding:0px;
+   outline:none;
+   position: relative;
+   z-index: 2;
+   float:right;
+   cursor: pointer;
+   transition: all 0.3s ease-in-out;
+}
+.search-wrapper .input-holder .search-icon {
+   width: 50px;
+   height:40px;
+   margin: 10px;
+   border-radius: 30px;
+}
+.search-wrapper .input-holder .search-icon span {
+   width:22px;
+   height:22px;
+   display: inline-block;
+   vertical-align: middle;
+   position:relative;
+   transform: rotate(45deg);
+   transition: all .4s cubic-bezier(0.650, -0.600, 0.240, 1.650);
+}
+.search-wrapper .input-holder .search-icon span {
+   transform: rotate(-45deg);
+}
+.search-wrapper .input-holder .search-icon span::before, .search-wrapper .input-holder .search-icon span::after {
+   position: absolute; 
+   content:'';
+}
+.search-wrapper .input-holder .search-icon span::before {
+   width: 4px;
+   height: 11px;
+   left: 9px;
+   top: 18px;
+   border-radius: 2px;
+   background: var(--background-color-secondary);
+}
+.search-wrapper .input-holder .search-icon span::after {
+   width: 14px;
+   height: 14px;
+   left: 0px;
+   top: 0px;
+   border-radius: 16px;
+   border: 4px solid var(--background-color-secondary);
 }
 
-#search-button {
-  font-size: 1rem;
-  padding: 0.5rem 1rem;
-  background-color: #007bff;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+.search-wrapper:focus-within .input-holder .search-icon span::after{
+    border-color: var(--accent-color);
+}
+.search-wrapper:focus-within .input-holder .search-icon span::before {
+  background: var(--accent-color);
 }
 
-#search-button:hover {
-  background-color: var(--accent-color);
-}
+
 
 #settings-button {
   font-size: 1rem;
@@ -963,12 +1052,17 @@ filter: brightness(1.7);
   margin-top: 20px;
 }
 
-.site-card .background-image-container {
-  width: 130%;
-  height: 130%;
+.site-card .site-card-background-image-container {
+  position: fixed;
+  top:-5%;
+  left: -5%;
+  width: 110%;
+  height: 110%;
   border-radius: 7px;
   overflow: hidden;
   filter: blur(35px) brightness(1.5);
+  background-position: center center;
+  background-size: cover;
   z-index: -1;
   opacity: 0.85;
 }
@@ -1012,6 +1106,7 @@ filter: brightness(1.7);
   overflow: hidden;
   transition: all 0.25s ease-in-out;
   background-blend-mode: darken;
+  box-shadow: var(--box-shadow-standard);
   -webkit-backdrop-filter: blur(0.65em);
   backdrop-filter: blur(0.65em);
   transition: all 0.25s ease-in-out;
@@ -1052,7 +1147,7 @@ filter: brightness(1.7);
   color: var(--color);
   font-size: 14px;
   text-align: center;
-  font-weight: 600;
+  font-weight: 400;
   overflow: hidden;
   padding: 4px 12px 0px 12px;
   text-overflow: ellipsis;
@@ -1070,7 +1165,7 @@ filter: brightness(1.7);
   color: var(--color);
   font-size: 12px;
   text-align: center;
-  font-weight: 600;
+  font-weight: 400;
   overflow: hidden;
   text-overflow: ellipsis;
   height: 32px;
