@@ -7,7 +7,7 @@ self.addEventListener("install", function (event) {
 
 self.addEventListener("message", function (event) {
   if (event.data.action === "setApiUrl") {
-    console.log("updating apiUrl: ", event.data.apiUrl);
+    console.log("SW: updating ApiUrl: ", event.data.apiUrl);
     acceptApiUrl(event.data.apiUrl);
   }
 });
