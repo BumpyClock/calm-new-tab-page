@@ -166,6 +166,12 @@ body > *:not(.background-image-container) {
   z-index: 1;
 }
 
+body > *:not(.background-image-container)::selection {
+  background-color: lightsteelblue;
+  color:var(--color);
+  opacity: 1;
+}
+
 .attribution-container {
   position: absolute;
   top: 24px;
@@ -256,7 +262,7 @@ body > *:not(.background-image-container) {
 
 .card:hover .card-bg img {
   opacity: 0.5;
-  
+
   filter: blur(60px) brightness(1.1);
   transform: scale(1.7);
 }
@@ -479,9 +485,7 @@ body {
   background: var(--new-tab-background-color);
 }
 
-::selection {
-  background: #212129;
-}
+
 
 .search-wrapper {
     position: relative;
@@ -543,6 +547,13 @@ body {
 {
   color:var(--color);
   opacity: .4;
+}
+
+.search-wrapper .input-holder .search-input[type=text]::selection
+{
+  background-color: lightsteelblue;
+  color:var(--color);
+  opacity: 1;
 }
 .search-wrapper .input-holder .search-input {
    opacity: 1;
