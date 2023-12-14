@@ -229,22 +229,36 @@ body > *:not(.background-image-container) {
   /* transition: var(--transition-standard); */
 }
 
-.card .card-bg {
+.card .card-bg .noise {
+  background-image: url(./images/noisy-background.jpg);
   position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 80%;
-  filter: blur(90px) brightness(1.4);
+  background-size: cover;
+  background-position: center center;
   z-index: -1;
+  top:0%;
+  width: 100%;
+  height: 100%;
+  opacity: 0.2;
+  transition: var(--transition-slow);
+}
+.card .card-bg img {
+  position: absolute;
+  bottom: -20%;
+  left: -20%;
+  width: 140%;
+  height: 120%;
+  filter: blur(60px) brightness(1.5);
+  z-index: -2;
   opacity: 0.7;
+  transform: scale(1.4);
   transition: var(--transition-slow);
 }
 
-.card:hover .card-bg {
+.card:hover .card-bg img {
   opacity: 0.5;
-  filter: blur(90px) brightness(1.1);
-  transform: scale(1.25);
+  
+  filter: blur(60px) brightness(1.1);
+  transform: scale(1.7);
 }
 
 .card:hover {
@@ -1087,13 +1101,13 @@ filter: brightness(1.7);
 
 .site-card .site-card-background-image-container {
   position: fixed;
-  top:-5%;
-  left: -5%;
-  width: 110%;
-  height: 110%;
+  top:-20%;
+  left: -20%;
+  width: 140%;
+  height: 140%;
   border-radius: 7px;
   overflow: hidden;
-  filter: blur(35px) brightness(1.5);
+  filter: blur(60px) brightness(1.5);
   background-position: center center;
   background-size: cover;
   z-index: -1;
