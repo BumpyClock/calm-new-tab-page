@@ -1305,6 +1305,7 @@ function setApiUrl(apiUrl) {
     localStorage.setItem('apiUrl', apiUrl);
 
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      console.log('Sending message to service worker to set apiUrl');
       navigator.serviceWorker.controller.postMessage({
         action: 'setApiUrl',
         apiUrl: apiUrl
