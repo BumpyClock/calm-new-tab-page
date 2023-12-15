@@ -277,7 +277,6 @@ function initializeMasonry() {
   document.querySelectorAll('.masonry-item').forEach(item => {
     item.addEventListener('load', () => {
       msnry.layout();
-      setupParallaxEffect(item.parentElement.parentElement);
       item.parentElement.classList.remove('loading');
     });
   });
@@ -337,41 +336,30 @@ async function renderFeed(feeditems, feedDetails) {
 }
 
 //parallax effect for image container
+// function setupParallaxEffect(card, imageContainer) {
+//   card.addEventListener("mousemove", (e) => {
+//     // Immediate removal of any transition for a smooth parallax effect
+//     imageContainer.style.transition = 'none';
 
-function setupParallaxEffect(card) {
-  console.log("setting up parallax effect");
-    const imageContainer = card.querySelector("#thumbnail-image");
+//     const cardRect = card.getBoundingClientRect();
+//     const xVal = (e.clientX - cardRect.left) / cardRect.width;
+//     const yVal = (e.clientY - cardRect.top) / cardRect.height;
 
-    if (imageContainer) {
-      card.addEventListener("mouseover", () => {
-        // Zoom in effect
-        imageContainer.style.transition = "transform 0.25s ease-in";
-        imageContainer.style.transform = "scale(1.05)";
-        // imageContainer.style.backgroundPosition = 'center center';
-      });
+//     const xOffset = -(xVal - 0.5) * 20;
+//     const yOffset = -(yVal - 0.5) * 20;
 
-      card.addEventListener("mousemove", (e) => {
-        const cardRect = card.getBoundingClientRect();
-        const xVal = (e.clientX - cardRect.left) / cardRect.width;
-        const yVal = (e.clientY - cardRect.top) / cardRect.height;
+//     setTimeout(() => {
+//       imageContainer.style.transform = `translate(${xOffset}px, ${yOffset}px) scale(1.1)`;
+//     }, 10); // Slight delay to allow transition to be visible
+//   });
 
-        // Translate this into a percentage-based position
-        const xOffset = -(xVal - 0.5) * 20; // Adjust for desired effect strength
-        const yOffset = -(yVal - 0.5) * 20;
+//   card.addEventListener("mouseleave", () => {
+//     imageContainer.style.transition = 'transform 0.25s ease-in-out';
+//     imageContainer.style.transform = 'scale(1)';
+//   });
+// }
 
-        // Apply the effect to the image container's background
-        imageContainer.style.objectPosition = `${50 + xOffset}% ${
-          50 + yOffset
-        }%`;
-      });
 
-      card.addEventListener("mouseleave", () => {
-        // Reset the background position when the mouse leaves the card
-        imageContainer.style.transform = "scale(1)";
-        imageContainer.style.backgroundPosition = "center center";
-      });
-    }
-}
 
 async function cacheRenderedCards(htmlContent) {
   try {
