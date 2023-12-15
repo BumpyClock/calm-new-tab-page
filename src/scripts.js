@@ -5,6 +5,8 @@ const FEED_DETAILS_KEY = "feedDetails";
 const SEARCH_PREFERENCE_KEY = "searchPref";
 const DEFAULT_API_URL = "https://rss.bumpyclock.com";
 const feedContainer = document.getElementById("feed-container");
+const welcomePage = document.getElementById("welcome-page");
+const settingsPage = document.getElementById("settings-page");
 const refreshTimer = 15 * 60 * 1000; //fifteen minutes
 const NTP_PERMISSION_DEFAULT = false;
 var NTP_PERMISSON;
@@ -37,7 +39,6 @@ const debouncedLayout = debounce(() => {
   msnry.layout();
 },300);
 
-window.addEventListener('resize', debouncedLayout);
 
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {
@@ -82,7 +83,6 @@ const siteInfoCache = {};
 let mostVisitedSitesCache = null;
 
 let lastRefreshed = new Date().getTime(); // Get the current timestamp
-
 const getGreeting = () => {
   const date = new Date();
   const hours = date.getHours();
@@ -97,18 +97,17 @@ const getGreeting = () => {
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
+
   const setGreeting = () => {
     const greeting = getGreeting();
     document.title = `${greeting} - New Tab`;
   };
   // Welcome screen logic
-  const welcomeScreen = document.getElementById("welcome-screen");
-  if(welcomeScreen){
-  const continueButton = document.getElementById("continue-button");
-  continueButton.addEventListener("click", () => {
-    welcomeScreen.style.display = "none";
+  if(welcomePage){
+    setupWelcomePage();
+  
     setGreeting();
-  });
+  
 }
   // setGreeting();
   if (feedContainer) {
@@ -122,6 +121,8 @@ lazySizes.init();
 
     await initializeMostVisitedSitesCache();
     await fetchBingImageOfTheDay();
+    window.addEventListener('resize', debouncedLayout);
+
     cachedCards = await getCachedRenderedCards();
     if (cachedCards !== null) {
       const feedContainer = document.getElementById("feed-container");
@@ -135,7 +136,7 @@ lazySizes.init();
       console.log("rendering feed from scratch");
       await loadSubscribedFeeds();
     }
-  } else {
+  } else if(settingsPage) {
     // Settings page
     setupSettingsPage();
   }
@@ -766,6 +767,7 @@ function createReaderViewModal(article) {
   const modal = document.createElement("div");
   modal.className = "reader-view-modal";
   modal.innerHTML = `
+  <div class="noise"></div>
     <div class="reader-view-content ">
       
       <div class="reader-view-page-content">
@@ -1275,6 +1277,39 @@ async function setupSettingsPage() {
   setupApiUrlFormEventHandler();
 }
 
+
+// Welcome page code
+
+
+
+function setupWelcomePage() {
+getNtpPermission();
+  const welcomePage = document.getElementById("welcome-page");
+  const welcomePageButton = document.getElementById("consent-button");
+  welcomePageButton.addEventListener("click", () => {
+    console.log("consent button clicked");
+
+    setNtpPermission(true);
+    console.log(`NTP_PERMISSON set to ${getNtpPermission()}`)
+    checkNTPConsent();
+    // welcomePage.style.display = "none";
+  });
+}
+function checkNTPConsent(){
+  chrome.permissions.request({ permissions: ["chrome_url_overrides.newtab"] }, granted => {
+    if (granted) {
+      // Activate the new tab override
+      chrome.storage.local.set({ newTabOverrideActive: true });
+      // Replace the new tab page (e.g., open your extension's new tab page)
+      chrome.tabs.query({ url: "chrome://newtab" }, tabs => {
+        if (tabs && tabs.length) {
+          chrome.tabs.update(tabs[0].id, { url: "index.html" });
+        }
+      });
+    } else {
+      // Handle permission denial (e.g., inform user)
+    }
+  });}
 // getter and setter functions
 function setFeedDetails(feedDetails) {
   localStorage.setItem("feedDetails", JSON.stringify(feedDetails));
@@ -1345,6 +1380,7 @@ function getApiUrl() {
 function setNtpPermission(permission) {
   try {
     localStorage.setItem('NTP_PERMISSION', permission);
+    console.log(`NTP_PERMISSION set to ${permission}`);
   } catch (error) {
     console.error('Failed to set NTP_PERMISSION:', error);
   }

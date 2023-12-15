@@ -5,6 +5,13 @@ self.addEventListener("install", function (event) {
   // fetchRSSFeedAndUpdateCache();
 });
 
+chrome.runtime.onInstalled.addListener(function(details) {
+  if (details.reason === "install") {
+    chrome.tabs.create({ url: "welcome.html" });
+  }
+  // Other installation logic if needed
+});
+
 self.addEventListener("message", function (event) {
   if (event.data.action === "setApiUrl") {
     console.log("SW: updating ApiUrl: ", event.data.apiUrl);
