@@ -277,6 +277,7 @@ function initializeMasonry() {
   document.querySelectorAll('.masonry-item').forEach(item => {
     item.addEventListener('load', () => {
       msnry.layout();
+      setupParallaxEffect(item.parentElement.parentElement);
       item.parentElement.classList.remove('loading');
     });
   });
@@ -336,30 +337,41 @@ async function renderFeed(feeditems, feedDetails) {
 }
 
 //parallax effect for image container
-// function setupParallaxEffect(card, imageContainer) {
-//   card.addEventListener("mousemove", (e) => {
-//     // Immediate removal of any transition for a smooth parallax effect
-//     imageContainer.style.transition = 'none';
 
-//     const cardRect = card.getBoundingClientRect();
-//     const xVal = (e.clientX - cardRect.left) / cardRect.width;
-//     const yVal = (e.clientY - cardRect.top) / cardRect.height;
+function setupParallaxEffect(card) {
+  console.log("setting up parallax effect");
+    const imageContainer = card.querySelector("#thumbnail-image");
 
-//     const xOffset = -(xVal - 0.5) * 20;
-//     const yOffset = -(yVal - 0.5) * 20;
+    if (imageContainer) {
+      card.addEventListener("mouseover", () => {
+        // Zoom in effect
+        imageContainer.style.transition = "transform 0.25s ease-in";
+        imageContainer.style.transform = "scale(1.05)";
+        // imageContainer.style.backgroundPosition = 'center center';
+      });
 
-//     setTimeout(() => {
-//       imageContainer.style.transform = `translate(${xOffset}px, ${yOffset}px) scale(1.1)`;
-//     }, 10); // Slight delay to allow transition to be visible
-//   });
+      card.addEventListener("mousemove", (e) => {
+        const cardRect = card.getBoundingClientRect();
+        const xVal = (e.clientX - cardRect.left) / cardRect.width;
+        const yVal = (e.clientY - cardRect.top) / cardRect.height;
 
-//   card.addEventListener("mouseleave", () => {
-//     imageContainer.style.transition = 'transform 0.25s ease-in-out';
-//     imageContainer.style.transform = 'scale(1)';
-//   });
-// }
+        // Translate this into a percentage-based position
+        const xOffset = -(xVal - 0.5) * 20; // Adjust for desired effect strength
+        const yOffset = -(yVal - 0.5) * 20;
 
+        // Apply the effect to the image container's background
+        imageContainer.style.objectPosition = `${50 + xOffset}% ${
+          50 + yOffset
+        }%`;
+      });
 
+      card.addEventListener("mouseleave", () => {
+        // Reset the background position when the mouse leaves the card
+        imageContainer.style.transform = "scale(1)";
+        imageContainer.style.backgroundPosition = "center center";
+      });
+    }
+}
 
 async function cacheRenderedCards(htmlContent) {
   try {
@@ -780,61 +792,19 @@ function createReaderViewModal(article) {
       </div>
       <div id="progress-ring" class="progress-indicator-container"></div>
     </div>
-    <div class="reader-view-settings-pane">
-      <label for="theme-select">Theme:</label>
-      <select id="theme-select">
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-        <option value="sepia">Sepia</option>
-      </select>
-    </div>
+    
   `;
 
-  // add event handlers for theme selection
-
-  const themeDropdown = modal.querySelector("#theme-select");
-  themeDropdown.addEventListener("change", (event) => {
-    const selectedTheme = "";
-    const readerViewPageText = modal.querySelector(".reader-view-page-content");
-    const readerViewSettingsPane = modal.querySelector(
-      ".reader-view-settings-pane"
-    );
-    const readerViewContent = modal.querySelector(".reader-view-content");
-
-    // Remove any existing theme class
-    readerViewPageText.classList.remove("light", "dark", "sepia");
-    readerViewSettingsPane.classList.remove("light", "dark", "sepia");
-    readerViewContent.classList.remove("light", "dark", "sepia");
-
-    // Add the selected theme class
-    if (selectedTheme === "light") {
-      readerViewPageText.classList.add("light");
-      readerViewSettingsPane.classList.add("light");
-      readerViewContent.classList.add("light");
-    } else if (selectedTheme === "dark") {
-      readerViewPageText.classList.add("dark");
-      readerViewSettingsPane.classList.add("dark");
-      readerViewContent.classList.add("dark");
-    } else if (selectedTheme === "sepia") {
-      readerViewPageText.classList.add("sepia");
-      readerViewSettingsPane.classList.add("sepia");
-      readerViewContent.classList.add("sepia");
-    }
-  });
-
-  modal.querySelector(".reader-view-close").onclick = () => {
+   modal.querySelector(".reader-view-close").onclick = () => {
     modal.remove();
     toggleBodyScroll(true);
   };
   modal.addEventListener("click", (event) => {
     const readerViewContent = modal.querySelector(".reader-view-content");
-    const readerViewSettingsPane = modal.querySelector(
-      ".reader-view-settings-pane"
-    );
+    
 
     if (
-      !readerViewContent.contains(event.target) &&
-      !readerViewSettingsPane.contains(event.target)
+      !readerViewContent.contains(event.target)
     ) {
       modal.remove();
       toggleBodyScroll(true);
