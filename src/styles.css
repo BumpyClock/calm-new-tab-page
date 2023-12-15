@@ -1586,17 +1586,12 @@ filter: brightness(1.7);
     }
   }
  
-  * {
-    box-sizing: inherit;
-  }
-  *:before, *:after {
-    box-sizing: inherit;
-  }
+
  
   
   .settings-section{
     display:flex;
-    padding:24px;
+    padding:12px 24px;
     box-shadow: var(--box-shadow-standard);
     border-radius: 12px;
     flex-direction:row;
