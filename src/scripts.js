@@ -796,8 +796,10 @@ function createReaderViewModal(article) {
   `;
 
    modal.querySelector(".reader-view-close").onclick = () => {
+    modal.style.opacity = "0";
+modal.addEventListener('transitionend', function() {
     modal.remove();
-    toggleBodyScroll(true);
+}, { once: true }); // The listener is invoked only once and then it's removed    toggleBodyScroll(true);
   };
   modal.addEventListener("click", (event) => {
     const readerViewContent = modal.querySelector(".reader-view-content");
@@ -806,7 +808,10 @@ function createReaderViewModal(article) {
     if (
       !readerViewContent.contains(event.target)
     ) {
-      modal.remove();
+      modal.style.opacity = "0";
+      modal.addEventListener('transitionend', function() {
+        modal.remove();
+    }, { once: true });
       toggleBodyScroll(true);
     }
   });
@@ -1095,10 +1100,23 @@ async function displaySubscribedFeeds() {
   // Assuming feedDetails is an array of objects with detailed information for each feed
   feedDetails.forEach(async (detail, index) => {
     const feedURL = feeds[index]; // Corresponding URL from feeds array
+    var tempElement = document.createElement("div");
+    const docFragment = document.createDocumentFragment();
     if (feedURL != null) {
-      console.log(JSON.stringify(feedURL));
       const listItem = document.createElement("div");
       listItem.className = "list-item";
+      const noiseLayer = document.createElement("div");
+      noiseLayer.className = "noise";
+      
+      const bgImageContainer = document.createElement("div");
+      bgImageContainer.className = "bg";
+      const bgImage = document.createElement("img");
+bgImage.setAttribute('data-src', detail.favicon);   
+   bgImage.className = "bg lazyload";
+      bgImageContainer.appendChild(bgImage);
+      bgImageContainer.appendChild(noiseLayer);
+      const websiteInfo = document.createElement("div");
+      websiteInfo.className = "website-info";
 
       // Use details from feedDetails array
       const favicon = document.createElement("img");
@@ -1106,24 +1124,31 @@ async function displaySubscribedFeeds() {
         detail.favicon || (await getSiteFavicon(new URL(feedURL).hostname)); // Use the favicon from feedDetails if available
       favicon.alt = `${detail.siteTitle} Favicon`;
       favicon.className = "site-favicon";
-      listItem.appendChild(favicon);
+      docFragment.appendChild(favicon);
 
-      const websiteName = document.createElement("span");
-      websiteName.textContent = detail.siteTitle; // Use the siteTitle from feedDetails
-      listItem.appendChild(websiteName);
+      const websiteName = document.createElement("h3");
+      tempElement.innerHTML = detail.siteTitle || detail.feedTitle;
+      websiteName.textContent = tempElement.textContent; // Use the siteTitle from feedDetails
+      websiteInfo.appendChild(websiteName);
+      docFragment.appendChild(websiteInfo);
 
       const removeButton = document.createElement("button");
-      const removeButtonSpan = document.createElement("span");
-      removeButtonSpan.textContent = "\nclose\n";
-      removeButtonSpan.className = "material-symbols-outlined";
-      removeButton.appendChild(removeButtonSpan);
-      removeButton.className = "remove-feed-button material-symbols-outlined";
+      const removeButtonText = document.createElement("p");
+      removeButtonText.textContent = "Unsubscribe";
+      removeButtonText.className = "unsubscribe-button";
+      removeButton.appendChild(removeButtonText);
+      removeButton.className = "remove-feed-button";
       removeButton.addEventListener("click", () => {
         removeFeed(feedURL);
       });
 
-      listItem.appendChild(removeButton);
-      listfragment.appendChild(listItem);
+      docFragment.appendChild(removeButton);
+      docFragment.appendChild(bgImageContainer);
+
+      listItem.appendChild(docFragment);
+      if (list !== null) {
+        list.appendChild(listItem);
+      }
     }
   });
 

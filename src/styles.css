@@ -117,7 +117,7 @@
     --reading-progress-color: var(--light-accent-color);
     --search-box-color: var(--light-theme-search-box-color);  
     --search-box-color-active: var(--light-theme-search-box-color-active);
-    --sucess-color: var(--light-success-color);
+    --success-color: var(--light-success-color);
     --critical-color: var(--light-critical-color);
   }
 }
@@ -861,9 +861,9 @@ a {
 
 /* Settings Page */
 .settings-container {
-  max-width: 600px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 24px;
 }
 
 .settings-container h1,
@@ -941,28 +941,41 @@ a {
   padding: 0;
   row-gap: 24px;
   column-gap: 24px;
-  max-width: 600px;
-  margin: 1rem auto;
+  max-width: 1200px;
+  margin: 24px auto;
   transition: all 0.25s ease-in-out;
 }
 
 #subscribed-feeds-list .list-item {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
   gap: 24px;
   align-items: center;
-  padding: 1rem;
-  background: linear-gradient(112deg,transparent 30%,rgba(var(--geist-foreground-rgb),.1) 40%,rgba(var(--geist-foreground-rgb),.3) 50%,rgba(var(--geist-foreground-rgb),.1) 60%,transparent 80%);
-  background-color: rgba(18, 17, 17, 0.7);
-  border-color: rgba(99, 99, 99, 0.7);
-  border-width: 2px;
-  border-style: solid;
+  padding: 24px;
+  background: var(--background-color-secondary);
+  overflow: hidden;
   border-radius: 12px;
-  margin-bottom: 1rem;
-  box-shadow: 0 0 0 1px transparent, 0 2px 4px transparent, 0 12px 24px transparent;
+  box-shadow: var(--box-shadow-standard);
   width: 240px;
-  backdrop-filter: blur(250px);
+  justify-content: space-between;
+  height: 240px;
+}
+.list-item:hover {
+  box-shadow: var(--box-shadow-hover);
+  background: var(--background-color-hover);
+}
+
+.list-item .bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* background-image: url("./images/noisy-background.jpg"); */
+  background-repeat: repeat;
+  background-size: 2000px 2000px;
+  z-index: -1;
+  opacity: 0.04;
 }
 #subscribed-feeds-list .list-item .background-image-container {
   width: 130%;
@@ -990,7 +1003,30 @@ a {
 filter: brightness(1.7);
 }
 
-.website-info span {
+.website-info h3{
+  font-family: var(--font-family);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color);
+  display:-webkit-box;
+  text-align: center;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5;
+  width: 100%;
+}
+
+.website-info p {
+  font-family: var(--font-family);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color);
+
+  width: -webkit-fill-available;
+}
+.website-info {
   font-family: var(--font-family);
   font-size: 14px;
   font-weight: 600;
@@ -1000,10 +1036,14 @@ filter: brightness(1.7);
 }
 
 #subscribed-feeds-list .list-item img {
-  width: 48px;
-  height: 48px;
+  width: fit-content;
+  min-width:48px;
+  min-height: 48px;
+  max-width: 180px;
+  max-height: 180px;
+  height: fit-content;
   border-radius: 7px;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .reader-view-modal {
@@ -1591,14 +1631,15 @@ filter: brightness(1.7);
   
   .settings-section{
     display:flex;
-    padding:12px 24px;
+    padding:24px;
     box-shadow: var(--box-shadow-standard);
     border-radius: 12px;
     flex-direction:row;
     justify-content:space-between;
     align-items:center;
-    margin: 0 0 20px 0;
+    margin: 0 0 24px 0;
     background-color: var(--background-color-secondary);
+    transition: var(--transition-fast);
 
   }
 
@@ -1611,12 +1652,18 @@ filter: brightness(1.7);
     flex-direction:column;
     justify-content:center;
     align-items:flex-start;
-    margin: 0 0 20px 0;
+    margin: 0;
     row-gap: 8px;
   }
 
   .settings-section .infoContainer h3{
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 400;
     color: var(--color);
+  }
+  .settings-section .infoContainer p{
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--color);
+    opacity: 0.7;
   }

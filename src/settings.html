@@ -29,12 +29,12 @@
       <button type="submit">Subscribe</button>
     </form>
 <!-- ... -->
-<div id="feed-preferences-container" class="feed-preferences-container">
+<div id="display-preferences-container" class="display-preferences-container">
 <h2>Display Preferences</h2>
 <div id="search-settings" class="settings-section">
   <div class="infoContainer">
-    <h3>Show search</h3>
-    <p>Toggle to show search box on NTP</p></div>
+    <h3>Search</h3>
+    <p>Show search box on NTP</p></div>
   
   <label class="toggleButton">
     <input type="checkbox" id="search-preference-toggle">
@@ -43,11 +43,18 @@
     </div>
   </label>
 </div>
+<div id="feed-discovery-prefs-container" class="settings-section">
+  <div class="infoContainer">
+    <h3>Feed Discovery</h3>
+    <p>Automatically discover and subscribe to your most visited sites?</p>
+  </div>
+  <label class="toggleButton">
+    <input type="checkbox" id="feed-discovery-toggle">
+    <div>
+      <svg><use xlink:href="./icons/icons.svg#toggleButton"></use></svg>
+    </div>
+  </label>
 
-<h2>Feed Discovery</h2>
-<div id="feed-discovery-prefs-container" class="feed-discovery-toggle-container">
-  <label for="feed-discovery-toggle">Automatically discover and subscribe to your most visited sites?</label>
-  <input type="checkbox" id="feed-discovery-toggle" />
 </div>
 </div>
 <div id="apiUrl-container">
