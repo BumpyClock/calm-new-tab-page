@@ -31,10 +31,19 @@
 <!-- ... -->
 <div id="feed-preferences-container" class="feed-preferences-container">
 <h2>Display Preferences</h2>
-<div>
-  <label id="show-search-box-pref" for="showSearchBox">Show search box:</label>
-  <input type="checkbox" id="search-preference-toggle">
+<div id="search-settings" class="settings-section">
+  <div class="infoContainer">
+    <h3>Show search</h3>
+    <p>Toggle to show search box on NTP</p></div>
+  
+  <label class="toggleButton">
+    <input type="checkbox" id="search-preference-toggle">
+    <div>
+      <svg><use xlink:href="./icons/icons.svg#toggleButton"></use></svg>
+    </div>
+  </label>
 </div>
+
 <h2>Feed Discovery</h2>
 <div id="feed-discovery-prefs-container" class="feed-discovery-toggle-container">
   <label for="feed-discovery-toggle">Automatically discover and subscribe to your most visited sites?</label>

@@ -23,6 +23,8 @@
   --light-foreground-color: #1a1a1a;
   --light-accent-color: #007bff;
   --light-border-color: #e6e6e6;
+  --light-critical-color:red;
+  --light-success-color:green;
 
   /* Dark Theme Colors */
   --dark-background-color: rgba(0, 0, 0, 1);
@@ -35,6 +37,8 @@
   --dark-active-color: rgba(0, 0, 0, 0.7);
   --dark-accent-color: #708ea5;
   --dark-border-color: #000;
+  --dark-critical-color:coral;
+  --dark-success-color:lightgreen;
 
   /* Sepia Theme Colors */
   --sepia-background-color: #f4e7d8;
@@ -94,6 +98,8 @@
     --reading-progress-container-background-color: var(--dark-background-color-hover);
     --reading-progress-color: var(--dark-accent-color);
     --progress-background: var(--dark-background-color);
+    --success-color: var(--dark-success-color);
+    --critical-color: var(--dark-critical-color);
   }
 
   
@@ -111,6 +117,8 @@
     --reading-progress-color: var(--light-accent-color);
     --search-box-color: var(--light-theme-search-box-color);  
     --search-box-color-active: var(--light-theme-search-box-color-active);
+    --sucess-color: var(--light-success-color);
+    --critical-color: var(--light-critical-color);
   }
 }
 
@@ -1415,3 +1423,205 @@ filter: brightness(1.7);
 
   mix-blend-mode: soft-light;
   background-color: rgba(0, 0, 0, .9); }
+
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+    white-space: nowrap; /* added line to ensure the text doesn't wrap */
+}
+
+
+  /* settings page styles */
+  
+  .toggleButton {
+    box-sizing: border-box;
+    
+    -webkit-font-smoothing: antialiased;
+    cursor: pointer;
+    display: block;
+      color:var(--critical-color);
+    transform-origin: 50% 50%;
+    transform-style: preserve-3d;
+    transition: transform 0.14s ease;
+  }
+
+    .toggleButton:active {
+    transform: rotateX(30deg);
+     color:var(--success-color);
+  }
+  .toggleButton input {
+    display: none;
+  }
+  .toggleButton input + div {
+    border: 3px solid rgba(0, 128, 0, 0.2);
+    border-radius: 50%;
+    position: relative;
+    width: 44px;
+    height: 44px;
+  }
+  .toggleButton input + div svg {
+   fill: none;
+    stroke-width: 3.6;
+    stroke: var(--critical-color); /* Default stroke color */
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    width: 44px;
+    height: 44px;
+    display: block;
+    position: absolute;
+    left: -3px;
+    top: -3px;
+    right: -3px;
+    bottom: -3px;
+    z-index: 1;
+    stroke-dashoffset: 124.6;
+    stroke-dasharray: 0 162.6 133 29.6;
+    transition: all 0.4s ease 0s;
+  }
+  .toggleButton input + div:before, .toggleButton input + div:after {
+    content: '';
+    width: 3px;
+    height: 16px;
+    background: var(--critical-color);
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 5px;
+  }
+
+  .toggleButton input:checked + div {
+    border: 3.6px solid var(--success-color);
+  }
+  
+  .toggleButton input + div:before {
+    opacity: 0;
+    transform: scale(0.3) translate(-50%, -50%) rotate(45deg);
+    animation: bounceInBefore 0.3s linear forwards 0.3s;
+  }
+  .toggleButton input + div:after {
+    opacity: 0;
+    transform: scale(0.3) translate(-50%, -50%) rotate(-45deg);
+    animation: bounceInAfter 0.3s linear forwards 0.3s;
+  }
+  .toggleButton input:checked + div svg {
+    stroke-dashoffset: 162.6;
+      stroke:var(--success-color);
+    stroke-dasharray: 0 162.6 28 134.6;
+    transition: all 0.4s ease 0.2s;
+  }
+  .toggleButton input:checked + div:before {
+    opacity: 0;
+      stroke:var(--success-color);
+    transform: scale(0.3) translate(-50%, -50%) rotate(45deg);
+    animation: bounceInBeforeDont 0.3s linear forwards 0s;
+  }
+  
+  .toggleButton input:checked + div:after {
+    opacity: 0;
+      
+    transform: scale(0.3) translate(-50%, -50%) rotate(-45deg);
+    animation: bounceInAfterDont 0.3s linear forwards 0s;
+  }
+  @keyframes bounceInBefore {
+    0% {
+      opacity: 0;
+      transform: scale(0.3) translate(-50%, -50%) rotate(45deg);
+    }
+    50% {
+      opacity: 0.9;
+      transform: scale(1.1) translate(-50%, -50%) rotate(45deg);
+    }
+    80% {
+      opacity: 1;
+      transform: scale(0.89) translate(-50%, -50%) rotate(45deg);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translate(-50%, -50%) rotate(45deg);
+    }
+  }
+  @keyframes bounceInAfter {
+    0% {
+      opacity: 0;
+      transform: scale(0.3) translate(-50%, -50%) rotate(-45deg);
+    }
+    50% {
+      opacity: 0.9;
+      transform: scale(1.1) translate(-50%, -50%) rotate(-45deg);
+    }
+    80% {
+      opacity: 1;
+      transform: scale(0.89) translate(-50%, -50%) rotate(-45deg);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translate(-50%, -50%) rotate(-45deg);
+    }
+  }
+  @keyframes bounceInBeforeDont {
+    0% {
+      opacity: 1;
+      transform: scale(1) translate(-50%, -50%) rotate(45deg);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0.3) translate(-50%, -50%) rotate(45deg);
+    }
+  }
+  @keyframes bounceInAfterDont {
+    0% {
+      opacity: 1;
+      transform: scale(1) translate(-50%, -50%) rotate(-45deg);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0.3) translate(-50%, -50%) rotate(-45deg);
+    }
+  }
+ 
+  * {
+    box-sizing: inherit;
+  }
+  *:before, *:after {
+    box-sizing: inherit;
+  }
+ 
+  
+  .settings-section{
+    display:flex;
+    padding:24px;
+    box-shadow: var(--box-shadow-standard);
+    border-radius: 12px;
+    flex-direction:row;
+    justify-content:space-between;
+    align-items:center;
+    margin: 0 0 20px 0;
+    background-color: var(--background-color-secondary);
+
+  }
+
+  .settings-section:hover{
+    box-shadow: var(--box-shadow-hover);
+  }
+
+  .settings-section .infoContainer{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:flex-start;
+    margin: 0 0 20px 0;
+    row-gap: 8px;
+  }
+
+  .settings-section .infoContainer h3{
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color);
+  }
