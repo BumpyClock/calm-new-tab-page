@@ -115,8 +115,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     setupSearch();
  lazySizes.cfg.expand = 1000;
 lazySizes.cfg.preloadAfterLoad = true;
-lazySizes.cfg.loadMode = 3;
-lazySizes.cfg.expFactor = 2;
+lazySizes.cfg.loadMode = 2;
+// lazySizes.cfg.expFactor = 2;
 lazySizes.init();
 
     await initializeMostVisitedSitesCache();
@@ -323,8 +323,9 @@ async function renderFeed(feeditems, feedDetails) {
   console.log(`rendered ${cardCount} cards`);
   // hideLoadingState();
   //create a refresh animation here to show that feed has been refreshed
+  if (feedContainer) {
   feedContainer.innerHTML = "";
-
+  }
   feedContainer.appendChild(fragment);
   await cacheRenderedCards(feedContainer.innerHTML);
   setLastRefreshedTimestamp();
