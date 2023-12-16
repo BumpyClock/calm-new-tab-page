@@ -694,10 +694,9 @@ function handleSearch() {
 
 // Add this function to remove a feed
 function removeFeed(feedURL) {
-  const feeds = getSubscribedFeeds();
+  const feeds = getSubscribedFeeds().subscribedFeeds;
   const updatedFeeds = feeds.filter((url) => url !== feedURL);
   setSubscribedFeeds(updatedFeeds);
-  displaySubscribedFeeds();
 }
 
 async function showReaderView(url) {
@@ -1077,7 +1076,20 @@ async function setupSubscriptionForm() {
     form.reset();
     await refreshFeeds();
     await displaySubscribedFeeds();
+    setupUnsubscribeButtons();
+
+    
   });
+}
+
+function setupUnsubscribeButton(elem,feedUrl) {
+  elem.addEventListener("click", () => {
+    removeFeed(feedUrl);
+    console.log(`Removing feed: ${feedUrl}`);
+    displaySubscribedFeeds();
+
+  });
+
 }
 
 function setupBackButton() {
@@ -1140,9 +1152,7 @@ bgImage.setAttribute('data-src', detail.favicon);
       removeButtonText.className = "unsubscribe-button";
       removeButton.appendChild(removeButtonText);
       removeButton.className = "remove-feed-button";
-      removeButton.addEventListener("click", () => {
-        removeFeed(feedURL);
-      });
+      setupUnsubscribeButton(removeButton, feedURL);
 
       docFragment.appendChild(removeButton);
       docFragment.appendChild(bgImageContainer);

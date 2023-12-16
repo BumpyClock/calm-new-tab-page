@@ -386,7 +386,7 @@ body > *:not(.background-image-container)::selection {
   font-weight: 600;
   margin-bottom: 8px;
   display: inline-block;
-  transition:var(--transition-standard);
+  transition:var(--transition-fast);
 }
 
 .card:hover a{
