@@ -3,6 +3,14 @@ const SUBSCRIBED_FEEDS_KEY = "subscribedFeeds";
 const FEED_DISCOVERY_KEY = "feedDiscoveryPref"; // By default feed discovery is enabled
 const FEED_DETAILS_KEY = "feedDetails";
 const SEARCH_PREFERENCE_KEY = "searchPref";
+const DEFAULT_API_URL = "https://rss.bumpyclock.com";
+const feedContainer = document.getElementById("feed-container");
+const welcomePage = document.getElementById("welcome-page");
+const settingsPage = document.getElementById("settings-page");
+const refreshTimer = 15 * 60 * 1000; //fifteen minutes
+const NTP_PERMISSION_DEFAULT = false;
+var NTP_PERMISSON;
+let startY; // Variable to store the start Y position of the touch
 
 defaultFeeds = [
   "http://www.theverge.com/rss/index.xml",
@@ -14,11 +22,25 @@ let feedList = {
   subscribedFeeds: [],
   suggestedFeeds: [],
 };
+let msnry;
 
-const refreshTimer = 15 * 60 * 1000; //fifteen minutes
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+
 
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {
+    chrome.tabs.create({ url: "welcome.html" });
     setFeedDiscovery(true);
     setSearchPreference(false);
     getSubscribedFeeds();
@@ -59,7 +81,6 @@ const siteInfoCache = {};
 let mostVisitedSitesCache = null;
 
 let lastRefreshed = new Date().getTime(); // Get the current timestamp
-
 const getGreeting = () => {
   const date = new Date();
   const hours = date.getHours();
@@ -73,47 +94,47 @@ const getGreeting = () => {
   }
 };
 
-async function doInitialLoad() {
-  if (document.querySelector("#feed-container")) {
-    await initializeMostVisitedSitesCache();
-    await loadSubscribedFeeds();
-    // await fetchBingImageOfTheDay();
-    // hideSearch();
-  }
-}
-
-// doInitialLoad().then(() => {
-//   if (document.querySelector("#feed-container")) {
-//     initialLoad = false;
-//   }
-// });
-
 document.addEventListener("DOMContentLoaded", async () => {
   const setGreeting = () => {
     const greeting = getGreeting();
     document.title = `${greeting} - New Tab`;
   };
+  // Welcome screen logic
+  if (welcomePage) {
+    setupWelcomePage();
+
+    setGreeting();
+  }
   // setGreeting();
-  if (document.querySelector("#feed-container")) {
+  if (feedContainer) {
     // Main page
     setupSearch();
+    lazySizes.cfg.expand = 1000;
+    lazySizes.cfg.preloadAfterLoad = true;
+    lazySizes.cfg.loadMode = 2;
+    lazySizes.cfg.expFactor = 2;
+    lazySizes.init();
 
     await initializeMostVisitedSitesCache();
     await fetchBingImageOfTheDay();
+    
+
     cachedCards = await getCachedRenderedCards();
     if (cachedCards !== null) {
       const feedContainer = document.getElementById("feed-container");
       feedContainer.innerHTML = cachedCards;
-      setupParallaxEffect();
+      // setupParallaxEffect();
       initializeMasonry();
       reapplyEventHandlersToCachedCards();
       feedContainer.style.opacity = "1"; // apply the fade-in effect
-      bgImageScrollHandler();
+      
+      // bgImageScrollHandler();
     } else {
       console.log("rendering feed from scratch");
       await loadSubscribedFeeds();
     }
-  } else {
+   
+  } else if (settingsPage) {
     // Settings page
     setupSettingsPage();
   }
@@ -128,18 +149,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function hideSearch() {
-  const searchContainer = document.getElementById("search-container");
+  const searchContainer = document.getElementById("search-wrapper");
   searchContainer.innerHTML = "";
 }
 function showSearch() {
-  const searchContainer = document.getElementById("search-container");
-  searchContainer.innerHTML = `<input type="text" id="search-input" placeholder="Search...">
-  <select title="select search engine" id="search-engine" class="search-engine">
-    <option value="https://www.google.com/search?q=">Google</option>
-    <option value="https://www.bing.com/search?q=">Bing</option>
-    <option value="https://duckduckgo.com/?q=">DuckDuckGo</option>
-  </select>
-  <button id="search-button">Search</button>`;
+  const searchContainer = document.getElementById("search-wrapper");
+  searchContainer.innerHTML = `<div class="input-holder">
+  <input type="text" id="search-input" class="search-input" placeholder="Type to search" />
+  <button id="search-button" class="search-icon" ><span></span></button>
+</div>
+`;
   handleSearch();
 }
 
@@ -189,26 +208,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-function getSubscribedFeeds() {
-  if (!localStorage.getItem(SUBSCRIBED_FEEDS_KEY)) {
-    setSubscribedFeeds(defaultFeeds);
-    return {
-      subscribedFeeds: defaultFeeds,
-      feedDetails: JSON.parse(localStorage.getItem(FEED_DETAILS_KEY)) || [],
-    };
-  } else {
-    return {
-      subscribedFeeds: JSON.parse(localStorage.getItem(SUBSCRIBED_FEEDS_KEY)),
-      feedDetails: JSON.parse(localStorage.getItem(FEED_DETAILS_KEY)) || [],
-    };
-  }
-}
-
-function setSubscribedFeeds(feeds) {
-  feedList.subscribedFeeds = feeds;
-  localStorage.setItem(SUBSCRIBED_FEEDS_KEY, JSON.stringify(feeds));
-}
-
 async function clearOldCaches() {
   const cacheNames = await caches.keys();
   await Promise.all(
@@ -240,10 +239,10 @@ async function refreshFeeds() {
   const serviceWorker = navigator.serviceWorker.controller;
   if (serviceWorker) {
     lastRefreshed = new Date().getTime();
-    console.log(
-      "Sending message to service worker to fetch feeds",
-      feedList.subscribedFeeds
-    );
+    // console.log(
+    //   "Sending message to service worker to fetch feeds",
+    //   feedList.subscribedFeeds
+    // );
     serviceWorker.postMessage({
       action: "fetchRSS",
       feedUrls: feedList.subscribedFeeds,
@@ -256,7 +255,7 @@ async function updateDisplayOnNewTab() {
   const cachedCards = await getCachedRenderedCards();
   if (cachedCards) {
     renderFeed(cachedCards);
-    setupParallaxEffect();
+    // setupParallaxEffect();
   } else {
     loadSubscribedFeeds();
   }
@@ -264,18 +263,26 @@ async function updateDisplayOnNewTab() {
 
 function initializeMasonry() {
   // Initialize Masonry after all cards are loaded
-  var feedContainer = document.querySelector("#feed-container");
-  var msnry = new Masonry(feedContainer, {
+  msnry = new Masonry(feedContainer, {
     // options
     itemSelector: ".card", // Use your card's class
     columnWidth: ".card", // The width of each column, you can set this as needed
     gutter: 12, // Space between items, you can set this as needed
     fitWidth: true,
   });
-  // msnry.imagesloaded().progress( function() {
-  //   msnry.layout();
-  // });
+  document.querySelectorAll(".masonry-item").forEach((item) => {
+    item.addEventListener("load", () => {
+      msnry.layout();
+      setupParallaxEffect(item.parentElement.parentElement);
+      item.parentElement.classList.remove("loading");
+    });
+  });
+  const debouncedLayout = debounce(() => {
+    msnry.layout();
+  }, 300);
+  window.addEventListener("resize", debouncedLayout);
 }
+
 function insertGridSizer() {
   const feedContainer = document.getElementById("feed-container");
   const gridSizer = document.createElement("div");
@@ -316,56 +323,52 @@ async function renderFeed(feeditems, feedDetails) {
   console.log(`rendered ${cardCount} cards`);
   // hideLoadingState();
   //create a refresh animation here to show that feed has been refreshed
-  feedContainer.innerHTML = "";
-
+  if (feedContainer) {
+    feedContainer.innerHTML = "";
+  }
   feedContainer.appendChild(fragment);
   await cacheRenderedCards(feedContainer.innerHTML);
   setLastRefreshedTimestamp();
   // Fade-in effect
   feedContainer.style.opacity = "1";
   // Setup parallax effect for each card
-  setupParallaxEffect();
-  insertGridSizer();
   initializeMasonry();
+  // setupParallaxEffect();
+  insertGridSizer();
 }
 
 //parallax effect for image container
 
-function setupParallaxEffect() {
-  console.log("setting up parallax effect");
-  document.querySelectorAll(".card").forEach((card) => {
-    const imageContainer = card.querySelector(".thumbnail-image");
+function setupParallaxEffect(card) {
+  const imageContainer = card.querySelector("#thumbnail-image");
 
-    if (imageContainer) {
-      card.addEventListener("mouseover", () => {
-        // Zoom in effect
-        imageContainer.style.transition = "transform 0.25s ease-in";
-        imageContainer.style.transform = "scale(1.05)";
-        // imageContainer.style.backgroundPosition = 'center center';
-      });
+  if (imageContainer) {
+    card.addEventListener("mouseover", () => {
+      // Zoom in effect
+      imageContainer.style.transition = "transform 0.25s ease-in";
+      imageContainer.style.transform = "scale(1.05)";
+      // imageContainer.style.backgroundPosition = 'center center';
+    });
 
-      card.addEventListener("mousemove", (e) => {
-        const cardRect = card.getBoundingClientRect();
-        const xVal = (e.clientX - cardRect.left) / cardRect.width;
-        const yVal = (e.clientY - cardRect.top) / cardRect.height;
+    card.addEventListener("mousemove", (e) => {
+      const cardRect = card.getBoundingClientRect();
+      const xVal = (e.clientX - cardRect.left) / cardRect.width;
+      const yVal = (e.clientY - cardRect.top) / cardRect.height;
 
-        // Translate this into a percentage-based position
-        const xOffset = -(xVal - 0.5) * 20; // Adjust for desired effect strength
-        const yOffset = -(yVal - 0.5) * 20;
+      // Translate this into a percentage-based position
+      const xOffset = -(xVal - 0.5) * 20; // Adjust for desired effect strength
+      const yOffset = -(yVal - 0.5) * 20;
 
-        // Apply the effect to the image container's background
-        imageContainer.style.backgroundPosition = `${50 + xOffset}% ${
-          50 + yOffset
-        }%`;
-      });
+      // Apply the effect to the image container's background
+      imageContainer.style.objectPosition = `${50 + xOffset}% ${50 + yOffset}%`;
+    });
 
-      card.addEventListener("mouseleave", () => {
-        // Reset the background position when the mouse leaves the card
-        imageContainer.style.transform = "scale(1)";
-        imageContainer.style.backgroundPosition = "center center";
-      });
-    }
-  });
+    card.addEventListener("mouseleave", () => {
+      // Reset the background position when the mouse leaves the card
+      imageContainer.style.transform = "scale(1)";
+      imageContainer.style.backgroundPosition = "center center";
+    });
+  }
 }
 
 async function cacheRenderedCards(htmlContent) {
@@ -396,12 +399,15 @@ navigator.serviceWorker.addEventListener("message", async function (event) {
     let response = JSON.parse(event.data.rssData);
     console.log(`feed refresh from service worker: ${response}`);
     const { feedDetails, feedItems } = processRSSData(response);
-
-    localStorage.setItem("feedDetails", JSON.stringify(feedDetails));
-    localStorage.setItem("feedItems", JSON.stringify(feedItems));
-    await renderFeed(feedItems, feedDetails).catch((error) => {
-      console.error("Error rendering the feed:", error);
-    });
+    setFeedDetails(feedDetails);
+    setFeedItems(feedItems);
+    try {
+      await renderFeed(feedItems, feedDetails).catch((error) => {
+        console.error("Error rendering the feed:", error);
+      });
+    } catch (error) {
+      console.log("feed container not found:", error);
+    }
   }
 });
 async function getWebsiteTitle(url) {
@@ -437,8 +443,10 @@ channel.addEventListener("message", (event) => {
       loadSubscribedFeeds();
     } else {
       const { feedDetails, feedItems } = processRSSData(response);
-      renderFeed(feedDetails, feedItems);
-      setLastRefreshedTimestamp(new Date(event.data.lastRefreshed));
+      if (document.getElementById("#feed-container")) {
+        renderFeed(feedDetails, feedItems);
+        setLastRefreshedTimestamp(new Date(event.data.lastRefreshed));
+      }
     }
   }
 });
@@ -503,157 +511,7 @@ function processRSSData(rssData) {
   return { feedDetails, feedItems };
 }
 
-async function createCard(item) {
-  const docFrag = document.createDocumentFragment();
-  const card = document.createElement("div");
-  var tempElement = document.createElement("div");
-  card.className = "card";
 
-  // Image container
-  const imageContainer = document.createElement("div");
-  imageContainer.className = "image-container";
-
-  // Card background
-  const cardbg = document.createElement("div");
-  cardbg.className = "card-bg";
-
-  // Set thumbnail URL
-  let thumbnailUrl = item.thumbnail;
-
-  if (Array.isArray(item.thumbnail)) {
-    //parse the array and get the first item that has a url or link property
-    for (const thumbnail of item.thumbnail) {
-      if (thumbnail.url) {
-        thumbnailUrl = thumbnail.url;
-        break;
-      } else if (thumbnail.link) {
-        thumbnailUrl = thumbnail.link;
-        break;
-      }
-    }
-  }
-  if (thumbnailUrl) {
-    imageContainer.innerHTML = `<img data-src="${thumbnailUrl}" alt="${item.siteTitle} Thumbnail" class="thumbnail-image lazyload">`;
-    cardbg.innerHTML = `<img data-src="${thumbnailUrl}" alt="${item.siteTitle} Thumbnail" class="card-bg lazyload">`;
-    docFrag.appendChild(imageContainer);
-    docFrag.appendChild(cardbg);
-  }
-
-  // Text content container
-  const textContentDiv = document.createElement("div");
-  textContentDiv.classList.add("text-content");
-
-  // Website information
-  const websiteInfoDiv = document.createElement("div");
-  websiteInfoDiv.className = "website-info";
-  if (!thumbnailUrl) {
-    websiteInfoDiv.style.marginTop = "12px";
-  }
-
-  // Favicon
-  const favicon = document.createElement("img");
-  favicon.src = item.favicon;
-  favicon.alt = `${item.siteTitle} Favicon`;
-  favicon.className = "site-favicon";
-  websiteInfoDiv.appendChild(favicon);
-
-  // Website name
-  const websiteName = document.createElement("span");
-  websiteName.textContent = item.feedTitle || item.siteTitle;
-  websiteInfoDiv.appendChild(websiteName);
-  textContentDiv.appendChild(websiteInfoDiv);
-
-  // Title
-  const title = document.createElement("h3");
-  title.textContent = item.title;
-  textContentDiv.appendChild(title);
-
-  // Description
-  if (item.content) {
-    try {
-      const snippet = document.createElement("p");
-      snippet.className = "description";
-
-      // Sanitize item.content
-      const sanitizedContent = DOMPurify.sanitize(item.content);
-
-      // Check sanitizedContent for SVG elements before setting it as the innerHTML of tempElement
-      const svgRegex = /<svg.*?>.*?<\/svg>|<path.*?>.*?<\/path>/g;
-      if (svgRegex.test(sanitizedContent)) {
-        tempElement.textContent = "";
-      } else {
-        tempElement.innerHTML = sanitizedContent;
-        snippet.textContent = tempElement.textContent;
-        textContentDiv.appendChild(snippet);
-      }
-    } catch (error) {
-      console.log(`Error creating content snippet for : ${item.content} `, error);
-    }
-  }
-
-  // Publication date and time
-  const date = new Date(item.published);
-  const dateString = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-  const details = document.createElement("div");
-  details.className = "date";
-  details.textContent = dateString;
-  textContentDiv.appendChild(details);
-
-  // Description
-  if (!thumbnailUrl && item.description) {
-    const description = document.createElement("div");
-    description.className = "description long-description";
-    description.textContent = item.description;
-    textContentDiv.appendChild(description);
-  }
-
-  // Read more link
-  const readMoreLink = document.createElement("a");
-  readMoreLink.href = item.link;
-  readMoreLink.target = "_blank";
-  readMoreLink.textContent = "Read more";
-  readMoreLink.className = "read-more-link";
-  textContentDiv.appendChild(readMoreLink);
-
-  // Event handler for card click
-  applyCardEventHandlers(card, item);
-
-  // Append text content to the card
-  docFrag.appendChild(textContentDiv);
-
-  // Append the document fragment to the card
-  card.appendChild(docFrag);
-
-  return card;
-}
-
-function applyCardEventHandlers(card, item) {
-  // Event listener for card click
-  if (item.link.includes("engadget")) {
-    card.addEventListener("click", () => {
-      window.open(item.link, "_blank");
-    });
-  } else {
-    card.addEventListener("click", (e) => {
-      if (e.target.tagName.toLowerCase() !== "a") {
-        showReaderView(item);
-      }
-    });
-  }
-}
-
-function reapplyEventHandlersToCachedCards() {
-  console.log("reapplying event handlers to cached cards");
-  let eventHandlersRestored = 0;
-  const feedContainer = document.getElementById("feed-container");
-  const cards = feedContainer.querySelectorAll(".card");
-  cards.forEach((card) => {
-    const linkURL = card.querySelector("a").href; // Example: getting the URL from the card's read more link
-    applyCardEventHandlers(card, linkURL);
-    eventHandlersRestored++;
-  });
-  console.log(`Restored ${eventHandlersRestored} event handlers`);
-}
 
 // Search code
 
@@ -664,12 +522,13 @@ function handleSearch() {
 
   searchButton.addEventListener("click", () => {
     const query = searchInput.value;
-    const searchEngineURL = searchEngineSelect.value;
+    // const searchEngineURL = searchEngineSelect.value;
+    const searchEngineURL = "https://www.google.com/search?q=";
     const searchURL = searchEngineURL + encodeURIComponent(query);
     window.open(searchURL, "_blank");
   });
 
-  searchInput.addEventListener("keydown", (event) => {
+  searchInput.addEventListener("keyup", (event) => {
     if (event.key === "Enter") {
       searchButton.click();
     }
@@ -678,222 +537,9 @@ function handleSearch() {
 
 // Add this function to remove a feed
 function removeFeed(feedURL) {
-  const feeds = getSubscribedFeeds();
+  const feeds = getSubscribedFeeds().subscribedFeeds;
   const updatedFeeds = feeds.filter((url) => url !== feedURL);
   setSubscribedFeeds(updatedFeeds);
-  displaySubscribedFeeds();
-}
-
-async function showReaderView(item) {
-  const url = item.link;
-  try {
-    const response = await fetch(url);
-    const html = await response.text();
-    const pure = DOMPurify.sanitize(html);
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
-    const reader = new Readability(doc);
-    const article = reader.parse();
-
-    if (article) {
-      const readerViewModal = createReaderViewModal(article);
-      document.body.appendChild(readerViewModal);
-      setTimeout(() => {
-        readerViewModal.classList.add("visible");
-      }, 10);
-      toggleBodyScroll(false);
-
-      // Add website name and favicon
-      const websiteInfoDiv = document.createElement("div");
-      websiteInfoDiv.className = "website-info";
-
-      const favicon = document.createElement("img");
-      const mainDomain = new URL(url).hostname;
-      favicon.src = item.favicon;
-      favicon.alt = `${mainDomain} Favicon`;
-      favicon.className = "site-favicon";
-      websiteInfoDiv.appendChild(favicon);
-
-      const websiteName = document.createElement("span");
-      websiteName.textContent = item.siteTitle;
-      console.log("website name: ", websiteName.textContent);
-      websiteInfoDiv.appendChild(websiteName);
-
-      readerViewModal
-        .querySelector("#website-info-placeholder")
-        .appendChild(websiteInfoDiv);
-
-      // Check if content overflows
-      const contentHeight = readerViewModal.querySelector(
-        ".reader-view-page-text"
-      );
-      const contentContainerHeight = readerViewModal.querySelector(
-        ".reader-view-content"
-      );
-      const progressRing = document.getElementById("progress-ring");
-      if (contentHeight.clientHeight < contentContainerHeight.clientHeight) {
-        progressRing.style.display = "none";
-      }
-    } else {
-      console.error("Failed to fetch readable content.");
-    }
-  } catch (error) {
-    console.error("Error fetching the page content:", error);
-  }
-}
-
-function createReaderViewModal(article) {
-  const modal = document.createElement("div");
-  modal.className = "reader-view-modal";
-  modal.innerHTML = `
-    <div class="reader-view-content ">
-      
-      <div class="reader-view-page-content">
-        <div class="reader-view-header">
-          <span class="reader-view-close material-symbols-rounded">close</span>
-          <h1 class="reader-view-title"><span id="website-info-placeholder"></span>${
-            article.title
-          }</h1>
-          ${
-            article.byline
-              ? `<h2 class="reader-view-author">${article.byline}</h2>`
-              : ""
-          }
-          <p class="reader-view-reading-time">${estimateReadingTime(
-            article.textContent
-          )} minutes</p>
-          <hr class="solid">
-        </div>
-        <div class="reader-view-page-text">
-          <div class="reader-view-article">${article.content}</div>
-        </div>
-      </div>
-      <div id="progress-ring" class="progress-indicator-container"></div>
-    </div>
-    <div class="reader-view-settings-pane">
-      <label for="theme-select">Theme:</label>
-      <select id="theme-select">
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-        <option value="sepia">Sepia</option>
-      </select>
-    </div>
-  `;
-
-  // add event handlers for theme selection
-
-  const themeDropdown = modal.querySelector("#theme-select");
-  themeDropdown.addEventListener("change", (event) => {
-    const selectedTheme = "";
-    const readerViewPageText = modal.querySelector(".reader-view-page-content");
-    const readerViewSettingsPane = modal.querySelector(
-      ".reader-view-settings-pane"
-    );
-    const readerViewContent = modal.querySelector(".reader-view-content");
-
-    // Remove any existing theme class
-    readerViewPageText.classList.remove("light", "dark", "sepia");
-    readerViewSettingsPane.classList.remove("light", "dark", "sepia");
-    readerViewContent.classList.remove("light", "dark", "sepia");
-
-    // Add the selected theme class
-    if (selectedTheme === "light") {
-      readerViewPageText.classList.add("light");
-      readerViewSettingsPane.classList.add("light");
-      readerViewContent.classList.add("light");
-    } else if (selectedTheme === "dark") {
-      readerViewPageText.classList.add("dark");
-      readerViewSettingsPane.classList.add("dark");
-      readerViewContent.classList.add("dark");
-    } else if (selectedTheme === "sepia") {
-      readerViewPageText.classList.add("sepia");
-      readerViewSettingsPane.classList.add("sepia");
-      readerViewContent.classList.add("sepia");
-    }
-  });
-
-  modal.querySelector(".reader-view-close").onclick = () => {
-    modal.remove();
-    toggleBodyScroll(true);
-  };
-  modal.addEventListener("click", (event) => {
-    const readerViewContent = modal.querySelector(".reader-view-content");
-    const readerViewSettingsPane = modal.querySelector(
-      ".reader-view-settings-pane"
-    );
-
-    if (
-      !readerViewContent.contains(event.target) &&
-      !readerViewSettingsPane.contains(event.target)
-    ) {
-      modal.remove();
-      toggleBodyScroll(true);
-    }
-  });
-
-  const progressIndicator = createCircularProgressIndicator();
-  modal
-    .querySelector(".progress-indicator-container")
-    .appendChild(progressIndicator);
-  const progressCircle = progressIndicator.querySelector(
-    ".progress-circle__progress"
-  );
-  const pageText = modal.querySelector(".reader-view-content");
-  pageText.addEventListener("scroll", () =>
-    updateReadingProgress(progressCircle, pageText)
-  );
-
-  return modal;
-}
-
-//Reading progress indicator code
-
-function createCircularProgressIndicator() {
-  const progressIndicator = document.createElement("div");
-  progressIndicator.className = "progress-indicator";
-
-  progressIndicator.innerHTML = `
-    <svg id="progress-ring" class="progress-circle" viewBox="0 0 36 36">
-      <circle class="progress-circle__background" cx="18" cy="18" r="15.9155" stroke-width="2"></circle>
-      <circle class="progress-circle__progress" cx="18" cy="18" r="15.9155" stroke-width="2" stroke-dasharray="100" stroke-dashoffset="100"></circle>
-    </svg>
-  `;
-
-  return progressIndicator;
-}
-
-function updateReadingProgress(progressCircle, pageText) {
-  const scrollPosition = pageText.scrollTop;
-  const maxScroll = pageText.scrollHeight - pageText.clientHeight;
-
-  const progressPercentage = (scrollPosition / maxScroll) * 100;
-
-  setCircularProgress(progressCircle, progressPercentage);
-}
-
-function setCircularProgress(progressIndicator, progressPercentage) {
-  const radius = progressIndicator.r.baseVal.value;
-  const circumference = 2 * Math.PI * radius;
-
-  const offset = circumference - (progressPercentage / 100) * circumference;
-  progressIndicator.style.strokeDashoffset = offset;
-}
-
-//function to estimate reading time
-function estimateReadingTime(text) {
-  const wordsPerMinute = 183; // Adjust this value based on your preferred reading speed
-  const words = text.trim().split(/\s+/).length;
-  const readingTimeInMinutes = Math.ceil(words / wordsPerMinute);
-
-  return readingTimeInMinutes;
-}
-
-function toggleBodyScroll(isEnabled) {
-  if (isEnabled) {
-    document.body.style.overflow = "";
-  } else {
-    document.body.style.overflow = "hidden";
-  }
 }
 
 // Show Top Sites
@@ -938,12 +584,13 @@ async function createMostVisitedSiteCard(site) {
   const sitefaviconUrl = await getSiteFavicon(mainDomain);
   //send a get request to get the favicon url from http://192.168.1.51:3000/get-favicon?url=${mainDomain}
   siteCard.innerHTML = `
-    <a href="${site.url}" class="site-link">
-      <div class="background-image-container" style="background-image: url('${sitefaviconUrl}');"></div>
-      <img src="${sitefaviconUrl}" alt="${site.title} Favicon" class="site-favicon">
-      <div class="site-title"><p>${site.title}</p></div>
-    </a>
-  `;
+  <a href="${site.url}" class="site-link">
+  <img src="${sitefaviconUrl}" alt="${site.title} Favicon" class="site-favicon lazyload">
+    <div class="site-title"><p>${site.title}</p></div>
+    
+  </a>      <div class="site-card-background-image-container lazyload" style="background-image: url('${sitefaviconUrl}');"></div>
+
+`;
   return siteCard;
 }
 
@@ -1092,6 +739,14 @@ async function setupSubscriptionForm() {
   });
 }
 
+function setupUnsubscribeButton(elem, feedUrl) {
+  elem.addEventListener("click", () => {
+    removeFeed(feedUrl);
+    console.log(`Removing feed: ${feedUrl}`);
+    displaySubscribedFeeds();
+  });
+}
+
 function setupBackButton() {
   const backButton = document.getElementById("back-to-main");
   backButton.addEventListener("click", () => {
@@ -1114,10 +769,23 @@ async function displaySubscribedFeeds() {
   // Assuming feedDetails is an array of objects with detailed information for each feed
   feedDetails.forEach(async (detail, index) => {
     const feedURL = feeds[index]; // Corresponding URL from feeds array
+    var tempElement = document.createElement("div");
+    const docFragment = document.createDocumentFragment();
     if (feedURL != null) {
-      console.log(JSON.stringify(feedURL));
       const listItem = document.createElement("div");
       listItem.className = "list-item";
+      const noiseLayer = document.createElement("div");
+      noiseLayer.className = "noise";
+
+      const bgImageContainer = document.createElement("div");
+      bgImageContainer.className = "bg";
+      const bgImage = document.createElement("img");
+      bgImage.setAttribute("data-src", detail.favicon);
+      bgImage.className = "bg lazyload";
+      bgImageContainer.appendChild(bgImage);
+      bgImageContainer.appendChild(noiseLayer);
+      const websiteInfo = document.createElement("div");
+      websiteInfo.className = "website-info";
 
       // Use details from feedDetails array
       const favicon = document.createElement("img");
@@ -1125,24 +793,38 @@ async function displaySubscribedFeeds() {
         detail.favicon || (await getSiteFavicon(new URL(feedURL).hostname)); // Use the favicon from feedDetails if available
       favicon.alt = `${detail.siteTitle} Favicon`;
       favicon.className = "site-favicon";
-      listItem.appendChild(favicon);
+      docFragment.appendChild(favicon);
 
-      const websiteName = document.createElement("span");
-      websiteName.textContent = detail.siteTitle; // Use the siteTitle from feedDetails
-      listItem.appendChild(websiteName);
+      const websiteName = document.createElement("h3");
+      tempElement.innerHTML = detail.siteTitle || detail.feedTitle;
+      websiteName.textContent = tempElement.textContent; // Use the siteTitle from feedDetails
+      websiteInfo.appendChild(websiteName);
+      const feedTitle = document.createElement("p");
+      tempElement.innerHTML = detail.feedTitle || detail.siteTitle;
+      feedTitle.textContent = tempElement.textContent; // Use the feedTitle from feedDetails
+      websiteInfo.appendChild(feedTitle);
+      const feedUrl = document.createElement("p");
+      feedUrl.className = "feed-url";
+      feedTitle.className = "feed-title";
+      feedUrl.textContent = feedURL;
+      websiteInfo.appendChild(feedUrl);
+      docFragment.appendChild(websiteInfo);
 
       const removeButton = document.createElement("button");
-      const removeButtonSpan = document.createElement("span");
-      removeButtonSpan.textContent = "\nclose\n";
-      removeButtonSpan.className = "material-symbols-outlined";
-      removeButton.appendChild(removeButtonSpan);
-      removeButton.className = "remove-feed-button material-symbols-outlined";
-      removeButton.addEventListener("click", () => {
-        removeFeed(feedURL);
-      });
+      const removeButtonText = document.createElement("p");
+      removeButtonText.textContent = "Unsubscribe";
+      removeButtonText.className = "unsubscribe-button";
+      removeButton.appendChild(removeButtonText);
+      removeButton.className = "remove-feed-button";
+      setupUnsubscribeButton(removeButton, feedURL);
 
-      listItem.appendChild(removeButton);
-      listfragment.appendChild(listItem);
+      docFragment.appendChild(removeButton);
+      docFragment.appendChild(bgImageContainer);
+
+      listItem.appendChild(docFragment);
+      if (list !== null) {
+        list.appendChild(listItem);
+      }
     }
   });
 
@@ -1227,11 +909,152 @@ function setupSearchPreferenceToggle() {
   });
 }
 
+function setupApiUrlFormEventHandler() {
+  const apiUrlForm = document.getElementById("apiUrl-form");
+  const apiUrlInput = document.getElementById("apiUrl-input");
+  apiUrlInput.value = getApiUrl();
+  const apiUrlSubmitButton = document.getElementById("apiUrl-submit-button");
+
+  apiUrlForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    setApiUrl(apiUrlInput.value);
+  });
+
+  apiUrlSubmitButton.addEventListener("click", () => {
+    setApiUrl(apiUrlInput.value);
+  });
+}
+
 async function setupSettingsPage() {
   await displaySubscribedFeeds();
-
   setupSubscriptionForm();
   setupBackButton();
   setupFeedDiscoveryToggle();
   setupSearchPreferenceToggle();
+  setupApiUrlFormEventHandler();
+}
+
+// Welcome page code
+
+function setupWelcomePage() {
+  getNtpPermission();
+  const welcomePage = document.getElementById("welcome-page");
+  const welcomePageButton = document.getElementById("consent-button");
+  welcomePageButton.addEventListener("click", () => {
+    console.log("consent button clicked");
+
+    //open a new page to show the new tab page when the user clicks on the consent button and close the welcome tab
+    chrome.tabs.create({ url: "newtab.html" });
+    chrome.tabs.getCurrent((tab) => {
+      chrome.tabs.remove(tab.id);
+    });
+    setNtpPermission(true);
+    console.log(`NTP_PERMISSON set to ${getNtpPermission()}`);
+    // checkNTPConsent();
+    // welcomePage.style.display = "none";
+  });
+}
+function checkNTPConsent() {
+  
+  
+   if(getNtpPermission()) {
+      
+        // Activate the new tab override
+        chrome.storage.local.set({ newTabOverrideActive: true });
+        // Replace the new tab page (e.g., open your extension's new tab page)
+        chrome.tabs.query({ url: "chrome://newtab" }, (tabs) => {
+          if (tabs && tabs.length) {
+            chrome.tabs.update(tabs[0].id, { url: "index.html" });
+          }
+        });
+     
+    }
+  
+}
+// getter and setter functions
+function setFeedDetails(feedDetails) {
+  localStorage.setItem("feedDetails", JSON.stringify(feedDetails));
+}
+
+function getFeedDetails() {
+  return JSON.parse(localStorage.getItem("feedDetails"));
+}
+
+function setFeedItems(feedItems) {
+  localStorage.setItem("feedItems", JSON.stringify(feedItems));
+}
+
+function getFeedItems() {
+  return JSON.parse(localStorage.getItem("feedItems"));
+}
+
+function getSubscribedFeeds() {
+  if (!localStorage.getItem(SUBSCRIBED_FEEDS_KEY)) {
+    setSubscribedFeeds(defaultFeeds);
+    return {
+      subscribedFeeds: defaultFeeds,
+      feedDetails: JSON.parse(localStorage.getItem(FEED_DETAILS_KEY)) || [],
+    };
+  } else {
+    return {
+      subscribedFeeds: JSON.parse(localStorage.getItem(SUBSCRIBED_FEEDS_KEY)),
+      feedDetails: JSON.parse(localStorage.getItem(FEED_DETAILS_KEY)) || [],
+    };
+  }
+}
+
+function setSubscribedFeeds(feeds) {
+  feedList.subscribedFeeds = feeds;
+  localStorage.setItem(SUBSCRIBED_FEEDS_KEY, JSON.stringify(feeds));
+}
+
+function setApiUrl(apiUrl) {
+  try {
+    localStorage.setItem("apiUrl", apiUrl);
+
+    if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+      console.log("Sending message to service worker to set apiUrl");
+      navigator.serviceWorker.controller.postMessage({
+        action: "setApiUrl",
+        apiUrl: apiUrl,
+      });
+    }
+  } catch (error) {
+    console.error("Failed to set apiUrl:", error);
+  }
+}
+
+function getApiUrl() {
+  try {
+    if (!localStorage.getItem("apiUrl")) {
+      setApiUrl(DEFAULT_API_URL);
+    }
+    return localStorage.getItem("apiUrl");
+  } catch (error) {
+    console.error("Failed to get apiUrl:", error);
+    return null;
+  }
+}
+
+function setNtpPermission(permission) {
+  try {
+    localStorage.setItem("NTP_PERMISSION", permission);
+    console.log(`NTP_PERMISSION set to ${permission}`);
+  } catch (error) {
+    console.error("Failed to set NTP_PERMISSION:", error);
+  }
+}
+
+function getNtpPermission() {
+  try {
+    let permission = localStorage.getItem("NTP_PERMISSION");
+    if (permission === null) {
+      permission = NTP_PERMISSION_DEFAULT;
+      setNtpPermission(permission);
+    }
+    return permission;
+  } catch (error) {
+    console.error("Failed to get NTP_PERMISSION:", error);
+    return NTP_PERMISSION_DEFAULT;
+  }
 }

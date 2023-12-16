@@ -1,14 +1,96 @@
+var apiUrl = "https://rss.bumpyclock.com";
 self.addEventListener("install", function (event) {
   // RSS feed logic here or any caching logic if needed
   // console.log("installing service worker");
   // fetchRSSFeedAndUpdateCache();
 });
 
+chrome.runtime.onInstalled.addListener(function(details) {
+  if (details.reason === "install") {
+    chrome.tabs.create({ url: "welcome.html" });
+  }
+  // Other installation logic if needed
+});
+
+self.addEventListener("message", function (event) {
+  if (event.data.action === "setApiUrl") {
+    console.log("SW: updating ApiUrl: ", event.data.apiUrl);
+    acceptApiUrl(event.data.apiUrl);
+  }
+});
+
+self.addEventListener("message", function (event) {
+  if (event.data.action === "getApiUrl") {
+    console.log("apiUrl: ", apiUrl);
+    event.ports[0].postMessage({
+      action: "getapiUrl",
+      apiUrl: getApiUrl(),
+    });
+  }
+});
+
+self.addEventListener("message", function (event) {
+  if (event.data.action === "discoverFeeds") {
+    const feeds = event.data.feeds;
+    console.log(`[Service Worker] Fetching feeds for ${feeds}`);
+    const feedUrls = discoverFeedUrls(feeds);
+    //Sending fetched feed data to tab
+
+  }
+});
+
+async function discoverFeedUrls(siteUrls){
+  var requestUrl = apiUrl+"/discover";
+  const urlsForPostRequest = {
+    urls: siteUrls,
+  };
+
+  const requestOptions = {
+    method: "POST", // Using POST method
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(urlsForPostRequest), // Sending the urls in the body
+  };
+
+  return fetch(requestUrl, requestOptions).then((response) => {
+    const fetchedFeedUrls = response.json();
+    console.log(`[ServiceWorker] Discover Feed response ${fetchedFeedUrls}`);
+
+    if (response.ok) {
+      return fetchedFeedData;
+    } else {
+      console.log("API response: ", JSON.stringify(fetchedFeedData));
+      throw new Error("Failed to discover RSS feeds");
+    }
+  });
+
+  //put the status check back in after debugging, also need to update api endpoint to send back status
+  // .then(data => {
+  //   // Assuming the new API returns data in a similar format
+  //   if (data.status === "ok") {
+  //     return data;
+  //   } else {
+  //     throw new Error("Failed to parse RSS feeds");
+  //   }
+  // });
+}
+
+
+function getApiUrl() {
+  return apiUrl;
+}
+function acceptApiUrl(url) {
+  console.log("SW: setting apiUrl: ", url);
+  apiUrl = url;
+}
+
 self.addEventListener("message", function (event) {
   if (event.data.action === "fetchRSS") {
     fetchRSSFeedAndUpdateCache(event.data.feedUrls); //Sending fetched feed data to tab
   }
 });
+
 
 async function fetchRSSFeedAndUpdateCache(feedUrls) {
   console.log("fetching rss feeds", feedUrls);
@@ -96,7 +178,7 @@ async function fetchRSSFeedAndUpdateCache(feedUrls) {
       );
 
       // Send the sorted items to the client
-      sendUpdateToClient(combinedDataString);
+      sendRssUpdateToClient(combinedDataString);
       const channel = new BroadcastChannel("rss_feeds_channel");
       channel.postMessage({
         action: "shareFeeds",
@@ -108,12 +190,14 @@ async function fetchRSSFeedAndUpdateCache(feedUrls) {
     });
 }
 
-function sendUpdateToClient(data) {
+function sendRssUpdateToClient(data) {
   clients.matchAll().then((clients) => {
     if (clients && clients.length) {
-      clients[0].postMessage({
-        action: "rssUpdate",
-        rssData: data,
+      clients.forEach(client => {
+        client.postMessage({
+          action: "rssUpdate",
+          rssData: data,
+        });
       });
     }
   });
@@ -121,8 +205,7 @@ function sendUpdateToClient(data) {
 
 //Get thumbnailUrl from the feed items and cache the images
 async function fetchRSSFeed(feedUrls) {
-  const apiUrl = `https://rss.bumpyclock.com/parse`;
-  // const apiUrl = `http://192.168.1.51:3000/parse`;
+  var requestUrl = apiUrl+"/parse";
   const urlsForPostRequest = {
     urls: feedUrls,
   };
@@ -135,7 +218,7 @@ async function fetchRSSFeed(feedUrls) {
     body: JSON.stringify(urlsForPostRequest), // Sending the urls in the body
   };
 
-  return fetch(apiUrl, requestOptions).then((response) => {
+  return fetch(requestUrl, requestOptions).then((response) => {
     const fetchedFeedData = response.json();
     // console.log("fetchedFeedData: ", fetchedFeedData);
 

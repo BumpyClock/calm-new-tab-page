@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <link rel="icon" type="image/png" sizes="32x32" href="icons/icon48.png">
-
+  <script src="./scripts/utils/readability.js"></script>
+  <script src="./scripts/utils/masonry.pkgd.js"></script>
+  <script src="./scripts/utils/lazysizes.min.js"></script>
+  <script src="./scripts/utils/purify.min.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Settings - Calm New Tab Page</title>
@@ -14,7 +17,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 </head>
-<body >
+<body id="settings-page" style="background-color: var(--background-color);" >
   <div class="settings-container">
     <h1>Settings</h1>
     <h2>Subscribed Feeds</h2>
@@ -26,21 +29,45 @@
       <button type="submit">Subscribe</button>
     </form>
 <!-- ... -->
-<div id="feed-preferences-container" class="feed-preferences-container">
+<div id="display-preferences-container" class="display-preferences-container">
 <h2>Display Preferences</h2>
-<div>
-  <label id="show-search-box-pref" for="showSearchBox">Show search box:</label>
-  <input type="checkbox" id="search-preference-toggle">
+<div id="search-settings" class="settings-section">
+  <div class="infoContainer">
+    <h3>Search</h3>
+    <p>Show search box on NTP</p></div>
+  
+  <label class="toggleButton">
+    <input type="checkbox" id="search-preference-toggle">
+    <div>
+      <svg><use xlink:href="./icons/icons.svg#toggleButton"></use></svg>
+    </div>
+  </label>
 </div>
-<h2>Feed Discovery</h2>
-<div id="feed-discovery-prefs-container" class="feed-discovery-toggle-container">
-  <label for="feed-discovery-toggle">Automatically discover and subscribe to your most visited sites?</label>
-  <input type="checkbox" id="feed-discovery-toggle" />
+<div id="feed-discovery-prefs-container" class="settings-section">
+  <div class="infoContainer">
+    <h3>Feed Discovery</h3>
+    <p>Automatically discover and subscribe to your most visited sites?</p>
+  </div>
+  <label class="toggleButton">
+    <input type="checkbox" id="feed-discovery-toggle">
+    <div>
+      <svg><use xlink:href="./icons/icons.svg#toggleButton"></use></svg>
+    </div>
+  </label>
+
 </div>
+</div>
+<div id="apiUrl-container">
+  <h2>Custom API Endpoint</h2>
+  <p>You can use a custom API endpoint for the feeds. Extension expects feeds to be a in a certain format so not any endpoint will work</p>
+  <form id="apiUrl-form" class="apiUrl-form">
+    <input type="url" id="apiUrl-input" placeholder="enter an API URL here" required>
+    <button id="apiUrl-submit-button" type="submit">Save</button>
 </div>
 <div id="credits-container" class="credits-container">
 <h2>Credits</h2>
 <div id="credits-container" class="credits-container">
+
 <h3>Extension dependencies</h3>
 <p>This extension is only possible due to the following projects </p>
 <h4>Readability.js</h4>
