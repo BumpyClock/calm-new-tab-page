@@ -1730,3 +1730,24 @@ filter: brightness(1.7);
   color: var(--color);
   opacity: 0.7;
 }
+
+/* welcome page styles */
+#welcome-container {
+  margin-top: 50px;
+}
+
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  margin-top: 20px;
+}
+
+button:hover {
+  background-color: #45a049;
+}

@@ -793,12 +793,12 @@ function createReaderViewModal(article) {
     modal.addEventListener(
       "transitionend",
       function () {
-        modal.removeEventListener("wheel", handleModalScroll);
-
-        modal.remove();
+       closeModal(modal);
       },
       { once: true }
-    ); // The listener is invoked only once and then it's removed    toggleBodyScroll(true);
+    );
+    toggleBodyScroll(true);
+    // The listener is invoked only once and then it's removed    toggleBodyScroll(true);
   };
   modal.addEventListener("click", (event) => {
     const readerViewContent = modal.querySelector(".reader-view-content");
@@ -808,9 +808,7 @@ function createReaderViewModal(article) {
       modal.addEventListener(
         "transitionend",
         function () {
-          modal.removeEventListener("wheel", handleModalScroll);
-
-          modal.remove();
+          closeModal(modal);
         },
         { once: true }
       );
@@ -831,11 +829,23 @@ function createReaderViewModal(article) {
     updateReadingProgress(progressCircle, pageText)
   );
   modal.addEventListener("wheel", handleModalScroll, { passive: false, capture: true });
+  modal.addEventListener('touchstart', handleModalTouch, { passive: false });
+modal.addEventListener('touchmove', handleModalTouch, { passive: false });
 
   return modal;
 }
 
+function closeModal(modal){
+  modal.removeEventListener("wheel", handleModalScroll);
+  modal.removeEventListener("wheel", handleModalScroll);
+modal.removeEventListener('touchstart', handleModalTouch);
+modal.removeEventListener('touchmove', handleModalTouch);
+
+  modal.remove();
+}
+
 function handleModalScroll(event) {
+
   console.log("handling modal scroll");
   const modal = document.querySelector(".reader-view-modal");
   const readerArticle = modal.querySelector(".reader-view-content");
@@ -846,6 +856,28 @@ function handleModalScroll(event) {
     readerArticle.scrollTop += event.deltaY;
     // Allow scroll on modal content (optional)
     event.preventDefault(); // Uncomment to prevent page scroll behind modal
+  }
+}
+
+let startY; // Variable to store the start Y position of the touch
+
+function handleModalTouch(event) {
+  const modal = document.querySelector(".reader-view-modal");
+  const readerArticle = modal.querySelector(".reader-view-content");
+
+  if (event.type === 'touchstart') {
+    startY = event.touches[0].pageY; // Store the start Y position of the touch
+  } else if (event.type === 'touchmove') {
+    const deltaY = startY - event.touches[0].pageY; // Calculate the distance moved
+    startY = event.touches[0].pageY; // Update the start Y position for the next move event
+
+    if (event.target === readerArticle || readerArticle.contains(event.target)) {
+      readerArticle.scrollTop += deltaY;
+      event.preventDefault();
+    } else if (event.target === modal || modal.contains(event.target)) {
+      readerArticle.scrollTop += deltaY;
+      event.preventDefault();
+    }
   }
 }
 
@@ -1299,6 +1331,9 @@ function setupWelcomePage() {
   const welcomePageButton = document.getElementById("consent-button");
   welcomePageButton.addEventListener("click", () => {
     console.log("consent button clicked");
+
+    //open a new page to show the new tab page when the user clicks on the consent button
+    chrome.tabs.create({ url: "newtab.html" });
 
     setNtpPermission(true);
     console.log(`NTP_PERMISSON set to ${getNtpPermission()}`);
