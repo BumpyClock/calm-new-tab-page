@@ -21,7 +21,7 @@
   --light-new-tab-background-color: #f9f9fb;
   --light-theme-search-box-color: #e0e0e05a;
   --light-theme-search-box-color-active: #fff;
-  --light-new-tab-background-color-secondary: #fff;
+  --light-new-tab-background-color-secondary: #ffffffe8;
   --light-background-color-hover: rgba(245, 245, 245, 0.9);
   --light-active-color: rgba(245, 245, 245, 0.7);
   --light-foreground-color: #1a1a1a;
@@ -247,7 +247,7 @@ body > *:not(.background-image-container)::selection {
   break-inside: avoid;
   -webkit-backdrop-filter: var(--blur);
   backdrop-filter: var(--blur);
-  /* transition: var(--transition-standard); */
+  transition: var(--transition-standard);
 }
 
 .card .card-bg .noise {
@@ -296,7 +296,6 @@ body > *:not(.background-image-container)::selection {
 
 .card:hover .card-bg img {
   opacity: 0.5;
-
   filter: blur(60px) brightness(1.1);
 }
 
@@ -310,6 +309,7 @@ body > *:not(.background-image-container)::selection {
   filter: blur(90px) brightness(1.1);
   box-shadow: var(--box-shadow-hover);
   transform: scale(1.15);
+  transition: var(--transition-standard);
 }
 
 .card .image-container {
