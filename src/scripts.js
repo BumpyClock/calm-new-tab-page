@@ -37,8 +37,7 @@ function debounce(func, wait) {
 
 const debouncedLayout = debounce(() => {
   msnry.layout();
-},300);
-
+}, 300);
 
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {
@@ -97,31 +96,29 @@ const getGreeting = () => {
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
-
   const setGreeting = () => {
     const greeting = getGreeting();
     document.title = `${greeting} - New Tab`;
   };
   // Welcome screen logic
-  if(welcomePage){
+  if (welcomePage) {
     setupWelcomePage();
-  
+
     setGreeting();
-  
-}
+  }
   // setGreeting();
   if (feedContainer) {
     // Main page
     setupSearch();
- lazySizes.cfg.expand = 1000;
-lazySizes.cfg.preloadAfterLoad = true;
-lazySizes.cfg.loadMode = 2;
-// lazySizes.cfg.expFactor = 2;
-lazySizes.init();
+    lazySizes.cfg.expand = 1000;
+    lazySizes.cfg.preloadAfterLoad = true;
+    lazySizes.cfg.loadMode = 2;
+    // lazySizes.cfg.expFactor = 2;
+    lazySizes.init();
 
     await initializeMostVisitedSitesCache();
     await fetchBingImageOfTheDay();
-    window.addEventListener('resize', debouncedLayout);
+    window.addEventListener("resize", debouncedLayout);
 
     cachedCards = await getCachedRenderedCards();
     if (cachedCards !== null) {
@@ -136,7 +133,7 @@ lazySizes.init();
       console.log("rendering feed from scratch");
       await loadSubscribedFeeds();
     }
-  } else if(settingsPage) {
+  } else if (settingsPage) {
     // Settings page
     setupSettingsPage();
   }
@@ -210,8 +207,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-
-
 async function clearOldCaches() {
   const cacheNames = await caches.keys();
   await Promise.all(
@@ -243,10 +238,10 @@ async function refreshFeeds() {
   const serviceWorker = navigator.serviceWorker.controller;
   if (serviceWorker) {
     lastRefreshed = new Date().getTime();
-    console.log(
-      "Sending message to service worker to fetch feeds",
-      feedList.subscribedFeeds
-    );
+    // console.log(
+    //   "Sending message to service worker to fetch feeds",
+    //   feedList.subscribedFeeds
+    // );
     serviceWorker.postMessage({
       action: "fetchRSS",
       feedUrls: feedList.subscribedFeeds,
@@ -267,18 +262,18 @@ async function updateDisplayOnNewTab() {
 
 function initializeMasonry() {
   // Initialize Masonry after all cards are loaded
- msnry = new Masonry(feedContainer, {
+  msnry = new Masonry(feedContainer, {
     // options
     itemSelector: ".card", // Use your card's class
     columnWidth: ".card", // The width of each column, you can set this as needed
     gutter: 12, // Space between items, you can set this as needed
     fitWidth: true,
   });
-  document.querySelectorAll('.masonry-item').forEach(item => {
-    item.addEventListener('load', () => {
+  document.querySelectorAll(".masonry-item").forEach((item) => {
+    item.addEventListener("load", () => {
       msnry.layout();
       setupParallaxEffect(item.parentElement.parentElement);
-      item.parentElement.classList.remove('loading');
+      item.parentElement.classList.remove("loading");
     });
   });
 }
@@ -324,7 +319,7 @@ async function renderFeed(feeditems, feedDetails) {
   // hideLoadingState();
   //create a refresh animation here to show that feed has been refreshed
   if (feedContainer) {
-  feedContainer.innerHTML = "";
+    feedContainer.innerHTML = "";
   }
   feedContainer.appendChild(fragment);
   await cacheRenderedCards(feedContainer.innerHTML);
@@ -341,37 +336,35 @@ async function renderFeed(feeditems, feedDetails) {
 
 function setupParallaxEffect(card) {
   console.log("setting up parallax effect");
-    const imageContainer = card.querySelector("#thumbnail-image");
+  const imageContainer = card.querySelector("#thumbnail-image");
 
-    if (imageContainer) {
-      card.addEventListener("mouseover", () => {
-        // Zoom in effect
-        imageContainer.style.transition = "transform 0.25s ease-in";
-        imageContainer.style.transform = "scale(1.05)";
-        // imageContainer.style.backgroundPosition = 'center center';
-      });
+  if (imageContainer) {
+    card.addEventListener("mouseover", () => {
+      // Zoom in effect
+      imageContainer.style.transition = "transform 0.25s ease-in";
+      imageContainer.style.transform = "scale(1.05)";
+      // imageContainer.style.backgroundPosition = 'center center';
+    });
 
-      card.addEventListener("mousemove", (e) => {
-        const cardRect = card.getBoundingClientRect();
-        const xVal = (e.clientX - cardRect.left) / cardRect.width;
-        const yVal = (e.clientY - cardRect.top) / cardRect.height;
+    card.addEventListener("mousemove", (e) => {
+      const cardRect = card.getBoundingClientRect();
+      const xVal = (e.clientX - cardRect.left) / cardRect.width;
+      const yVal = (e.clientY - cardRect.top) / cardRect.height;
 
-        // Translate this into a percentage-based position
-        const xOffset = -(xVal - 0.5) * 20; // Adjust for desired effect strength
-        const yOffset = -(yVal - 0.5) * 20;
+      // Translate this into a percentage-based position
+      const xOffset = -(xVal - 0.5) * 20; // Adjust for desired effect strength
+      const yOffset = -(yVal - 0.5) * 20;
 
-        // Apply the effect to the image container's background
-        imageContainer.style.objectPosition = `${50 + xOffset}% ${
-          50 + yOffset
-        }%`;
-      });
+      // Apply the effect to the image container's background
+      imageContainer.style.objectPosition = `${50 + xOffset}% ${50 + yOffset}%`;
+    });
 
-      card.addEventListener("mouseleave", () => {
-        // Reset the background position when the mouse leaves the card
-        imageContainer.style.transform = "scale(1)";
-        imageContainer.style.backgroundPosition = "center center";
-      });
-    }
+    card.addEventListener("mouseleave", () => {
+      // Reset the background position when the mouse leaves the card
+      imageContainer.style.transform = "scale(1)";
+      imageContainer.style.backgroundPosition = "center center";
+    });
+  }
 }
 
 async function cacheRenderedCards(htmlContent) {
@@ -404,11 +397,11 @@ navigator.serviceWorker.addEventListener("message", async function (event) {
     const { feedDetails, feedItems } = processRSSData(response);
     setFeedDetails(feedDetails);
     setFeedItems(feedItems);
-    try{
+    try {
       await renderFeed(feedItems, feedDetails).catch((error) => {
-      console.error("Error rendering the feed:", error);
-    });}
-    catch(error){
+        console.error("Error rendering the feed:", error);
+      });
+    } catch (error) {
       console.log("feed container not found:", error);
     }
   }
@@ -446,9 +439,10 @@ channel.addEventListener("message", (event) => {
       loadSubscribedFeeds();
     } else {
       const { feedDetails, feedItems } = processRSSData(response);
-      if(document.getElementById("#feed-container")){
-      renderFeed(feedDetails, feedItems);
-      setLastRefreshedTimestamp(new Date(event.data.lastRefreshed));}
+      if (document.getElementById("#feed-container")) {
+        renderFeed(feedDetails, feedItems);
+        setLastRefreshedTimestamp(new Date(event.data.lastRefreshed));
+      }
     }
   }
 });
@@ -522,12 +516,10 @@ async function createCard(item) {
   // Image container
   const imageContainer = document.createElement("div");
   imageContainer.className = "image-container loading";
-  
 
   // Card background
   const cardbg = document.createElement("div");
   cardbg.className = "card-bg";
-  
 
   // Set thumbnail URL
   let thumbnailUrl = item.thumbnail;
@@ -570,7 +562,7 @@ async function createCard(item) {
   websiteInfoDiv.appendChild(favicon);
 
   // Website name
-  const websiteName = document.createElement("span");
+  const websiteName = document.createElement("p");
   tempElement.innerHTML = item.feedTitle || item.siteTitle;
   websiteName.textContent = tempElement.textContent;
   websiteInfoDiv.appendChild(websiteName);
@@ -601,7 +593,10 @@ async function createCard(item) {
         textContentDiv.appendChild(snippet);
       }
     } catch (error) {
-      console.log(`Error creating content snippet for : ${item.content} `, error);
+      console.log(
+        `Error creating content snippet for : ${item.content} `,
+        error
+      );
     }
   }
 
@@ -643,18 +638,15 @@ async function createCard(item) {
 
 function applyCardEventHandlers(card, url) {
   // Event listener for card click
-  try{
-    
-   
+  try {
     card.addEventListener("click", (e) => {
       if (e.target.tagName.toLowerCase() !== "a") {
-        showReaderView(url);}
-     
-  
-});}
-catch(error){
-  console.log(error, "error in applyCardEventHandlers", url);
-}
+        showReaderView(url);
+      }
+    });
+  } catch (error) {
+    console.log(error, "error in applyCardEventHandlers", url);
+  }
 }
 
 function reapplyEventHandlersToCachedCards() {
@@ -796,27 +788,37 @@ function createReaderViewModal(article) {
     
   `;
 
-   modal.querySelector(".reader-view-close").onclick = () => {
+  modal.querySelector(".reader-view-close").onclick = () => {
     modal.style.opacity = "0";
-modal.addEventListener('transitionend', function() {
-    modal.remove();
-}, { once: true }); // The listener is invoked only once and then it's removed    toggleBodyScroll(true);
+    modal.addEventListener(
+      "transitionend",
+      function () {
+        modal.removeEventListener("wheel", handleModalScroll);
+
+        modal.remove();
+      },
+      { once: true }
+    ); // The listener is invoked only once and then it's removed    toggleBodyScroll(true);
   };
   modal.addEventListener("click", (event) => {
     const readerViewContent = modal.querySelector(".reader-view-content");
-    
 
-    if (
-      !readerViewContent.contains(event.target)
-    ) {
+    if (!readerViewContent.contains(event.target)) {
       modal.style.opacity = "0";
-      modal.addEventListener('transitionend', function() {
-        modal.remove();
-    }, { once: true });
+      modal.addEventListener(
+        "transitionend",
+        function () {
+          modal.removeEventListener("wheel", handleModalScroll);
+
+          modal.remove();
+        },
+        { once: true }
+      );
       toggleBodyScroll(true);
     }
   });
 
+  
   const progressIndicator = createCircularProgressIndicator();
   modal
     .querySelector(".progress-indicator-container")
@@ -828,8 +830,23 @@ modal.addEventListener('transitionend', function() {
   pageText.addEventListener("scroll", () =>
     updateReadingProgress(progressCircle, pageText)
   );
+  modal.addEventListener("wheel", handleModalScroll, { passive: false, capture: true });
 
   return modal;
+}
+
+function handleModalScroll(event) {
+  console.log("handling modal scroll");
+  const modal = document.querySelector(".reader-view-modal");
+  const readerArticle = modal.querySelector(".reader-view-content");
+  if (event.target === readerArticle || readerArticle.contains(event.target)) {
+    readerArticle.scrollTop += event.deltaY;
+    event.preventDefault();
+  } else if (event.target === modal || modal.contains(event.target)) {
+    readerArticle.scrollTop += event.deltaY;
+    // Allow scroll on modal content (optional)
+    event.preventDefault(); // Uncomment to prevent page scroll behind modal
+  }
 }
 
 //Reading progress indicator code
@@ -1076,20 +1093,15 @@ async function setupSubscriptionForm() {
     form.reset();
     await refreshFeeds();
     await displaySubscribedFeeds();
-    setupUnsubscribeButtons();
-
-    
   });
 }
 
-function setupUnsubscribeButton(elem,feedUrl) {
+function setupUnsubscribeButton(elem, feedUrl) {
   elem.addEventListener("click", () => {
     removeFeed(feedUrl);
     console.log(`Removing feed: ${feedUrl}`);
     displaySubscribedFeeds();
-
   });
-
 }
 
 function setupBackButton() {
@@ -1121,12 +1133,12 @@ async function displaySubscribedFeeds() {
       listItem.className = "list-item";
       const noiseLayer = document.createElement("div");
       noiseLayer.className = "noise";
-      
+
       const bgImageContainer = document.createElement("div");
       bgImageContainer.className = "bg";
       const bgImage = document.createElement("img");
-bgImage.setAttribute('data-src', detail.favicon);   
-   bgImage.className = "bg lazyload";
+      bgImage.setAttribute("data-src", detail.favicon);
+      bgImage.className = "bg lazyload";
       bgImageContainer.appendChild(bgImage);
       bgImageContainer.appendChild(noiseLayer);
       const websiteInfo = document.createElement("div");
@@ -1144,6 +1156,15 @@ bgImage.setAttribute('data-src', detail.favicon);
       tempElement.innerHTML = detail.siteTitle || detail.feedTitle;
       websiteName.textContent = tempElement.textContent; // Use the siteTitle from feedDetails
       websiteInfo.appendChild(websiteName);
+      const feedTitle = document.createElement("p");
+      tempElement.innerHTML = detail.feedTitle || detail.siteTitle;
+      feedTitle.textContent = tempElement.textContent; // Use the feedTitle from feedDetails
+      websiteInfo.appendChild(feedTitle);
+      const feedUrl = document.createElement("p");
+      feedUrl.className = "feed-url";
+      feedTitle.className = "feed-title";
+      feedUrl.textContent = feedURL;
+      websiteInfo.appendChild(feedUrl);
       docFragment.appendChild(websiteInfo);
 
       const removeButton = document.createElement("button");
@@ -1245,22 +1266,20 @@ function setupSearchPreferenceToggle() {
   });
 }
 
-function setupApiUrlFormEventHandler(){
-  const apiUrlForm = document.getElementById('apiUrl-form');
-  const apiUrlInput = document.getElementById('apiUrl-input');
+function setupApiUrlFormEventHandler() {
+  const apiUrlForm = document.getElementById("apiUrl-form");
+  const apiUrlInput = document.getElementById("apiUrl-input");
   apiUrlInput.value = getApiUrl();
-  const apiUrlSubmitButton = document.getElementById('apiUrl-submit-button');
+  const apiUrlSubmitButton = document.getElementById("apiUrl-submit-button");
 
-  apiUrlForm.addEventListener('submit', (event) => {
+  apiUrlForm.addEventListener("submit", (event) => {
     event.preventDefault();
     setApiUrl(apiUrlInput.value);
   });
 
-  apiUrlSubmitButton.addEventListener('click', () => {
+  apiUrlSubmitButton.addEventListener("click", () => {
     setApiUrl(apiUrlInput.value);
   });
-  
-
 }
 
 async function setupSettingsPage() {
@@ -1272,39 +1291,40 @@ async function setupSettingsPage() {
   setupApiUrlFormEventHandler();
 }
 
-
 // Welcome page code
 
-
-
 function setupWelcomePage() {
-getNtpPermission();
+  getNtpPermission();
   const welcomePage = document.getElementById("welcome-page");
   const welcomePageButton = document.getElementById("consent-button");
   welcomePageButton.addEventListener("click", () => {
     console.log("consent button clicked");
 
     setNtpPermission(true);
-    console.log(`NTP_PERMISSON set to ${getNtpPermission()}`)
+    console.log(`NTP_PERMISSON set to ${getNtpPermission()}`);
     checkNTPConsent();
     // welcomePage.style.display = "none";
   });
 }
-function checkNTPConsent(){
-  chrome.permissions.request({ permissions: ["chrome_url_overrides.newtab"] }, granted => {
-    if (granted) {
-      // Activate the new tab override
-      chrome.storage.local.set({ newTabOverrideActive: true });
-      // Replace the new tab page (e.g., open your extension's new tab page)
-      chrome.tabs.query({ url: "chrome://newtab" }, tabs => {
-        if (tabs && tabs.length) {
-          chrome.tabs.update(tabs[0].id, { url: "index.html" });
-        }
-      });
-    } else {
-      // Handle permission denial (e.g., inform user)
+function checkNTPConsent() {
+  chrome.permissions.request(
+    { permissions: ["chrome_url_overrides.newtab"] },
+    (granted) => {
+      if (granted) {
+        // Activate the new tab override
+        chrome.storage.local.set({ newTabOverrideActive: true });
+        // Replace the new tab page (e.g., open your extension's new tab page)
+        chrome.tabs.query({ url: "chrome://newtab" }, (tabs) => {
+          if (tabs && tabs.length) {
+            chrome.tabs.update(tabs[0].id, { url: "index.html" });
+          }
+        });
+      } else {
+        // Handle permission denial (e.g., inform user)
+      }
     }
-  });}
+  );
+}
 // getter and setter functions
 function setFeedDetails(feedDetails) {
   localStorage.setItem("feedDetails", JSON.stringify(feedDetails));
@@ -1344,53 +1364,51 @@ function setSubscribedFeeds(feeds) {
 
 function setApiUrl(apiUrl) {
   try {
-   
-    localStorage.setItem('apiUrl', apiUrl);
+    localStorage.setItem("apiUrl", apiUrl);
 
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      console.log('Sending message to service worker to set apiUrl');
+    if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+      console.log("Sending message to service worker to set apiUrl");
       navigator.serviceWorker.controller.postMessage({
-        action: 'setApiUrl',
-        apiUrl: apiUrl
+        action: "setApiUrl",
+        apiUrl: apiUrl,
       });
     }
   } catch (error) {
-    console.error('Failed to set apiUrl:', error);
+    console.error("Failed to set apiUrl:", error);
   }
 }
 
 function getApiUrl() {
   try {
-    if (!localStorage.getItem('apiUrl')) {
+    if (!localStorage.getItem("apiUrl")) {
       setApiUrl(DEFAULT_API_URL);
     }
-    return localStorage.getItem('apiUrl');
+    return localStorage.getItem("apiUrl");
   } catch (error) {
-    console.error('Failed to get apiUrl:', error);
+    console.error("Failed to get apiUrl:", error);
     return null;
   }
 }
 
-
 function setNtpPermission(permission) {
   try {
-    localStorage.setItem('NTP_PERMISSION', permission);
+    localStorage.setItem("NTP_PERMISSION", permission);
     console.log(`NTP_PERMISSION set to ${permission}`);
   } catch (error) {
-    console.error('Failed to set NTP_PERMISSION:', error);
+    console.error("Failed to set NTP_PERMISSION:", error);
   }
 }
 
 function getNtpPermission() {
   try {
-    let permission = localStorage.getItem('NTP_PERMISSION');
+    let permission = localStorage.getItem("NTP_PERMISSION");
     if (permission === null) {
       permission = NTP_PERMISSION_DEFAULT;
       setNtpPermission(permission);
     }
     return permission;
   } catch (error) {
-    console.error('Failed to get NTP_PERMISSION:', error);
+    console.error("Failed to get NTP_PERMISSION:", error);
     return NTP_PERMISSION_DEFAULT;
   }
 }
