@@ -10,6 +10,7 @@ const settingsPage = document.getElementById("settings-page");
 const refreshTimer = 15 * 60 * 1000; //fifteen minutes
 const NTP_PERMISSION_DEFAULT = false;
 var NTP_PERMISSON;
+let startY; // Variable to store the start Y position of the touch
 
 defaultFeeds = [
   "http://www.theverge.com/rss/index.xml",
@@ -35,9 +36,7 @@ function debounce(func, wait) {
   };
 }
 
-const debouncedLayout = debounce(() => {
-  msnry.layout();
-}, 300);
+
 
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {
@@ -113,12 +112,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     lazySizes.cfg.expand = 1000;
     lazySizes.cfg.preloadAfterLoad = true;
     lazySizes.cfg.loadMode = 2;
-    // lazySizes.cfg.expFactor = 2;
+    lazySizes.cfg.expFactor = 2;
     lazySizes.init();
 
     await initializeMostVisitedSitesCache();
     await fetchBingImageOfTheDay();
-    window.addEventListener("resize", debouncedLayout);
+    
 
     cachedCards = await getCachedRenderedCards();
     if (cachedCards !== null) {
@@ -128,11 +127,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       initializeMasonry();
       reapplyEventHandlersToCachedCards();
       feedContainer.style.opacity = "1"; // apply the fade-in effect
+      
       // bgImageScrollHandler();
     } else {
       console.log("rendering feed from scratch");
       await loadSubscribedFeeds();
     }
+   
   } else if (settingsPage) {
     // Settings page
     setupSettingsPage();
@@ -276,6 +277,10 @@ function initializeMasonry() {
       item.parentElement.classList.remove("loading");
     });
   });
+  const debouncedLayout = debounce(() => {
+    msnry.layout();
+  }, 300);
+  window.addEventListener("resize", debouncedLayout);
 }
 
 function insertGridSizer() {
@@ -335,7 +340,6 @@ async function renderFeed(feeditems, feedDetails) {
 //parallax effect for image container
 
 function setupParallaxEffect(card) {
-  console.log("setting up parallax effect");
   const imageContainer = card.querySelector("#thumbnail-image");
 
   if (imageContainer) {
@@ -507,160 +511,7 @@ function processRSSData(rssData) {
   return { feedDetails, feedItems };
 }
 
-async function createCard(item) {
-  const docFrag = document.createDocumentFragment();
-  const card = document.createElement("div");
-  var tempElement = document.createElement("div");
-  card.className = "card";
 
-  // Image container
-  const imageContainer = document.createElement("div");
-  imageContainer.className = "image-container loading";
-
-  // Card background
-  const cardbg = document.createElement("div");
-  cardbg.className = "card-bg";
-
-  // Set thumbnail URL
-  let thumbnailUrl = item.thumbnail;
-
-  if (Array.isArray(item.thumbnail)) {
-    //parse the array and get the first item that has a url or link property
-    for (const thumbnail of item.thumbnail) {
-      if (thumbnail.url) {
-        thumbnailUrl = thumbnail.url;
-        break;
-      } else if (thumbnail.link) {
-        thumbnailUrl = thumbnail.link;
-        break;
-      }
-    }
-  }
-  if (thumbnailUrl) {
-    imageContainer.innerHTML = `<img data-src="${thumbnailUrl}" id="thumbnail-image" alt="${item.siteTitle} Thumbnail" class="thumbnail-image lazyload masonry-item">`;
-    cardbg.innerHTML = `<div class=noise></div><img data-src="${thumbnailUrl}" alt="${item.siteTitle} Thumbnail" class="card-bg lazyload">`;
-    docFrag.appendChild(imageContainer);
-    docFrag.appendChild(cardbg);
-  }
-
-  // Text content container
-  const textContentDiv = document.createElement("div");
-  textContentDiv.classList.add("text-content");
-
-  // Website information
-  const websiteInfoDiv = document.createElement("div");
-  websiteInfoDiv.className = "website-info";
-  if (!thumbnailUrl) {
-    websiteInfoDiv.style.marginTop = "12px";
-  }
-
-  // Favicon
-  const favicon = document.createElement("img");
-  favicon.src = item.favicon;
-  favicon.alt = `${item.siteTitle} Favicon`;
-  favicon.className = "site-favicon";
-  websiteInfoDiv.appendChild(favicon);
-
-  // Website name
-  const websiteName = document.createElement("p");
-  tempElement.innerHTML = item.feedTitle || item.siteTitle;
-  websiteName.textContent = tempElement.textContent;
-  websiteInfoDiv.appendChild(websiteName);
-  textContentDiv.appendChild(websiteInfoDiv);
-
-  // Title
-  const title = document.createElement("h3");
-  tempElement.innerHTML = item.title;
-  title.textContent = tempElement.textContent;
-  textContentDiv.appendChild(title);
-
-  // Description
-  if (item.content) {
-    try {
-      const snippet = document.createElement("p");
-      snippet.className = "description";
-
-      // Sanitize item.content
-      const sanitizedContent = DOMPurify.sanitize(item.content);
-
-      // Check sanitizedContent for SVG elements before setting it as the innerHTML of tempElement
-      const svgRegex = /<svg.*?>.*?<\/svg>|<path.*?>.*?<\/path>/g;
-      if (svgRegex.test(sanitizedContent)) {
-        tempElement.textContent = "";
-      } else {
-        tempElement.innerHTML = sanitizedContent;
-        snippet.textContent = tempElement.textContent;
-        textContentDiv.appendChild(snippet);
-      }
-    } catch (error) {
-      console.log(
-        `Error creating content snippet for : ${item.content} `,
-        error
-      );
-    }
-  }
-
-  // Publication date and time
-  const date = new Date(item.published);
-  const dateString = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-  const details = document.createElement("div");
-  details.className = "date";
-  details.textContent = dateString;
-  textContentDiv.appendChild(details);
-
-  // Description
-  if (!thumbnailUrl && item.description) {
-    const description = document.createElement("div");
-    description.className = "description long-description";
-    description.textContent = item.description;
-    textContentDiv.appendChild(description);
-  }
-
-  // Read more link
-  const readMoreLink = document.createElement("a");
-  readMoreLink.href = item.link;
-  readMoreLink.target = "_blank";
-  readMoreLink.textContent = "Read more";
-  readMoreLink.className = "read-more-link";
-  textContentDiv.appendChild(readMoreLink);
-
-  // Event handler for card click
-  applyCardEventHandlers(card, item.link);
-
-  // Append text content to the card
-  docFrag.appendChild(textContentDiv);
-
-  // Append the document fragment to the card
-  card.appendChild(docFrag);
-
-  return card;
-}
-
-function applyCardEventHandlers(card, url) {
-  // Event listener for card click
-  try {
-    card.addEventListener("click", (e) => {
-      if (e.target.tagName.toLowerCase() !== "a") {
-        showReaderView(url);
-      }
-    });
-  } catch (error) {
-    console.log(error, "error in applyCardEventHandlers", url);
-  }
-}
-
-function reapplyEventHandlersToCachedCards() {
-  console.log("reapplying event handlers to cached cards");
-  let eventHandlersRestored = 0;
-  const feedContainer = document.getElementById("feed-container");
-  const cards = feedContainer.querySelectorAll(".card");
-  cards.forEach((card) => {
-    const linkURL = card.querySelector("a").href; // Example: getting the URL from the card's read more link
-    applyCardEventHandlers(card, linkURL);
-    eventHandlersRestored++;
-  });
-  console.log(`Restored ${eventHandlersRestored} event handlers`);
-}
 
 // Search code
 
@@ -689,245 +540,6 @@ function removeFeed(feedURL) {
   const feeds = getSubscribedFeeds().subscribedFeeds;
   const updatedFeeds = feeds.filter((url) => url !== feedURL);
   setSubscribedFeeds(updatedFeeds);
-}
-
-async function showReaderView(url) {
-  try {
-    const response = await fetch(url);
-    const html = await response.text();
-    const pure = DOMPurify.sanitize(html);
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(pure, "text/html");
-    const reader = new Readability(doc);
-    const article = reader.parse();
-    const item = findItemFromUrl(getFeedItems(), url);
-
-    if (article) {
-      const readerViewModal = createReaderViewModal(article);
-      document.body.appendChild(readerViewModal);
-      setTimeout(() => {
-        readerViewModal.classList.add("visible");
-      }, 10);
-      toggleBodyScroll(false);
-
-      // Add website name and favicon
-      const websiteInfoDiv = document.createElement("div");
-      websiteInfoDiv.className = "website-info";
-
-      const favicon = document.createElement("img");
-      const mainDomain = new URL(url).hostname;
-      favicon.src = item.favicon;
-      favicon.alt = `${mainDomain} Favicon`;
-      favicon.className = "site-favicon";
-      websiteInfoDiv.appendChild(favicon);
-
-      const websiteName = document.createElement("span");
-      websiteName.textContent = item.siteTitle;
-      websiteInfoDiv.appendChild(websiteName);
-
-      readerViewModal
-        .querySelector("#website-info-placeholder")
-        .appendChild(websiteInfoDiv);
-
-      // Check if content overflows
-      const contentHeight = readerViewModal.querySelector(
-        ".reader-view-page-text"
-      );
-      const contentContainerHeight = readerViewModal.querySelector(
-        ".reader-view-content"
-      );
-      const progressRing = document.getElementById("progress-ring");
-      if (contentHeight.clientHeight < contentContainerHeight.clientHeight) {
-        progressRing.style.display = "none";
-      }
-    } else {
-      console.error("Failed to fetch readable content.");
-    }
-  } catch (error) {
-    console.error("Error fetching the page content:", error);
-  }
-}
-function findItemFromUrl(feedItems, url) {
-  for (let item of feedItems) {
-    if (item.link === url) {
-      return item;
-    }
-  }
-  return null; // return null if no matching item is found
-}
-
-function createReaderViewModal(article) {
-  const modal = document.createElement("div");
-  modal.className = "reader-view-modal";
-  modal.innerHTML = `
-  <div class="noise"></div>
-    <div class="reader-view-content ">
-      
-      <div class="reader-view-page-content">
-        <div class="reader-view-header">
-          <span class="reader-view-close material-symbols-rounded">close</span>
-          <h1 class="reader-view-title"><span id="website-info-placeholder"></span>${
-            article.title
-          }</h1>
-          ${
-            article.byline
-              ? `<h2 class="reader-view-author">${article.byline}</h2>`
-              : ""
-          }
-          <p class="reader-view-reading-time">${estimateReadingTime(
-            article.textContent
-          )} minutes</p>
-          <hr class="solid">
-        </div>
-        <div class="reader-view-page-text">
-          <div class="reader-view-article">${article.content}</div>
-        </div>
-      </div>
-      <div id="progress-ring" class="progress-indicator-container"></div>
-    </div>
-    
-  `;
-
-  modal.querySelector(".reader-view-close").onclick = () => {
-    modal.style.opacity = "0";
-    modal.addEventListener(
-      "transitionend",
-      function () {
-       closeModal(modal);
-      },
-      { once: true }
-    );
-    toggleBodyScroll(true);
-  };
-  modal.addEventListener("click", (event) => {
-    const readerViewContent = modal.querySelector(".reader-view-content");
-
-    if (!readerViewContent.contains(event.target)) {
-      modal.style.opacity = "0";
-      modal.addEventListener(
-        "transitionend",
-        function () {
-          closeModal(modal);
-        },
-        { once: true }
-      );
-      toggleBodyScroll(true);
-    }
-  });
-
-  
-  const progressIndicator = createCircularProgressIndicator();
-  modal
-    .querySelector(".progress-indicator-container")
-    .appendChild(progressIndicator);
-  const progressCircle = progressIndicator.querySelector(
-    ".progress-circle__progress"
-  );
-  const pageText = modal.querySelector(".reader-view-content");
-  pageText.addEventListener("scroll", () =>
-    updateReadingProgress(progressCircle, pageText)
-  );
-  modal.addEventListener("wheel", handleModalScroll, { passive: false, capture: true });
-  modal.addEventListener('touchstart', handleModalTouch, { passive: false });
-modal.addEventListener('touchmove', handleModalTouch, { passive: false });
-
-  return modal;
-}
-
-function closeModal(modal){
-  modal.removeEventListener("wheel", handleModalScroll);
-  modal.removeEventListener("wheel", handleModalScroll);
-modal.removeEventListener('touchstart', handleModalTouch);
-modal.removeEventListener('touchmove', handleModalTouch);
-
-  modal.remove();
-}
-
-function handleModalScroll(event) {
-
-  console.log("handling modal scroll");
-  const modal = document.querySelector(".reader-view-modal");
-  const readerArticle = modal.querySelector(".reader-view-content");
-  if (event.target === readerArticle || readerArticle.contains(event.target)) {
-    readerArticle.scrollTop += event.deltaY;
-    event.preventDefault();
-  } else if (event.target === modal || modal.contains(event.target)) {
-    readerArticle.scrollTop += event.deltaY;
-    // Allow scroll on modal content (optional)
-    event.preventDefault(); // Uncomment to prevent page scroll behind modal
-  }
-}
-
-let startY; // Variable to store the start Y position of the touch
-
-function handleModalTouch(event) {
-  const modal = document.querySelector(".reader-view-modal");
-  const readerArticle = modal.querySelector(".reader-view-content");
-
-  if (event.type === 'touchstart') {
-    startY = event.touches[0].pageY; // Store the start Y position of the touch
-  } else if (event.type === 'touchmove') {
-    const deltaY = startY - event.touches[0].pageY; // Calculate the distance moved
-    startY = event.touches[0].pageY; // Update the start Y position for the next move event
-
-    if (event.target === readerArticle || readerArticle.contains(event.target)) {
-      readerArticle.scrollTop += deltaY;
-      event.preventDefault();
-    } else if (event.target === modal || modal.contains(event.target)) {
-      readerArticle.scrollTop += deltaY;
-      event.preventDefault();
-    }
-  }
-}
-
-//Reading progress indicator code
-
-function createCircularProgressIndicator() {
-  const progressIndicator = document.createElement("div");
-  progressIndicator.className = "progress-indicator";
-
-  progressIndicator.innerHTML = `
-    <svg id="progress-ring" class="progress-circle" viewBox="0 0 36 36">
-      <circle class="progress-circle__background" cx="18" cy="18" r="15.9155" stroke-width="2"></circle>
-      <circle class="progress-circle__progress" cx="18" cy="18" r="15.9155" stroke-width="2" stroke-dasharray="100" stroke-dashoffset="100"></circle>
-    </svg>
-  `;
-
-  return progressIndicator;
-}
-
-function updateReadingProgress(progressCircle, pageText) {
-  const scrollPosition = pageText.scrollTop;
-  const maxScroll = pageText.scrollHeight - pageText.clientHeight;
-
-  const progressPercentage = (scrollPosition / maxScroll) * 100;
-
-  setCircularProgress(progressCircle, progressPercentage);
-}
-
-function setCircularProgress(progressIndicator, progressPercentage) {
-  const radius = progressIndicator.r.baseVal.value;
-  const circumference = 2 * Math.PI * radius;
-
-  const offset = circumference - (progressPercentage / 100) * circumference;
-  progressIndicator.style.strokeDashoffset = offset;
-}
-
-//function to estimate reading time
-function estimateReadingTime(text) {
-  const wordsPerMinute = 183; // Adjust this value based on your preferred reading speed
-  const words = text.trim().split(/\s+/).length;
-  const readingTimeInMinutes = Math.ceil(words / wordsPerMinute);
-
-  return readingTimeInMinutes;
-}
-
-function toggleBodyScroll(isEnabled) {
-  if (isEnabled) {
-    document.body.style.overflow = "";
-  } else {
-    document.body.style.overflow = "hidden";
-  }
 }
 
 // Show Top Sites
@@ -1331,20 +943,22 @@ function setupWelcomePage() {
   welcomePageButton.addEventListener("click", () => {
     console.log("consent button clicked");
 
-    //open a new page to show the new tab page when the user clicks on the consent button
+    //open a new page to show the new tab page when the user clicks on the consent button and close the welcome tab
     chrome.tabs.create({ url: "newtab.html" });
-
+    chrome.tabs.getCurrent((tab) => {
+      chrome.tabs.remove(tab.id);
+    });
     setNtpPermission(true);
     console.log(`NTP_PERMISSON set to ${getNtpPermission()}`);
-    checkNTPConsent();
+    // checkNTPConsent();
     // welcomePage.style.display = "none";
   });
 }
 function checkNTPConsent() {
-  chrome.permissions.request(
-    { permissions: ["chrome_url_overrides.newtab"] },
-    (granted) => {
-      if (granted) {
+  
+  
+   if(getNtpPermission()) {
+      
         // Activate the new tab override
         chrome.storage.local.set({ newTabOverrideActive: true });
         // Replace the new tab page (e.g., open your extension's new tab page)
@@ -1353,11 +967,9 @@ function checkNTPConsent() {
             chrome.tabs.update(tabs[0].id, { url: "index.html" });
           }
         });
-      } else {
-        // Handle permission denial (e.g., inform user)
-      }
+     
     }
-  );
+  
 }
 // getter and setter functions
 function setFeedDetails(feedDetails) {
