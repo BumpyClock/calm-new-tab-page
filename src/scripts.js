@@ -798,7 +798,6 @@ function createReaderViewModal(article) {
       { once: true }
     );
     toggleBodyScroll(true);
-    // The listener is invoked only once and then it's removed    toggleBodyScroll(true);
   };
   modal.addEventListener("click", (event) => {
     const readerViewContent = modal.querySelector(".reader-view-content");
