@@ -571,13 +571,15 @@ async function createCard(item) {
 
   // Website name
   const websiteName = document.createElement("span");
-  websiteName.textContent = item.feedTitle || item.siteTitle;
+  tempElement.innerHTML = item.feedTitle || item.siteTitle;
+  websiteName.textContent = tempElement.textContent;
   websiteInfoDiv.appendChild(websiteName);
   textContentDiv.appendChild(websiteInfoDiv);
 
   // Title
   const title = document.createElement("h3");
-  title.textContent = item.title;
+  tempElement.innerHTML = item.title;
+  title.textContent = tempElement.textContent;
   textContentDiv.appendChild(title);
 
   // Description
@@ -730,7 +732,6 @@ async function showReaderView(url) {
 
       const websiteName = document.createElement("span");
       websiteName.textContent = item.siteTitle;
-      console.log("website name: ", websiteName.textContent);
       websiteInfoDiv.appendChild(websiteName);
 
       readerViewModal

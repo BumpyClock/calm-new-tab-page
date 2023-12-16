@@ -227,7 +227,7 @@ body > *:not(.background-image-container)::selection {
 .card {
   overflow: hidden;
   position: relative;
-  row-gap: 8px;
+  row-gap: 0px;
   background: var(--background-color-secondary);
   border: var(--border-color);
   border-radius: 24px;
@@ -390,7 +390,7 @@ body > *:not(.background-image-container)::selection {
 }
 
 .card:hover a{
-  text-decoration: underline;
+  text-decoration:steelblue wavy underline ;
 }
 
 
@@ -432,10 +432,12 @@ body > *:not(.background-image-container)::selection {
 }
 
 .website-info span{
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  text-overflow: ellipsis;
+  ;
 
 }
 
