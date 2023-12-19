@@ -807,8 +807,8 @@ body {
 .reader-view-page-content {
   position: relative;
   border-radius: 7px;
-  /* other styles */
-}
+  -webkit-overflow-scrolling: touch;
+  -webkit-overflow-scroll:touch;}
 
 .reader-view-modal hr.solid {
   border-top: 1px solid #bbb;
@@ -1133,8 +1133,9 @@ filter: brightness(1.7);
   gap: 1rem;
   opacity: 0;
   transition: all 0.25s ease-in-out;
-  -webkit-overflow-scrolling: auto;
-  -webkit-overflow-scroll:auto;
+  -webkit-overflow-scrolling: touch;
+  -webkit-overflow-scroll:touch;
+
 }
 .reader-view-modal .noise {
   position: absolute;
