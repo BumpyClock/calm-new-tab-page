@@ -115,8 +115,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     lazySizes.cfg.expFactor = 2;
     lazySizes.init();
 
-//    await initializeMostVisitedSitesCache();
-    await fetchBingImageOfTheDay();
+   await initializeMostVisitedSitesCache();
     
 
     cachedCards = await getCachedRenderedCards();
@@ -128,7 +127,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       reapplyEventHandlersToCachedCards();
       feedContainer.style.opacity = "1"; // apply the fade-in effect
       
-      // bgImageScrollHandler();
+      bgImageScrollHandler();
     } else {
       console.log("rendering feed from scratch");
       await loadSubscribedFeeds();
@@ -545,7 +544,7 @@ function removeFeed(feedURL) {
 // Show Top Sites
 async function initializeMostVisitedSitesCache() {
   mostVisitedSitesCache = await new Promise((resolve) => {
-    topSites.get(async (sites) => {
+    chrome.topSites.get(async (sites) => {
       const siteCards = await Promise.all(
         sites
           .filter((site) => !site.url.startsWith("chrome-extension://"))
@@ -678,6 +677,41 @@ function setLastRefreshedTimestamp() {
   timestampDiv.textContent = `Last refreshed: ${now.toLocaleTimeString()}`;
 }
 
+if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+  navigator.serviceWorker.controller.postMessage({ action: "fetchBingImage" });
+
+  navigator.serviceWorker.addEventListener('message', event => {
+    if (event.data.action === "bingImageResponse") {
+      const imageDetails = {
+        imageBlob: event.data.imageBlob,
+        title: event.data.title,
+        copyright: event.data.copyright
+      };
+      console.log(JSON.stringify(imageDetails));
+      setBingImage(imageDetails);
+    }
+  });
+}
+
+
+function setBingImage(imageDetails) {
+  console.log(`setBingImage: ${JSON.stringify(imageDetails)}`);
+  const bgContainer = document.querySelector(".background-image-container");
+  const imageUrl = URL.createObjectURL(imageDetails.imageBlob);
+  const title = imageDetails.title;
+    const copyright = imageDetails.copyright;
+    bgContainer.innerHTML = `<img id="background-image-container" data-src="${imageUrl}"  alt="${title}" class="background-image-container extension-bg lazyload" style>`;
+    // bgContainer.style.backgroundImage = `url(${imageUrl})`;
+    const attributionContainer = document.createElement("div");
+    attributionContainer.className = "attribution-container";
+    attributionContainer.innerHTML = `
+        <p class="attribution-title">${title}</p>
+        <p class="attribution-copyright">${copyright} | Bing & Microsoft</p>
+      `;
+    bgContainer.appendChild(attributionContainer);
+  bgContainer.style.backgroundImage = `url(${imageUrl})`;
+}
+
 async function fetchBingImageOfTheDay() {
   try {
     const response = await fetch(
@@ -711,7 +745,7 @@ function bgImageScrollHandler() {
     const scrollPosition = window.scrollY || document.documentElement.scrollTop;
     const blurIntensity = Math.min(scrollPosition / 100, 10);
     const darkIntensity = Math.min(scrollPosition / 100, 0.5); // Adjust the values as per your preference
-    const bgContainer = document.querySelector(".background-image-container");
+    const bgContainer = document.getElementById("background-image-container");
     // bgContainer.style.filter = `blur(${blurIntensity}px) brightness(${
     //   1 - darkIntensity
     // }) grayscale(100%)`;

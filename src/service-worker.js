@@ -1,4 +1,13 @@
 var apiUrl = "https://rss.bumpyclock.com";
+const BING_CACHE_NAME ='bing-image-cache';
+const BING_IMAGE_URL = 'https://www.bing.com/HPImageArchive.aspx?resoultion=3840&format=js&image_format=webp&idx=random&n=1&mkt=en-US';
+var bingImageCache = {
+  title: "",
+  copyright: "",
+  imageBlob: null,
+  timestamp: null
+};
+
 self.addEventListener("install", function (event) {
   // RSS feed logic here or any caching logic if needed
   // console.log("installing service worker");
@@ -239,4 +248,54 @@ async function fetchRSSFeed(feedUrls) {
   //     throw new Error("Failed to parse RSS feeds");
   //   }
   // });
+}
+
+self.addEventListener('activate', async (event) => {
+  try {
+    bingImageCache = await getCachedBingImageBlob();
+
+
+  }
+  catch (error) {
+    console.error("Failed to fetch Bing image of the day:", error);
+  }
+ 
+  
+  
+});
+
+self.addEventListener('message', async (event) => {
+  if (event.data.action === "fetchBingImage") {
+    const cachedData = await getCachedBingImageBlob();
+    event.source.postMessage({ 
+      action: "bingImageResponse", 
+      imageBlob: cachedData.imageBlob,
+      title: cachedData.title,
+      copyright: cachedData.copyright,
+      timestamp: cachedData.timestamp
+    });
+  }
+});
+
+
+async function getCachedBingImageBlob() {
+  const now = new Date().getTime();
+
+  // Check if the image is older than 24 hours or not available
+  if (!bingImageCache.imageBlob || now - bingImageCache.timestamp > 24 * 60 * 60 * 1000) {
+    try {
+      const response = await fetch(BING_IMAGE_URL);
+      const data = await response.json();
+      const imageUrl = "https://www.bing.com" + data.images[0].url.replace(/1920x1080/g, "UHD");
+      const imageResponse = await fetch(imageUrl);
+      bingImageCache.imageBlob = await imageResponse.blob();
+      bingImageCache.timestamp = now;
+      bingImageCache.title = data.images[0].title;
+      bingImageCache.copyright = data.images[0].copyright;
+    } catch (error) {
+      console.error("Failed to fetch Bing image of the day:", error);
+    }
+  }
+  
+  return bingImageCache;
 }
