@@ -115,7 +115,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     lazySizes.cfg.expFactor = 2;
     lazySizes.init();
 
-    await initializeMostVisitedSitesCache();
+//    await initializeMostVisitedSitesCache();
     await fetchBingImageOfTheDay();
     
 
@@ -545,7 +545,7 @@ function removeFeed(feedURL) {
 // Show Top Sites
 async function initializeMostVisitedSitesCache() {
   mostVisitedSitesCache = await new Promise((resolve) => {
-    chrome.topSites.get(async (sites) => {
+    topSites.get(async (sites) => {
       const siteCards = await Promise.all(
         sites
           .filter((site) => !site.url.startsWith("chrome-extension://"))
