@@ -1,18 +1,30 @@
 async function showReaderView(url) {
+  let article = {};
     try {
-      const response = await fetch(url);
-      const html = await response.text();
-      const pure = DOMPurify.sanitize(html);
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, "text/html");
-      const reader = new Readability(doc);
-      const article = reader.parse();
+      const response = await fetch('http://192.168.1.51:3000/getreaderview', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ urls: [url] })
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+  
+      const data = await response.json();
+      if(data[0].status === "ok"){
+        article.content = data[0].content;
+        article.title = data[0].title;
+        article.textContent = data[0].textContent;
+      }
       const item = findItemFromUrl(getFeedItems(), url);
   
       if (article) {
         const readerViewModal = createReaderViewModal(article);
         console.log("article", article);
-        console.log("Article Title", article.title); 
+        // console.log("Article Title", article.title); 
         document.body.appendChild(readerViewModal);
         setTimeout(() => {
           readerViewModal.classList.add("visible");
@@ -66,8 +78,8 @@ async function showReaderView(url) {
   }
   
   function createReaderViewModal(article) {
-    console.log("article", article);
-    console.log("Article Title", article.title); 
+    // console.log("article", article);
+    // console.log("Article Title", article.title); 
     const modal = document.createElement("div");
     modal.className = "reader-view-modal";
     modal.innerHTML = `

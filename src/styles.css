@@ -10,11 +10,16 @@
   /* Base Theme Variables */
   --font-family: "Lato", "Open Sans", "Noto Sans", "GeistVariableVF", "Roboto",
     sans-serif;
+    --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
   --box-shadow-standard: 0px 10px 15px -3px rgba(0, 0, 0, 0.1),
     0px 4px 6px -2px rgba(0, 0, 0, 0.05);
   --box-shadow-hover: 0px 20px 25px -5px rgba(0, 0, 0, 0.1),
     0px 10px 10px -5px rgba(0, 0, 0, 0.04);
   --blur: blur(0.65em);
+
 
   /* Light Theme Colors */
   --light-background-color: rgba(245, 245, 245, 1);
@@ -141,6 +146,7 @@ body {
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   -webkit-overflow-scroll:touch;
+
 
 }
 
@@ -973,6 +979,7 @@ a {
   position: relative;
   visibility: hidden;
   bottom: -48px;
+  width: -webkit-fill-available;
   width: 100%;
   height: 24px;
   margin-left: -24px;
@@ -1121,7 +1128,8 @@ filter: brightness(1.7);
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(90px);
   font-family: var(--font-family);
-  line-height: 1.6;
+  line-height: 1.8;
+  font-weight: var(--font-weight-medium);
   font-size: 18px;
   margin: 0 auto;
   overflow-y: auto;
@@ -1169,7 +1177,7 @@ filter: brightness(1.7);
   display: contents;
 }
 
-.reader-view-modal img {
+.reader-view-modal img, .reader-view-modal video {
   max-width: 100%;
   height: 100%;
   aspect-ratio: auto;
@@ -1181,9 +1189,9 @@ filter: brightness(1.7);
 }
 
 .reader-view-modal p {
-  margin: 1rem 0;
-  font-weight: var(--font-weight-light);
-  line-height: 1.8;
+  margin: 1.33em 0;
+  /* font-weight: var(--font-weight-light); */
+  /* line-heigsht: 1.5; */
 }
 
 .reader-view-modal figcaption {
@@ -1223,10 +1231,11 @@ filter: brightness(1.7);
 }
 
 .reader-view-title {
-  font-size: 36px;
+  font-size: 28px;
   margin: 0;
   margin-bottom: 8px;
   line-height: 1.2;
+  font-weight: 600;
   color: var(--color);
 }
 
