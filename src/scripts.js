@@ -3,7 +3,6 @@ const SUBSCRIBED_FEEDS_KEY = "subscribedFeeds";
 const FEED_DISCOVERY_KEY = "feedDiscoveryPref"; // By default feed discovery is enabled
 const FEED_DETAILS_KEY = "feedDetails";
 const SEARCH_PREFERENCE_KEY = "searchPref";
-const DEFAULT_API_URL = "https://rss.bumpyclock.com";
 const feedContainer = document.getElementById("feed-container");
 const welcomePage = document.getElementById("welcome-page");
 const settingsPage = document.getElementById("settings-page");
@@ -621,21 +620,26 @@ async function getSiteFavicon(mainDomain) {
       `https://www.google.com/s2/favicons?domain=${mainDomain}&sz=256`
     );
     if (!response.ok) {
-      throw new Error(response.statusText);
-    }
+      try {
+        //remove http:// or https:// from the start of the URL if it's there 
+        if (mainDomain.startsWith("http://")) {
+          mainDomain = mainDomain.replace("http://", "");
+        } else if (mainDomain.startsWith("https://")) {
+          mainDomain = mainDomain.replace("https://", "");
+        }
+        const response = await fetch(`https://icon.horse/icon/${mainDomain}`);
+        if (!response.ok) {
+          throw new Error(response.statusText);
+        }
+        const blob = await response.blob();
+        return URL.createObjectURL(blob);
+      } catch (error) {
+        console.log("Error fetching favicon from both iconhorse and google");
+      }    }
     const blob = await response.blob();
     return URL.createObjectURL(blob);
   } catch (error) {
-    try {
-      const response = await fetch(`https://icon.horse/icon/${mainDomain}`);
-      if (!response.ok) {
-        throw new Error(response.statusText);
-      }
-      const blob = await response.blob();
-      return URL.createObjectURL(blob);
-    } catch (error) {
-      console.log("Error fetching favicon from both sources");
-    }
+    console.log("Failed to fetch favicon for:", mainDomain);
   }
 }
 
@@ -1042,33 +1046,7 @@ function setSubscribedFeeds(feeds) {
   localStorage.setItem(SUBSCRIBED_FEEDS_KEY, JSON.stringify(feeds));
 }
 
-function setApiUrl(apiUrl) {
-  try {
-    localStorage.setItem("apiUrl", apiUrl);
 
-    if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
-      console.log("Sending message to service worker to set apiUrl");
-      navigator.serviceWorker.controller.postMessage({
-        action: "setApiUrl",
-        apiUrl: apiUrl,
-      });
-    }
-  } catch (error) {
-    console.error("Failed to set apiUrl:", error);
-  }
-}
-
-function getApiUrl() {
-  try {
-    if (!localStorage.getItem("apiUrl")) {
-      setApiUrl(DEFAULT_API_URL);
-    }
-    return localStorage.getItem("apiUrl");
-  } catch (error) {
-    console.error("Failed to get apiUrl:", error);
-    return null;
-  }
-}
 
 function setNtpPermission(permission) {
   try {

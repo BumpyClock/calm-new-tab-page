@@ -1,7 +1,7 @@
 async function showReaderView(url) {
   let article = {};
     try {
-      const response = await fetch('http://192.168.1.51:3000/getreaderview', {
+      const response = await fetch(`${getApiUrl()}/getreaderview`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
