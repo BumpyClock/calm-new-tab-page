@@ -233,7 +233,7 @@ async function refreshFeeds() {
   const { subscribedFeeds: tempFeedList, feedDetails: tempFeedDetails } =
     getSubscribedFeeds();
   feedList.subscribedFeeds = tempFeedList;
-  console.log(feedList.subscribedFeeds);
+  console.log(getApiUrl(),feedList.subscribedFeeds);
   const serviceWorker = navigator.serviceWorker.controller;
   if (serviceWorker) {
     lastRefreshed = new Date().getTime();
@@ -947,10 +947,10 @@ function setupSearchPreferenceToggle() {
   });
 }
 
-function setupApiUrlFormEventHandler() {
+async function setupApiUrlFormEventHandler() {
   const apiUrlForm = document.getElementById("apiUrl-form");
   const apiUrlInput = document.getElementById("apiUrl-input");
-  apiUrlInput.value = getApiUrl();
+  apiUrlInput.value = await getApiUrl();
   const apiUrlSubmitButton = document.getElementById("apiUrl-submit-button");
 
   apiUrlForm.addEventListener("submit", (event) => {

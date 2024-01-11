@@ -1,31 +1,84 @@
 const DEFAULT_API_URL = "https://rss.bumpyclock.com";
-
+var apiUrl =  getApiUrl();
 
 
 function setApiUrl(apiUrl) {
-    try {
-      localStorage.setItem("apiUrl", apiUrl);
-  
-      if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
-        console.log("Sending message to service worker to set apiUrl");
-        navigator.serviceWorker.controller.postMessage({
-          action: "setApiUrl",
-          apiUrl: apiUrl,
-        });
-      }
-    } catch (error) {
-      console.error("Failed to set apiUrl:", error);
+  const dbName = 'calm-ntp';
+  const storeName = 'defaults';
+
+  const openRequest = indexedDB.open(dbName);
+
+  openRequest.onupgradeneeded = function() {
+    const db = openRequest.result;
+    if (!db.objectStoreNames.contains(storeName)) {
+      db.createObjectStore(storeName);
     }
-  }
-  
-  function getApiUrl() {
-    try {
-      if (!localStorage.getItem("apiUrl")) {
-        setApiUrl(DEFAULT_API_URL);
-      }
-      return localStorage.getItem("apiUrl");
-    } catch (error) {
-      console.error("Failed to get apiUrl:", error);
-      return null;
+  };
+
+  openRequest.onerror = function() {
+    console.error("Failed to open database:", openRequest.error);
+  };
+
+  openRequest.onsuccess = function() {
+    const db = openRequest.result;
+    const transaction = db.transaction(storeName, 'readwrite');
+    const store = transaction.objectStore(storeName);
+    const putRequest = store.put(apiUrl, 'apiUrl');
+
+    putRequest.onsuccess = function() {
+      console.log("Successfully set apiUrl in IndexedDB");
+    };
+
+    putRequest.onerror = function() {
+      console.error("Failed to set apiUrl:", putRequest.error);
+    };
+
+    if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+      console.log("Sending message to service worker to set apiUrl");
+      navigator.serviceWorker.controller.postMessage({
+        action: "setApiUrl",
+        apiUrl: apiUrl,
+      });
     }
-  }
+  };
+}
+  
+async function getApiUrl() {
+  const dbName = 'calm-ntp';
+  const storeName = 'defaults';
+
+  return new Promise((resolve, reject) => {
+    const openRequest = indexedDB.open(dbName);
+
+    openRequest.onupgradeneeded = function() {
+      const db = openRequest.result;
+      if (!db.objectStoreNames.contains(storeName)) {
+        db.createObjectStore(storeName);
+      }
+    };
+
+    openRequest.onerror = function() {
+      reject(openRequest.error);
+    };
+
+    openRequest.onsuccess = function() {
+      const db = openRequest.result;
+      const transaction = db.transaction(storeName, 'readonly');
+      const store = transaction.objectStore(storeName);
+      const getRequest = store.get('apiUrl');
+
+      getRequest.onsuccess = function() {
+        if (getRequest.result) {
+          resolve(getRequest.result);
+        } else {
+          setApiUrl(DEFAULT_API_URL);
+          resolve(DEFAULT_API_URL);
+        }
+      };
+
+      getRequest.onerror = function() {
+        reject(getRequest.error);
+      };
+    };
+  });
+}

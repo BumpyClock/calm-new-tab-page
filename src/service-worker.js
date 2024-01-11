@@ -1,4 +1,6 @@
 var apiUrl = "https://rss.bumpyclock.com";
+importScripts(...["/scripts/utils/defaults.js"]);
+console.log("SW: apiUrl: ", getApiUrl());
 const BING_CACHE_NAME ='bing-image-cache';
 const BING_IMAGE_URL = 'https://www.bing.com/HPImageArchive.aspx?resoultion=3840&format=js&image_format=webp&idx=random&n=1&mkt=en-US';
 var bingImageCache = {
@@ -49,7 +51,7 @@ self.addEventListener("message", function (event) {
 });
 
 async function discoverFeedUrls(siteUrls){
-  var requestUrl = apiUrl+"/discover";
+  var requestUrl = getApiUrl()+"/discover";
   const urlsForPostRequest = {
     urls: siteUrls,
   };
@@ -86,9 +88,17 @@ async function discoverFeedUrls(siteUrls){
 }
 
 
-function getApiUrl() {
-  return apiUrl;
-}
+// function getApiUrl() {
+//   // Get api url from local storage
+//   const apiUrl = localStorage.getItem('apiUrl');
+  
+//   if (!apiUrl) {
+//     console.error('No API URL found in local storage.');
+//     return null;
+//   }
+
+//   return apiUrl;
+// }
 function acceptApiUrl(url) {
   console.log("SW: setting apiUrl: ", url);
   apiUrl = url;
@@ -214,10 +224,13 @@ function sendRssUpdateToClient(data) {
 
 //Get thumbnailUrl from the feed items and cache the images
 async function fetchRSSFeed(feedUrls) {
+  var apiUrl = await getApiUrl();
   var requestUrl = apiUrl+"/parse";
   const urlsForPostRequest = {
     urls: feedUrls,
   };
+
+  console.log("fetchRSSFeed: getApiUrl" + apiUrl);
 
   const requestOptions = {
     method: "POST", // Using POST method
