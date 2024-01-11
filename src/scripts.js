@@ -13,13 +13,13 @@ let startY; // Variable to store the start Y position of the touch
 
 defaultFeeds = [
   "http://www.theverge.com/rss/index.xml",
-  "https://www.vox.com/rss/index.xml",
+  "https://www.vox.com/rss/index.xml"
 ];
 
 // JSON array for holding default feeds url array
 let feedList = {
   subscribedFeeds: [],
-  suggestedFeeds: [],
+  suggestedFeeds: []
 };
 let msnry;
 
@@ -35,9 +35,7 @@ function debounce(func, wait) {
   };
 }
 
-
-
-chrome.runtime.onInstalled.addListener((details) => {
+chrome.runtime.onInstalled.addListener(details => {
   if (details.reason === "install") {
     chrome.tabs.create({ url: "welcome.html" });
     setFeedDiscovery(true);
@@ -50,18 +48,18 @@ chrome.runtime.onInstalled.addListener((details) => {
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
     .register("/service-worker.js")
-    .then(function (registration) {
+    .then(function(registration) {
       console.log("Service Worker registered with scope:", registration.scope);
       if (!navigator.serviceWorker.controller) {
         window.location.reload();
       }
     })
-    .catch(function (error) {
+    .catch(function(error) {
       console.log("Service Worker registration failed:", error);
     });
 }
 
-navigator.serviceWorker.addEventListener("controllerchange", function () {
+navigator.serviceWorker.addEventListener("controllerchange", function() {
   if (this.controller.state === "activated") {
     refreshFeeds();
   }
@@ -114,8 +112,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     lazySizes.cfg.expFactor = 2;
     lazySizes.init();
 
-   await initializeMostVisitedSitesCache();
-    
+    await initializeMostVisitedSitesCache();
 
     cachedCards = await getCachedRenderedCards();
     if (cachedCards !== null) {
@@ -125,14 +122,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       initializeMasonry();
       reapplyEventHandlersToCachedCards();
       feedContainer.style.opacity = "1"; // apply the fade-in effect
-      
+
       bgImageScrollHandler();
     } else {
       console.log("rendering feed from scratch");
       bgImageScrollHandler();
       await loadSubscribedFeeds();
     }
-   
   } else if (settingsPage) {
     // Settings page
     setupSettingsPage();
@@ -211,8 +207,8 @@ async function clearOldCaches() {
   const cacheNames = await caches.keys();
   await Promise.all(
     cacheNames
-      .filter((name) => name !== CARD_CACHE_NAME)
-      .map((name) => caches.delete(name))
+      .filter(name => name !== CARD_CACHE_NAME)
+      .map(name => caches.delete(name))
   );
 }
 
@@ -231,10 +227,12 @@ async function loadSubscribedFeeds() {
 }
 
 async function refreshFeeds() {
-  const { subscribedFeeds: tempFeedList, feedDetails: tempFeedDetails } =
-    getSubscribedFeeds();
+  const {
+    subscribedFeeds: tempFeedList,
+    feedDetails: tempFeedDetails
+  } = getSubscribedFeeds();
   feedList.subscribedFeeds = tempFeedList;
-  console.log(getApiUrl(),feedList.subscribedFeeds);
+  console.log(getApiUrl(), feedList.subscribedFeeds);
   const serviceWorker = navigator.serviceWorker.controller;
   if (serviceWorker) {
     lastRefreshed = new Date().getTime();
@@ -244,7 +242,7 @@ async function refreshFeeds() {
     // );
     serviceWorker.postMessage({
       action: "fetchRSS",
-      feedUrls: feedList.subscribedFeeds,
+      feedUrls: feedList.subscribedFeeds
     });
   } else {
     console.error("Service worker is not active or not controlled.");
@@ -267,9 +265,9 @@ function initializeMasonry() {
     itemSelector: ".card", // Use your card's class
     columnWidth: ".card", // The width of each column, you can set this as needed
     gutter: 12, // Space between items, you can set this as needed
-    fitWidth: true,
+    fitWidth: true
   });
-  document.querySelectorAll(".masonry-item").forEach((item) => {
+  document.querySelectorAll(".masonry-item").forEach(item => {
     item.addEventListener("load", () => {
       msnry.layout();
       setupParallaxEffect(item.parentElement.parentElement);
@@ -349,7 +347,7 @@ function setupParallaxEffect(card) {
       // imageContainer.style.backgroundPosition = 'center center';
     });
 
-    card.addEventListener("mousemove", (e) => {
+    card.addEventListener("mousemove", e => {
       const cardRect = card.getBoundingClientRect();
       const xVal = (e.clientX - cardRect.left) / cardRect.width;
       const yVal = (e.clientY - cardRect.top) / cardRect.height;
@@ -391,7 +389,7 @@ async function getCachedRenderedCards() {
   }
 }
 
-navigator.serviceWorker.addEventListener("message", async function (event) {
+navigator.serviceWorker.addEventListener("message", async function(event) {
   if (event.data.action === "rssUpdate") {
     // console.log("Received RSS update from service worker,rendering feed");
     // hideLoadingState();
@@ -401,7 +399,7 @@ navigator.serviceWorker.addEventListener("message", async function (event) {
     setFeedDetails(feedDetails);
     setFeedItems(feedItems);
     try {
-      await renderFeed(feedItems, feedDetails).catch((error) => {
+      await renderFeed(feedItems, feedDetails).catch(error => {
         console.error("Error rendering the feed:", error);
       });
     } catch (error) {
@@ -433,7 +431,7 @@ async function getWebsiteTitle(url) {
 }
 
 //listen for messages from broadcast channel
-channel.addEventListener("message", (event) => {
+channel.addEventListener("message", event => {
   if (event.data.action === "shareFeeds" && event.data.feeds) {
     const currentTimestamp = new Date().getTime();
     const fifteenMinutes = 15 * 60 * 1000;
@@ -459,7 +457,7 @@ function processRSSData(rssData) {
   // Check if the rssData object has the 'feedDetails' and 'items' arrays
   if (rssData && rssData.feedDetails && rssData.items) {
     // Process the feed details
-    feedDetails = rssData.feedDetails.map((feed) => ({
+    feedDetails = rssData.feedDetails.map(feed => ({
       siteTitle: feed.siteTitle,
       feedTitle: feed.feedTitle,
       feedUrl: feed.feedUrl, // Assuming 'feedUrl' should be the 'link' from the feed details
@@ -467,11 +465,11 @@ function processRSSData(rssData) {
       author: feed.author,
       lastUpdated: feed.lastUpdated,
       lastRefreshed: feed.lastRefreshed,
-      favicon: feed.favicon,
+      favicon: feed.favicon
     }));
 
     // Process the feed items
-    feedItems = rssData.items.map((item) => ({
+    feedItems = rssData.items.map(item => ({
       id: item.id,
       title: item.title,
       siteTitle: item.siteTitle,
@@ -487,10 +485,10 @@ function processRSSData(rssData) {
       content: item.content,
       media: item.media,
       enclosures: item.enclosures,
-      podcastInfo: item.podcastInfo,
+      podcastInfo: item.podcastInfo
     }));
 
-    feedItems.forEach((item) => {
+    feedItems.forEach(item => {
       if (item.published) {
         item.published = new Date(item.published).toISOString();
         // console.log(`item.published: ${item.published} converts to ${new Date(item.published)}`);
@@ -510,8 +508,6 @@ function processRSSData(rssData) {
   return { feedDetails, feedItems };
 }
 
-
-
 // Search code
 
 function handleSearch() {
@@ -527,7 +523,7 @@ function handleSearch() {
     window.open(searchURL, "_blank");
   });
 
-  searchInput.addEventListener("keyup", (event) => {
+  searchInput.addEventListener("keyup", event => {
     if (event.key === "Enter") {
       searchButton.click();
     }
@@ -537,19 +533,19 @@ function handleSearch() {
 // Add this function to remove a feed
 function removeFeed(feedURL) {
   const feeds = getSubscribedFeeds().subscribedFeeds;
-  const updatedFeeds = feeds.filter((url) => url !== feedURL);
+  const updatedFeeds = feeds.filter(url => url !== feedURL);
   setSubscribedFeeds(updatedFeeds);
 }
 
 // Show Top Sites
 async function initializeMostVisitedSitesCache() {
-  mostVisitedSitesCache = await new Promise((resolve) => {
-    chrome.topSites.get(async (sites) => {
+  mostVisitedSitesCache = await new Promise(resolve => {
+    chrome.topSites.get(async sites => {
       const siteCards = await Promise.all(
         sites
-          .filter((site) => !site.url.startsWith("chrome-extension://"))
+          .filter(site => !site.url.startsWith("chrome-extension://"))
           .slice(0, 10)
-          .map(async (site) => {
+          .map(async site => {
             const siteCard = await createMostVisitedSiteCard(site);
             return siteCard;
           })
@@ -622,7 +618,7 @@ async function getSiteFavicon(mainDomain) {
     );
     if (!response.ok) {
       try {
-        //remove http:// or https:// from the start of the URL if it's there 
+        //remove http:// or https:// from the start of the URL if it's there
         if (mainDomain.startsWith("http://")) {
           mainDomain = mainDomain.replace("http://", "");
         } else if (mainDomain.startsWith("https://")) {
@@ -636,7 +632,8 @@ async function getSiteFavicon(mainDomain) {
         return URL.createObjectURL(blob);
       } catch (error) {
         console.log("Error fetching favicon from both iconhorse and google");
-      }    }
+      }
+    }
     const blob = await response.blob();
     return URL.createObjectURL(blob);
   } catch (error) {
@@ -685,7 +682,7 @@ function setLastRefreshedTimestamp() {
 if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
   navigator.serviceWorker.controller.postMessage({ action: "fetchBingImage" });
 
-  navigator.serviceWorker.addEventListener('message', event => {
+  navigator.serviceWorker.addEventListener("message", event => {
     if (event.data.action === "bingImageResponse") {
       const imageDetails = {
         imageBlob: event.data.imageBlob,
@@ -698,22 +695,21 @@ if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
   });
 }
 
-
 function setBingImage(imageDetails) {
   console.log(`setBingImage: ${JSON.stringify(imageDetails)}`);
   const bgContainer = document.querySelector(".background-image-container");
   const imageUrl = URL.createObjectURL(imageDetails.imageBlob);
   const title = imageDetails.title;
-    const copyright = imageDetails.copyright;
-    bgContainer.innerHTML = `<img id="background-image-container" data-src="${imageUrl}"  alt="${title}" class="background-image-container extension-bg lazyload" style>`;
-    // bgContainer.style.backgroundImage = `url(${imageUrl})`;
-    const attributionContainer = document.createElement("div");
-    attributionContainer.className = "attribution-container";
-    attributionContainer.innerHTML = `
+  const copyright = imageDetails.copyright;
+  bgContainer.innerHTML = `<img id="background-image-container" data-src="${imageUrl}"  alt="${title}" class="background-image-container extension-bg lazyload" style>`;
+  // bgContainer.style.backgroundImage = `url(${imageUrl})`;
+  const attributionContainer = document.createElement("div");
+  attributionContainer.className = "attribution-container";
+  attributionContainer.innerHTML = `
         <p class="attribution-title">${title}</p>
         <p class="attribution-copyright">${copyright} | Bing & Microsoft</p>
       `;
-    bgContainer.appendChild(attributionContainer);
+  bgContainer.appendChild(attributionContainer);
   bgContainer.style.backgroundImage = `url(${imageUrl})`;
 }
 
@@ -744,21 +740,6 @@ async function fetchBingImageOfTheDay() {
   }
 }
 
-// function bgImageScrollHandler() {
-//   console.log(`adding bg-scroll event handler`);
-//   window.addEventListener("scroll", () => {
-//     const scrollPosition = window.scrollY || document.documentElement.scrollTop;
-//     const blurIntensity = Math.min(scrollPosition / 100, 10);
-//     const darkIntensity = Math.min(scrollPosition / 100, 0.5); // Adjust the values as per your preference
-//     const bgContainer = document.getElementById("background-image-container");
-//     // bgContainer.style.filter = `blur(${blurIntensity}px) brightness(${
-//     //   1 - darkIntensity
-//     // }) grayscale(100%)`;
-//     // const bgContainer = document.getElementById(".background-image-container");
-//     bgContainer.style.filter = `brightness(${1 - darkIntensity})`;
-//   });
-// }
-
 function bgImageScrollHandler() {
   // console.log(`adding bg-scroll event handler`);
   window.addEventListener("scroll", () => {
@@ -766,7 +747,8 @@ function bgImageScrollHandler() {
     const blurIntensity = Math.min(scrollPosition / 100, 10); // Adjust the maximum blur intensity as per your preference
     const darkIntensity = Math.min(scrollPosition / 100, 0.5); // Adjust the maximum dark intensity as per your preference
     const bgContainer = document.getElementById("background-image-container");
-    bgContainer.style.filter = `blur(${blurIntensity}px) brightness(${1 - darkIntensity})`;
+    bgContainer.style.filter = `blur(${blurIntensity}px) brightness(${1 -
+      darkIntensity})`;
   });
 }
 
@@ -774,7 +756,7 @@ function bgImageScrollHandler() {
 
 async function setupSubscriptionForm() {
   const form = document.getElementById("subscription-form");
-  form.addEventListener("submit", async (event) => {
+  form.addEventListener("submit", async event => {
     event.preventDefault();
     const feedURL = form.elements["feed-url"].value;
     const feeds = getSubscribedFeeds();
@@ -806,8 +788,10 @@ function setupBackButton() {
 }
 
 async function displaySubscribedFeeds() {
-  const { subscribedFeeds: feeds, feedDetails: feedDetails } =
-    getSubscribedFeeds();
+  const {
+    subscribedFeeds: feeds,
+    feedDetails: feedDetails
+  } = getSubscribedFeeds();
   const list = document.getElementById("subscribed-feeds-list");
   const listfragment = document.createDocumentFragment();
   if (list !== null) {
@@ -965,7 +949,7 @@ async function setupApiUrlFormEventHandler() {
   apiUrlInput.value = await getApiUrl();
   const apiUrlSubmitButton = document.getElementById("apiUrl-submit-button");
 
-  apiUrlForm.addEventListener("submit", (event) => {
+  apiUrlForm.addEventListener("submit", event => {
     event.preventDefault();
     setApiUrl(apiUrlInput.value);
   });
@@ -995,7 +979,7 @@ function setupWelcomePage() {
 
     //open a new page to show the new tab page when the user clicks on the consent button and close the welcome tab
     chrome.tabs.create({ url: "newtab.html" });
-    chrome.tabs.getCurrent((tab) => {
+    chrome.tabs.getCurrent(tab => {
       chrome.tabs.remove(tab.id);
     });
     setNtpPermission(true);
@@ -1005,21 +989,16 @@ function setupWelcomePage() {
   });
 }
 function checkNTPConsent() {
-  
-  
-   if(getNtpPermission()) {
-      
-        // Activate the new tab override
-        chrome.storage.local.set({ newTabOverrideActive: true });
-        // Replace the new tab page (e.g., open your extension's new tab page)
-        chrome.tabs.query({ url: "chrome://newtab" }, (tabs) => {
-          if (tabs && tabs.length) {
-            chrome.tabs.update(tabs[0].id, { url: "index.html" });
-          }
-        });
-     
-    }
-  
+  if (getNtpPermission()) {
+    // Activate the new tab override
+    chrome.storage.local.set({ newTabOverrideActive: true });
+    // Replace the new tab page (e.g., open your extension's new tab page)
+    chrome.tabs.query({ url: "chrome://newtab" }, tabs => {
+      if (tabs && tabs.length) {
+        chrome.tabs.update(tabs[0].id, { url: "index.html" });
+      }
+    });
+  }
 }
 // getter and setter functions
 function setFeedDetails(feedDetails) {
@@ -1043,12 +1022,12 @@ function getSubscribedFeeds() {
     setSubscribedFeeds(defaultFeeds);
     return {
       subscribedFeeds: defaultFeeds,
-      feedDetails: JSON.parse(localStorage.getItem(FEED_DETAILS_KEY)) || [],
+      feedDetails: JSON.parse(localStorage.getItem(FEED_DETAILS_KEY)) || []
     };
   } else {
     return {
       subscribedFeeds: JSON.parse(localStorage.getItem(SUBSCRIBED_FEEDS_KEY)),
-      feedDetails: JSON.parse(localStorage.getItem(FEED_DETAILS_KEY)) || [],
+      feedDetails: JSON.parse(localStorage.getItem(FEED_DETAILS_KEY)) || []
     };
   }
 }
@@ -1057,8 +1036,6 @@ function setSubscribedFeeds(feeds) {
   feedList.subscribedFeeds = feeds;
   localStorage.setItem(SUBSCRIBED_FEEDS_KEY, JSON.stringify(feeds));
 }
-
-
 
 function setNtpPermission(permission) {
   try {
