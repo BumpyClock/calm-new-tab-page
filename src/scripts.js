@@ -371,7 +371,7 @@ navigator.serviceWorker.addEventListener("message", async function(event) {
   if (event.data.action === "rssUpdate") {
     // console.log("Received RSS update from service worker,rendering feed");
     // hideLoadingState();
-    let response = JSON.parse(event.data.rssData);
+    let response = JSON.parse(event.data.data);
     console.log(`feed refresh from service worker: ${response}`);
     const { feedDetails, feedItems } = processRSSData(response);
     setFeedDetails(feedDetails);

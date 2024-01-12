@@ -1,11 +1,11 @@
 const DEFAULT_API_URL = "https://rss.bumpyclock.com";
-var apiUrl =  getApiUrl();
+const dbName = 'calm-ntp';
+const storeName = 'defaults';
+let apiUrl = getApiUrl();
 
 
-function setApiUrl(apiUrl) {
-  const dbName = 'calm-ntp';
-  const storeName = 'defaults';
 
+function openDatabase(dbName, storeName) {
   const openRequest = indexedDB.open(dbName);
 
   openRequest.onupgradeneeded = function() {
@@ -18,6 +18,12 @@ function setApiUrl(apiUrl) {
   openRequest.onerror = function() {
     console.error("Failed to open database:", openRequest.error);
   };
+
+  return openRequest;
+}
+
+function setApiUrl(apiUrl) {
+  const openRequest = openDatabase(dbName, storeName);
 
   openRequest.onsuccess = function() {
     const db = openRequest.result;
@@ -42,24 +48,10 @@ function setApiUrl(apiUrl) {
     }
   };
 }
-  
+
 async function getApiUrl() {
-  const dbName = 'calm-ntp';
-  const storeName = 'defaults';
-
   return new Promise((resolve, reject) => {
-    const openRequest = indexedDB.open(dbName);
-
-    openRequest.onupgradeneeded = function() {
-      const db = openRequest.result;
-      if (!db.objectStoreNames.contains(storeName)) {
-        db.createObjectStore(storeName);
-      }
-    };
-
-    openRequest.onerror = function() {
-      reject(openRequest.error);
-    };
+    const openRequest = openDatabase(dbName, storeName);
 
     openRequest.onsuccess = function() {
       const db = openRequest.result;
@@ -84,21 +76,7 @@ async function getApiUrl() {
 }
 
 async function cacheRenderedCards(htmlContent) {
-  const dbName = 'calm-ntp';
-  const storeName = 'defaults';
-
-  const openRequest = indexedDB.open(dbName);
-
-  openRequest.onupgradeneeded = function() {
-    const db = openRequest.result;
-    if (!db.objectStoreNames.contains(storeName)) {
-      db.createObjectStore(storeName);
-    }
-  };
-
-  openRequest.onerror = function() {
-    console.error("Failed to open database:", openRequest.error);
-  };
+  const openRequest = openDatabase(dbName, storeName);
 
   openRequest.onsuccess = function() {
     const db = openRequest.result;
@@ -117,22 +95,8 @@ async function cacheRenderedCards(htmlContent) {
 }
 
 async function getCachedRenderedCards() {
-  const dbName = 'calm-ntp';
-  const storeName = 'defaults';
-
   return new Promise((resolve, reject) => {
-    const openRequest = indexedDB.open(dbName);
-
-    openRequest.onupgradeneeded = function() {
-      const db = openRequest.result;
-      if (!db.objectStoreNames.contains(storeName)) {
-        db.createObjectStore(storeName);
-      }
-    };
-
-    openRequest.onerror = function() {
-      reject(openRequest.error);
-    };
+    const openRequest = openDatabase(dbName, storeName);
 
     openRequest.onsuccess = function() {
       const db = openRequest.result;
