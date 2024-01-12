@@ -82,26 +82,23 @@ chrome.runtime.onInstalled.addListener(function(details) {
 //   }
 // });
 async function handleDiscoverFeeds(event) {
-  if (event.data.action === "discoverFeeds") {
-    const urls = event.data.discoverUrls;
-    console.log(`[Service Worker] discovering Feeds for site ${urls}`);
-    console.log("URLs: ", urls);
-    const feedUrls = await discoverFeedUrls(urls);
-    
-    console.log("discovered feedUrls: ", feedUrls);
-    //Sending fetched feed data to tab
-    this.self.clients.matchAll().then((clients) => {
-      if (clients && clients.length) {
-        clients.forEach(client => {
-          client.postMessage({
-            action: "discoveredFeeds",
-            feedUrls: feedUrls,
-          });
+  const urls = event.data.discoverUrls;
+  console.log(`[Service Worker] discovering Feeds for site ${urls}`);
+  console.log("URLs: ", urls);
+  const feedUrls = await discoverFeedUrls(urls);
+  
+  console.log("discovered feedUrls: ", feedUrls);
+  //Sending fetched feed data to tab
+  this.self.clients.matchAll().then((clients) => {
+    if (clients && clients.length) {
+      clients.forEach(client => {
+        client.postMessage({
+          action: "discoveredFeeds",
+          feedUrls: feedUrls,
         });
-      }
-    });
-
-  }
+      });
+    }
+  });
 }
 
 async function discoverFeedUrls(siteUrls){
