@@ -253,7 +253,6 @@ function initializeMasonry() {
 }
 
 async function renderFeed(feeditems, feedDetails = null, cachedCards = null) {
-  const feedContainer = document.getElementById("feed-container");
   if (cachedCards) {
     console.log("rendering feed from cache");
     feedContainer.innerHTML = cachedCards;
@@ -283,9 +282,8 @@ async function renderFeed(feeditems, feedDetails = null, cachedCards = null) {
     setLastRefreshedTimestamp();
     feedContainer.style.opacity = "1";
     initializeMasonry();
-    // insertGridSizer();
   }
-}//parallax effect for image container
+}
 
 function setupParallaxEffect(card) {
   const imageContainer = card.querySelector("#thumbnail-image");
@@ -600,6 +598,7 @@ if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
 }
 
 function setBingImage(imageDetails) {
+  if(feedContainer){
   // console.log(`setBingImage: ${JSON.stringify(imageDetails)}`);
   const bgContainer = document.querySelector(".background-image-container");
   const imageUrl = URL.createObjectURL(imageDetails.imageBlob);
@@ -615,6 +614,7 @@ function setBingImage(imageDetails) {
       `;
   bgContainer.appendChild(attributionContainer);
   bgContainer.style.backgroundImage = `url(${imageUrl})`;
+  }
 }
 
 async function fetchBingImageOfTheDay() {
@@ -699,7 +699,6 @@ function setSearchPreference(state) {
 
 
 // Setup NTP
-
 async function setupNTP() {
   setupSearch();
   lazySizes.cfg.expand = 300;
@@ -712,20 +711,18 @@ async function setupNTP() {
   console.log(`Feed discovery is set to : ${getFeedDiscovery()}`);
 
   cachedCards = await getCachedRenderedCards();
+  const feedContainer = document.getElementById("feed-container");
   if (cachedCards !== null) {
-    const feedContainer = document.getElementById("feed-container");
     feedContainer.innerHTML = cachedCards;
     // setupParallaxEffect();
     initializeMasonry();
     reapplyEventHandlersToCachedCards();
     feedContainer.style.opacity = "1"; // apply the fade-in effect
-
-    bgImageScrollHandler();
   } else {
     console.log("rendering feed from scratch");
-    bgImageScrollHandler();
     await loadSubscribedFeeds();
   }
+  bgImageScrollHandler();
 }
 
 async function setupSettingsPage() {
