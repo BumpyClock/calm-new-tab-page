@@ -12,8 +12,7 @@ async function setupSubscriptionForm() {
     feeds.subscribedFeeds.push(feedURL);
     setSubscribedFeeds(feeds.subscribedFeeds);
     form.reset();
-    await clearCachedRenderedCards();
-    cachedCards = null;
+    await clearCache();
     refreshFeeds();
     await displaySubscribedFeeds();
   });
@@ -22,8 +21,7 @@ async function setupSubscriptionForm() {
 function setupUnsubscribeButton(elem, feedUrl) {
   elem.addEventListener("click", async () => {
     removeFeed(feedUrl);
-    await clearCachedRenderedCards();
-    cachedCards = null;
+    await clearCache();
     displaySubscribedFeeds();
   });
 }
@@ -79,8 +77,7 @@ async function createListItem(detail, feedURL) {
   
     setupEventListener(removeButton, "click", async () => {
       removeFeed(feedURL);
-      await clearCachedRenderedCards();
-      cachedCards = null;
+      await clearCache();
       displaySubscribedFeeds();
     });
   
