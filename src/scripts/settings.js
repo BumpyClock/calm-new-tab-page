@@ -52,69 +52,58 @@ async function displaySubscribedFeeds() {
     }
   });
 
-  // Since feedDetails.map is non-blocking and we're awaiting inside it,
-  // we need to handle the visibility change after all async operations have completed.
   Promise.all(feedPromises).then(() => {
     list.appendChild(listfragment);
     list.style.visibility = "visible";
     list.style.height = "auto";
   });
 }
-
 async function createListItem(detail, feedURL) {
-  const listItem = document.createElement("div");
-  listItem.className = "list-item";
+    const listItem = createElement("div", "list-item");
+    const bgImageContainer = createElement("div", "bg");
+    const faviconSrc = detail.favicon || await getSiteFavicon(new URL(feedURL).hostname);
+    const bgImage = createElement("img", "bg lazyload", {"data-src": faviconSrc});
+    const noiseLayer = createElement("div", "noise");
+    const websiteInfo = createElement("div", "website-info");
+    const favicon = createElement("img", "site-favicon", {src: faviconSrc, alt: `${detail.siteTitle} Favicon`});
+    const websiteName = createElement("h3", "", {}, detail.siteTitle || detail.feedTitle);
+    const feedTitle = createElement("p", "feed-title", {}, detail.feedTitle || detail.siteTitle);
+    const feedUrl = createElement("p", "feed-url", {}, feedURL);
+    const removeButton = createElement("button", "remove-feed-button");
+    const removeButtonText = createElement("p", "unsubscribe-button", {}, "Unsubscribe");
+  
+    bgImageContainer.append(bgImage, noiseLayer);
+    websiteInfo.append(favicon, websiteName, feedTitle, feedUrl);
+    removeButton.appendChild(removeButtonText);
+    listItem.append(websiteInfo, removeButton, bgImageContainer);
+  
+    setupEventListener(removeButton, "click", async () => {
+      removeFeed(feedURL);
+      await clearCachedRenderedCards();
+      cachedCards = null;
+      displaySubscribedFeeds();
+    });
+  
+    return listItem;
+  }
 
-  const bgImageContainer = document.createElement("div");
-  bgImageContainer.className = "bg";
-
-  const bgImage = document.createElement("img");
-  bgImage.setAttribute("data-src", detail.favicon);
-  bgImage.className = "bg lazyload";
-  bgImageContainer.appendChild(bgImage);
-
-  const noiseLayer = document.createElement("div");
-  noiseLayer.className = "noise";
-  bgImageContainer.appendChild(noiseLayer);
-
-  const websiteInfo = document.createElement("div");
-  websiteInfo.className = "website-info";
-
-  const favicon = document.createElement("img");
-  favicon.src = detail.favicon || (await getSiteFavicon(new URL(feedURL).hostname)); // Use the favicon from feedDetails if available
-  favicon.alt = `${detail.siteTitle} Favicon`;
-  favicon.className = "site-favicon";
-  websiteInfo.appendChild(favicon);
-
-  const websiteName = document.createElement("h3");
-  websiteName.textContent = detail.siteTitle || detail.feedTitle; // Use the siteTitle from feedDetails
-  websiteInfo.appendChild(websiteName);
-
-  const feedTitle = document.createElement("p");
-  feedTitle.textContent = detail.feedTitle || detail.siteTitle; // Use the feedTitle from feedDetails
-  feedTitle.className = "feed-title";
-  websiteInfo.appendChild(feedTitle);
-
-  const feedUrl = document.createElement("p");
-  feedUrl.className = "feed-url";
-  feedUrl.textContent = feedURL;
-  websiteInfo.appendChild(feedUrl);
-
-  listItem.appendChild(websiteInfo);
-
-  const removeButton = document.createElement("button");
-  removeButton.className = "remove-feed-button";
-  const removeButtonText = document.createElement("p");
-  removeButtonText.textContent = "Unsubscribe";
-  removeButtonText.className = "unsubscribe-button";
-  removeButton.appendChild(removeButtonText);
-  setupUnsubscribeButton(removeButton, feedURL);
-
-  listItem.appendChild(removeButton);
-  listItem.appendChild(bgImageContainer);
-
-  return listItem;
+function createElement(tag, className, attributes = {}, textContent = '') {
+  const element = document.createElement(tag);
+  element.className = className;
+  if (typeof attributes === 'object' && attributes !== null) {
+    Object.keys(attributes).forEach(key => element.setAttribute(key, attributes[key]));
+  }
+  element.textContent = textContent;
+  return element;
 }
+
+function setupEventListener(element, eventType, eventHandler) {
+  if (typeof element === 'string') {
+    element = document.getElementById(element);
+  }
+  element.addEventListener(eventType, eventHandler);
+}
+
 function setupToggle(id, getter, setter) {
   const toggle = document.getElementById(id);
   toggle.checked = getter();
