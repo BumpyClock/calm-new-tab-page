@@ -189,35 +189,26 @@ async function clearOldCaches() {
       .map(name => caches.delete(name))
   );
 }
-
-async function loadSubscribedFeeds() {
-  // await showLoadingState();
+function loadSubscribedFeeds() {
   const feedContainer = document.getElementById("feed-container");
   feedContainer.innerHTML = "";
   if (!shouldRefreshFeeds() && feedsCache) {
     console.log("Using cached feeds");
-    // Use cached feeds if available and no need to refresh
     renderFeed(cachedCards);
     setLastRefreshedTimestamp(new Date(lastRefreshed));
   } else {
-    await refreshFeeds();
+    refreshFeeds();
   }
 }
 
-async function refreshFeeds() {
-  const {
-    subscribedFeeds: tempFeedList,
-    feedDetails: tempFeedDetails
-  } = getSubscribedFeeds();
-  feedList.subscribedFeeds = tempFeedList;
+function refreshFeeds() {
+  const { subscribedFeeds, feedDetails } = getSubscribedFeeds();
+  feedList.subscribedFeeds = subscribedFeeds;
   console.log(getApiUrl(), feedList.subscribedFeeds);
   const serviceWorker = navigator.serviceWorker.controller;
   if (serviceWorker) {
     lastRefreshed = new Date().getTime();
-    console.log(
-      `Sending message to service worker to fetch feeds
-      ${feedList.subscribedFeeds}`
-    );
+    console.log(`Sending message to service worker to fetch feeds ${feedList.subscribedFeeds}`);
     serviceWorker.postMessage({
       action: "fetchRSS",
       feedUrls: feedList.subscribedFeeds
@@ -227,19 +218,17 @@ async function refreshFeeds() {
   }
 }
 
-async function discoverFeeds() {
+function discoverFeeds() {
   const serviceWorker = navigator.serviceWorker.controller;
   if (serviceWorker) {
     console.log("Sending message to service worker to discover feeds");
-
-    chrome.topSites.get(async function(topSites) {
+    chrome.topSites.get(function(topSites) {
       const discoverUrls = topSites
         .filter(site => {
           const url = new URL(site.url);
           return !url.protocol.startsWith('chrome-extension') && !url.hostname.match(/^[\d.]+$/);
         })
         .map(site => site.url);
-
       serviceWorker.postMessage({ action: "discoverFeeds", discoverUrls });
     });
   } else {
@@ -251,19 +240,16 @@ async function updateDisplayOnNewTab() {
   const cachedCards = await getCachedRenderedCards();
   if (cachedCards) {
     renderFeed(cachedCards);
-    // setupParallaxEffect();
   } else {
     loadSubscribedFeeds();
   }
 }
 
 function initializeMasonry() {
-  // Initialize Masonry after all cards are loaded
   msnry = new Masonry(feedContainer, {
-    // options
-    itemSelector: ".card", // Use your card's class
-    columnWidth: ".card", // The width of each column, you can set this as needed
-    gutter: 12, // Space between items, you can set this as needed
+    itemSelector: ".card",
+    columnWidth: ".card",
+    gutter: 12,
     fitWidth: true
   });
   document.querySelectorAll(".masonry-item").forEach(item => {
@@ -279,71 +265,50 @@ function initializeMasonry() {
   window.addEventListener("resize", debouncedLayout);
 }
 
-function insertGridSizer() {
+async function renderFeed(feeditems, feedDetails = null, cachedCards = null) {
   const feedContainer = document.getElementById("feed-container");
-  const gridSizer = document.createElement("div");
-  gridSizer.className = "grid-sizer";
-  const gridItem = document.createElement("div");
-  gridItem.className = "card grid-item ";
-  // feedContainer.insertBefore(gridItem, feedContainer.firstChild);
-  // feedContainer.insertBefore(gridSizer, feedContainer.firstChild);
-}
-
-async function renderFeed(cachedCards) {
-  console.log("rendering feed from cache");
-  const feedContainer = document.getElementById("feed-container");
-  feedContainer.innerHTML = cachedCards;
-  initializeMasonry();
-  await cacheRenderedCards(feedContainer.innerHTML);
-  feedContainer.style.opacity = "1"; // apply the fade-in effect
-  setLastRefreshedTimestamp(new Date(lastRefreshed));
-}
-
-async function renderFeed(feeditems, feedDetails) {
-  feedsCache = feeditems;
-  let cardCount = 0;
-
-  const feedContainer = document.getElementById("feed-container");
-  const fragment = document.createDocumentFragment();
-
-  for (const item of feeditems) {
-    const card = await createCard(item, feedDetails);
-
-    if (card instanceof Node) {
-      fragment.appendChild(card);
-      cardCount++;
-    } else {
-      console.error("Card is not a valid DOM Node:", card);
+  if (cachedCards) {
+    console.log("rendering feed from cache");
+    feedContainer.innerHTML = cachedCards;
+    initializeMasonry();
+    await cacheRenderedCards(feedContainer.innerHTML);
+    feedContainer.style.opacity = "1";
+    setLastRefreshedTimestamp(new Date(lastRefreshed));
+  } else {
+    feedsCache = feeditems;
+    let cardCount = 0;
+    const fragment = document.createDocumentFragment();
+    for (const item of feeditems) {
+      const card = await createCard(item, feedDetails);
+      if (card instanceof Node) {
+        fragment.appendChild(card);
+        cardCount++;
+      } else {
+        console.error("Card is not a valid DOM Node:", card);
+      }
     }
+    console.log(`rendered ${cardCount} cards`);
+    if (feedContainer) {
+      feedContainer.innerHTML = "";
+    }
+    feedContainer.appendChild(fragment);
+    await cacheRenderedCards(feedContainer.innerHTML);
+    setLastRefreshedTimestamp();
+    feedContainer.style.opacity = "1";
+    initializeMasonry();
+    insertGridSizer();
   }
-  console.log(`rendered ${cardCount} cards`);
-  // hideLoadingState();
-  //create a refresh animation here to show that feed has been refreshed
-  if (feedContainer) {
-    feedContainer.innerHTML = "";
-  }
-  feedContainer.appendChild(fragment);
-  await cacheRenderedCards(feedContainer.innerHTML);
-  setLastRefreshedTimestamp();
-  // Fade-in effect
-  feedContainer.style.opacity = "1";
-  // Setup parallax effect for each card
-  initializeMasonry();
-  // setupParallaxEffect();
-  insertGridSizer();
-}
-
-//parallax effect for image container
+}//parallax effect for image container
 
 function setupParallaxEffect(card) {
   const imageContainer = card.querySelector("#thumbnail-image");
 
   if (imageContainer) {
+    const imageContainerStyle = imageContainer.style;
+
     card.addEventListener("mouseover", () => {
-      // Zoom in effect
-      imageContainer.style.transition = "transform 0.25s ease-in";
-      imageContainer.style.transform = "scale(1.05)";
-      // imageContainer.style.backgroundPosition = 'center center';
+      imageContainerStyle.transition = "transform 0.25s ease-in";
+      imageContainerStyle.transform = "scale(1.05)";
     });
 
     card.addEventListener("mousemove", e => {
@@ -351,18 +316,15 @@ function setupParallaxEffect(card) {
       const xVal = (e.clientX - cardRect.left) / cardRect.width;
       const yVal = (e.clientY - cardRect.top) / cardRect.height;
 
-      // Translate this into a percentage-based position
-      const xOffset = -(xVal - 0.5) * 20; // Adjust for desired effect strength
+      const xOffset = -(xVal - 0.5) * 20;
       const yOffset = -(yVal - 0.5) * 20;
 
-      // Apply the effect to the image container's background
-      imageContainer.style.objectPosition = `${50 + xOffset}% ${50 + yOffset}%`;
+      imageContainerStyle.objectPosition = `${50 + xOffset}% ${50 + yOffset}%`;
     });
 
     card.addEventListener("mouseleave", () => {
-      // Reset the background position when the mouse leaves the card
-      imageContainer.style.transform = "scale(1)";
-      imageContainer.style.backgroundPosition = "center center";
+      imageContainerStyle.transform = "scale(1)";
+      imageContainerStyle.backgroundPosition = "center center";
     });
   }
 }
@@ -402,12 +364,10 @@ async function getWebsiteTitle(url) {
     const response = await fetch(rootDomain);
     const tempElement = document.createElement("div");
     const text = await response.text();
-    console.log("text: ", text);
-    // const matches = text.match(/<title>(.*?)<\/title>/i);
-    const matches = text.match(/<title>(.*?)<\/title>/is);
-    // console.log("matches: ", matches);
+
+    // Use a more specific regular expression to match the title tag
+    const matches = text.match(/<title[^>]*>([^<]+)<\/title>/i);
     tempElement.innerHTML = matches && matches[1] ? matches[1] : rootDomain;
-    // console.log(`Website title for ${url}: ${tempElement.textContent}`);
 
     return tempElement.textContent;
   } catch (e) {
