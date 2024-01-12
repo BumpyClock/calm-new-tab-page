@@ -296,7 +296,7 @@ async function renderFeed(feeditems, feedDetails = null, cachedCards = null) {
     setLastRefreshedTimestamp();
     feedContainer.style.opacity = "1";
     initializeMasonry();
-    insertGridSizer();
+    // insertGridSizer();
   }
 }//parallax effect for image container
 
@@ -396,56 +396,29 @@ channel.addEventListener("message", event => {
 
 function processRSSData(rssData) {
   // Initialize arrays to hold the processed feed details and items
-  let feedDetails = [];
-  let feedItems = [];
+  const feedDetails = [];
+  const feedItems = [];
+  
   if (rssData && rssData.feedDetails && rssData.items) {
     // Process the feed details
-    feedDetails = rssData.feedDetails.map(feed => ({
-      siteTitle: feed.siteTitle,
-      feedTitle: feed.feedTitle,
-      feedUrl: feed.feedUrl, // Assuming 'feedUrl' should be the 'link' from the feed details
-      description: feed.description,
-      author: feed.author,
-      lastUpdated: feed.lastUpdated,
-      lastRefreshed: feed.lastRefreshed,
-      favicon: feed.favicon
-    }));
+    rssData.feedDetails.forEach(feed => {
+      const { siteTitle, feedTitle, feedUrl, description, author, lastUpdated, lastRefreshed, favicon } = feed;
+      feedDetails.push({ siteTitle, feedTitle, feedUrl, description, author, lastUpdated, lastRefreshed, favicon });
+    });
 
     // Process the feed items
-    feedItems = rssData.items.map(item => ({
-      id: item.id,
-      title: item.title,
-      siteTitle: item.siteTitle,
-      feedUrl: item.feedUrl,
-      feedTitle: item.feedTitle,
-      favicon: item.favicon,
-      thumbnail: item.thumbnail,
-      link: item.link,
-      author: item.author,
-      published: item.published, // Convert timestamp to ISO string
-      created: item.created, // Convert timestamp to ISO string
-      category: item.category,
-      content: item.content,
-      media: item.media,
-      enclosures: item.enclosures,
-      podcastInfo: item.podcastInfo
-    }));
-
-    feedItems.forEach(item => {
-      if (item.published) {
-        item.published = new Date(item.published).toISOString();
-      }
-      if (item.created) {
-        item.created = new Date(item.created).toISOString();
-      }
-      if (!item.published) {
-        item.published = item.created;
-      }
+    rssData.items.forEach(item => {
+      const { id, title, siteTitle, feedUrl, feedTitle, favicon, thumbnail, link, author, published, created, category, content, media, enclosures, podcastInfo } = item;
+      const publishedDate = published ? new Date(published).toISOString() : null;
+      const createdDate = created ? new Date(created).toISOString() : null;
+      feedItems.push({ id, title, siteTitle, feedUrl, feedTitle, favicon, thumbnail, link, author, published: publishedDate, created: createdDate, category, content, media, enclosures, podcastInfo });
     });
+
     if (feedItems.length > 0) {
       feedItems.sort((a, b) => new Date(b.published) - new Date(a.published));
     }
   }
+  
   // Return the processed data
   return { feedDetails, feedItems };
 }
@@ -730,10 +703,7 @@ function setupBackButton() {
 }
 
 async function displaySubscribedFeeds() {
-  const {
-    subscribedFeeds: feeds,
-    feedDetails: feedDetails
-  } = getSubscribedFeeds();
+  const { subscribedFeeds: feeds, feedDetails } = getSubscribedFeeds();
   const list = document.getElementById("subscribed-feeds-list");
   const listfragment = document.createDocumentFragment();
   if (list !== null) {
@@ -742,78 +712,74 @@ async function displaySubscribedFeeds() {
     list.style.height = "0px";
   }
 
-  // Assuming feedDetails is an array of objects with detailed information for each feed
-  feedDetails.forEach(async (detail, index) => {
+  const feedPromises = feedDetails.map(async (detail, index) => {
     const feedURL = feeds[index]; // Corresponding URL from feeds array
-    var tempElement = document.createElement("div");
-    const docFragment = document.createDocumentFragment();
     if (feedURL != null) {
       const listItem = document.createElement("div");
       listItem.className = "list-item";
-      const noiseLayer = document.createElement("div");
-      noiseLayer.className = "noise";
 
       const bgImageContainer = document.createElement("div");
       bgImageContainer.className = "bg";
+
       const bgImage = document.createElement("img");
       bgImage.setAttribute("data-src", detail.favicon);
       bgImage.className = "bg lazyload";
       bgImageContainer.appendChild(bgImage);
+
+      const noiseLayer = document.createElement("div");
+      noiseLayer.className = "noise";
       bgImageContainer.appendChild(noiseLayer);
+
       const websiteInfo = document.createElement("div");
       websiteInfo.className = "website-info";
 
-      // Use details from feedDetails array
       const favicon = document.createElement("img");
-      favicon.src =
-        detail.favicon || (await getSiteFavicon(new URL(feedURL).hostname)); // Use the favicon from feedDetails if available
+      favicon.src = detail.favicon || (await getSiteFavicon(new URL(feedURL).hostname)); // Use the favicon from feedDetails if available
       favicon.alt = `${detail.siteTitle} Favicon`;
       favicon.className = "site-favicon";
-      docFragment.appendChild(favicon);
+      websiteInfo.appendChild(favicon);
 
       const websiteName = document.createElement("h3");
-      tempElement.innerHTML = detail.siteTitle || detail.feedTitle;
-      websiteName.textContent = tempElement.textContent; // Use the siteTitle from feedDetails
+      websiteName.textContent = detail.siteTitle || detail.feedTitle; // Use the siteTitle from feedDetails
       websiteInfo.appendChild(websiteName);
+
       const feedTitle = document.createElement("p");
-      tempElement.innerHTML = detail.feedTitle || detail.siteTitle;
-      feedTitle.textContent = tempElement.textContent; // Use the feedTitle from feedDetails
+      feedTitle.textContent = detail.feedTitle || detail.siteTitle; // Use the feedTitle from feedDetails
+      feedTitle.className = "feed-title";
       websiteInfo.appendChild(feedTitle);
+
       const feedUrl = document.createElement("p");
       feedUrl.className = "feed-url";
-      feedTitle.className = "feed-title";
       feedUrl.textContent = feedURL;
       websiteInfo.appendChild(feedUrl);
-      docFragment.appendChild(websiteInfo);
+
+      listItem.appendChild(websiteInfo);
 
       const removeButton = document.createElement("button");
+      removeButton.className = "remove-feed-button";
       const removeButtonText = document.createElement("p");
       removeButtonText.textContent = "Unsubscribe";
       removeButtonText.className = "unsubscribe-button";
       removeButton.appendChild(removeButtonText);
-      removeButton.className = "remove-feed-button";
       setupUnsubscribeButton(removeButton, feedURL);
 
-      docFragment.appendChild(removeButton);
-      docFragment.appendChild(bgImageContainer);
+      listItem.appendChild(removeButton);
+      listItem.appendChild(bgImageContainer);
 
-      listItem.appendChild(docFragment);
       if (list !== null) {
         list.appendChild(listItem);
       }
     }
   });
 
-  // Since feedDetails.forEach is non-blocking and we're awaiting inside it,
+  // Since feedDetails.map is non-blocking and we're awaiting inside it,
   // we need to handle the visibility change after all async operations have completed.
-  Promise.all(
-    feedDetails.map(async (detail, index) => {
-      // any async operation here
-    })
-  ).then(() => {
-    list.style.visibility = "visible";
-    list.style.height = "auto";
-    list.appendChild(listfragment);
+  Promise.all(feedPromises).then(() => {
+    if (list !== null) {
+      list.style.visibility = "visible";
+      list.style.height = "auto";
+      list.appendChild(listfragment);
+    }
   });
 }
 
