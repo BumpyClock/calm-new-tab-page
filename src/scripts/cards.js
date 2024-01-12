@@ -1,155 +1,107 @@
+function createElement(tag, properties = {}, textContent = '') {
+    const element = document.createElement(tag);
+    Object.assign(element, properties);
+    element.textContent = textContent;
+    return element;
+}
+
+function sanitizeHTML(html) {
+    const tempElement = document.createElement('div');
+    tempElement.innerHTML = html;
+    return tempElement.textContent;
+}
+
+function createImageContainer(thumbnailUrl, siteTitle) {
+    const imageContainer = createElement('div', { className: 'image-container loading' });
+    const cardbg = createElement('div', { className: 'card-bg' });
+
+    if (thumbnailUrl) {
+        imageContainer.innerHTML = `<img data-src="${thumbnailUrl}" id="thumbnail-image" alt="${siteTitle} Thumbnail" class="thumbnail-image lazyload masonry-item">`;
+        cardbg.innerHTML = `<div class=noise></div><img data-src="${thumbnailUrl}" alt="${siteTitle} Thumbnail" class="card-bg lazyload">`;
+    }
+
+    return { imageContainer, cardbg };
+}
+
 async function createCard(item) {
     const docFrag = document.createDocumentFragment();
-    const card = document.createElement("div");
-    var tempElement = document.createElement("div");
-    card.className = "card";
-  
-    // Image container
-    const imageContainer = document.createElement("div");
-    imageContainer.className = "image-container loading";
-  
-    // Card background
-    const cardbg = document.createElement("div");
-    cardbg.className = "card-bg";
-  
+    const card = createElement('div', { className: 'card' });
+
     // Set thumbnail URL
     let thumbnailUrl = item.thumbnail;
-  
     if (Array.isArray(item.thumbnail)) {
-      //parse the array and get the first item that has a url or link property
-      for (const thumbnail of item.thumbnail) {
-        if (thumbnail.url) {
-          thumbnailUrl = thumbnail.url;
-          break;
-        } else if (thumbnail.link) {
-          thumbnailUrl = thumbnail.link;
-          break;
-        }
-      }
+        thumbnailUrl = item.thumbnail.find(thumbnail => thumbnail.url || thumbnail.link)?.url;
     }
-    if (thumbnailUrl) {
-      imageContainer.innerHTML = `<img data-src="${thumbnailUrl}" id="thumbnail-image" alt="${item.siteTitle} Thumbnail" class="thumbnail-image lazyload masonry-item">`;
-      cardbg.innerHTML = `<div class=noise></div><img data-src="${thumbnailUrl}" alt="${item.siteTitle} Thumbnail" class="card-bg lazyload">`;
-      docFrag.appendChild(imageContainer);
-      docFrag.appendChild(cardbg);
-    }
-  
-    // Text content container
-    const textContentDiv = document.createElement("div");
-    textContentDiv.classList.add("text-content");
-  
-    // Website information
-    const websiteInfoDiv = document.createElement("div");
-    websiteInfoDiv.className = "website-info";
-    if (!thumbnailUrl) {
-      websiteInfoDiv.style.marginTop = "12px";
-    }
-  
-    // Favicon
-    const favicon = document.createElement("img");
-    favicon.src = item.favicon;
-    favicon.alt = `${item.siteTitle} Favicon`;
-    favicon.className = "site-favicon";
-    websiteInfoDiv.appendChild(favicon);
-  
-    // Website name
-    const websiteName = document.createElement("p");
-    tempElement.innerHTML = item.feedTitle || item.siteTitle;
-    websiteName.textContent = tempElement.textContent;
-    websiteInfoDiv.appendChild(websiteName);
+
+    const { imageContainer, cardbg } = createImageContainer(thumbnailUrl, item.siteTitle);
+    docFrag.append(imageContainer, cardbg);
+
+    const textContentDiv = createElement('div', { className: 'text-content' });
+
+    const websiteInfoDiv = createElement('div', { className: 'website-info', style: thumbnailUrl ? {} : { marginTop: '12px' } });
+    const favicon = createElement('img', { src: item.favicon, alt: `${item.siteTitle} Favicon`, className: 'site-favicon' });
+    const websiteName = createElement('p', {}, sanitizeHTML(item.feedTitle || item.siteTitle));
+
+    websiteInfoDiv.append(favicon, websiteName);
     textContentDiv.appendChild(websiteInfoDiv);
-  
-    // Title
-    const title = document.createElement("h3");
-    tempElement.innerHTML = item.title;
-    title.textContent = tempElement.textContent;
+
+    const title = createElement('h3', {}, sanitizeHTML(item.title));
     textContentDiv.appendChild(title);
-  
-    // Description
+
     if (item.content) {
-      try {
-        const snippet = document.createElement("p");
-        snippet.className = "description";
-  
-        // Sanitize item.content
-        const sanitizedContent = DOMPurify.sanitize(item.content);
-  
-        // Check sanitizedContent for SVG elements before setting it as the innerHTML of tempElement
-        const svgRegex = /<svg.*?>.*?<\/svg>|<path.*?>.*?<\/path>/g;
-        if (svgRegex.test(sanitizedContent)) {
-          tempElement.textContent = "";
-        } else {
-          tempElement.innerHTML = sanitizedContent;
-          snippet.textContent = tempElement.textContent;
-          textContentDiv.appendChild(snippet);
+        try {
+            const sanitizedContent = DOMPurify.sanitize(item.content);
+            const svgRegex = /<svg.*?>.*?<\/svg>|<path.*?>.*?<\/path>/g;
+            if (!svgRegex.test(sanitizedContent)) {
+                const snippet = createElement('p', { className: 'description' }, sanitizeHTML(sanitizedContent));
+                textContentDiv.appendChild(snippet);
+            }
+        } catch (error) {
+            console.log(`Error creating content snippet for : ${item.content} `, error);
         }
-      } catch (error) {
-        console.log(
-          `Error creating content snippet for : ${item.content} `,
-          error
-        );
-      }
     }
-  
-    // Publication date and time
+
     const date = new Date(item.published);
     const dateString = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-    const details = document.createElement("div");
-    details.className = "date";
-    details.textContent = dateString;
+    const details = createElement('div', { className: 'date' }, dateString);
     textContentDiv.appendChild(details);
-  
-    // Description
+
     if (!thumbnailUrl && item.description) {
-      const description = document.createElement("div");
-      description.className = "description long-description";
-      description.textContent = item.description;
-      textContentDiv.appendChild(description);
+        const description = createElement('div', { className: 'description long-description' }, item.description);
+        textContentDiv.appendChild(description);
     }
-  
-    // Read more link
-    const readMoreLink = document.createElement("a");
-    readMoreLink.href = item.link;
-    readMoreLink.target = "_blank";
-    readMoreLink.textContent = "Read more";
-    readMoreLink.className = "read-more-link";
+
+    const readMoreLink = createElement('a', { href: item.link, target: '_blank', className: 'read-more-link' }, 'Read more');
     textContentDiv.appendChild(readMoreLink);
-  
-    // Event handler for card click
+
     applyCardEventHandlers(card, item.link);
-  
-    // Append text content to the card
+
     docFrag.appendChild(textContentDiv);
-  
-    // Append the document fragment to the card
     card.appendChild(docFrag);
-  
+
     return card;
-  }
+}
   
-  async function applyCardEventHandlers(card, url) {
-    // Event listener for card click
-  
+function applyCardEventHandlers(card, url) {
     try {
-      card.addEventListener("click", (e) => {
-        if (e.target.tagName.toLowerCase() !== "a") {
-          showReaderView(url);
-        }
-      });
+        card.addEventListener("click", (e) => {
+            if (e.target.tagName.toLowerCase() !== "a") {
+                showReaderView(url);
+            }
+        });
     } catch (error) {
-      console.log(error, "error in applyCardEventHandlers", url);
+        console.log(error, "error in applyCardEventHandlers", url);
     }
-  }
-  
-  function reapplyEventHandlersToCachedCards() {
+}
+
+function reapplyEventHandlersToCachedCards() {
     console.log("reapplying event handlers to cached cards");
-    let eventHandlersRestored = 0;
     const feedContainer = document.getElementById("feed-container");
     const cards = feedContainer.querySelectorAll(".card");
-    cards.forEach((card) => {
-      const linkURL = card.querySelector("a").href; // Example: getting the URL from the card's read more link
-      applyCardEventHandlers(card, linkURL);
-      eventHandlersRestored++;
-    });
+    const eventHandlersRestored = Array.from(cards).map((card) => {
+        const linkURL = card.querySelector("a").href; // Example: getting the URL from the card's read more link
+        applyCardEventHandlers(card, linkURL);
+        return 1;
+    }).length;
     console.log(`Restored ${eventHandlersRestored} event handlers`);
-  }
+}
