@@ -49,18 +49,18 @@ chrome.runtime.onInstalled.addListener(details => {
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
     .register("/service-worker.js")
-    .then(function(registration) {
+    .then(function (registration) {
       console.log("Service Worker registered with scope:", registration.scope);
       if (!navigator.serviceWorker.controller) {
         window.location.reload();
       }
     })
-    .catch(function(error) {
+    .catch(function (error) {
       console.log("Service Worker registration failed:", error);
     });
 }
 
-navigator.serviceWorker.addEventListener("controllerchange", function() {
+navigator.serviceWorker.addEventListener("controllerchange", function () {
   if (this.controller.state === "activated") {
     refreshFeeds();
   }
@@ -100,7 +100,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Welcome screen logic
   if (welcomePage) {
     setupWelcomePage();
-discoverFeeds();
+    discoverFeeds();
     setGreeting();
   }
   // setGreeting();
@@ -137,9 +137,7 @@ function showSearch() {
 
 async function setupSearch() {
   const searchPref = getSearchPreference();
-  // console.log(`searchPref:  ${searchPref}`);
   try {
-    // console.log("searchPref: ", searchPref);
   } catch (error) {
     console.error("Error getting search preference: ", error);
   }
@@ -154,24 +152,19 @@ async function setupSearch() {
 // on exit, clear old caches
 window.addEventListener("unload", async () => {
   cachedCards = [];
-  localStorage.removeItem("renderedCards");
+  await clearCachedRenderedCards();
   localStorage.removeItem("mostVisitedSitesCache");
 });
 
 function shouldRefreshFeeds() {
   const currentTimestamp = new Date().getTime();
-
   // If lastRefreshed isn't set or is older than 15 minutes, refresh
-  if (!lastRefreshed || currentTimestamp - lastRefreshed > refreshTimer) {
-    return true;
-  }
-  return false;
+  return !lastRefreshed || currentTimestamp - lastRefreshed > refreshTimer;
 }
 
 async function autoRefreshFeed() {
-  // Assuming loadSubscribedFeeds is the function that fetches and renders the feed
   console.log("AutoRefresh triggered auto Refreshing Feeds");
-  await refreshFeeds();
+  refreshFeeds();
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -192,37 +185,31 @@ async function clearOldCaches() {
 function loadSubscribedFeeds() {
   const feedContainer = document.getElementById("feed-container");
   feedContainer.innerHTML = "";
-  if (!shouldRefreshFeeds() && feedsCache) {
-    console.log("Using cached feeds");
-    renderFeed(cachedCards);
-    setLastRefreshedTimestamp(new Date(lastRefreshed));
-  } else {
-    refreshFeeds();
-  }
+  !shouldRefreshFeeds() && feedsCache
+    ? (renderFeed(cachedCards), setLastRefreshedTimestamp(new Date(lastRefreshed)))
+    : refreshFeeds();
 }
 
 function refreshFeeds() {
-  const { subscribedFeeds, feedDetails } = getSubscribedFeeds();
-  feedList.subscribedFeeds = subscribedFeeds;
-  console.log(getApiUrl(), feedList.subscribedFeeds);
+  const { subscribedFeeds } = getSubscribedFeeds();
   const serviceWorker = navigator.serviceWorker.controller;
-  if (serviceWorker) {
-    lastRefreshed = new Date().getTime();
-    console.log(`Sending message to service worker to fetch feeds ${feedList.subscribedFeeds}`);
-    serviceWorker.postMessage({
-      action: "fetchRSS",
-      feedUrls: feedList.subscribedFeeds
-    });
-  } else {
+  if (!serviceWorker) {
     console.error("Service worker is not active or not controlled.");
+    return;
   }
+  feedList.subscribedFeeds = subscribedFeeds;
+  lastRefreshed = new Date().getTime();
+  serviceWorker.postMessage({
+    action: "fetchRSS",
+    feedUrls: feedList.subscribedFeeds
+  });
 }
 
 function discoverFeeds() {
   const serviceWorker = navigator.serviceWorker.controller;
   if (serviceWorker) {
     console.log("Sending message to service worker to discover feeds");
-    chrome.topSites.get(function(topSites) {
+    chrome.topSites.get(function (topSites) {
       const discoverUrls = topSites
         .filter(site => {
           const url = new URL(site.url);
@@ -329,15 +316,14 @@ function setupParallaxEffect(card) {
   }
 }
 
-navigator.serviceWorker.addEventListener("message", async function(event) {
+navigator.serviceWorker.addEventListener("message", async function (event) {
   if (event.data.action === "rssUpdate") {
-    // console.log("Received RSS update from service worker,rendering feed");
-    // hideLoadingState();
     let response = JSON.parse(event.data.data);
     console.log(`feed refresh from service worker: ${response}`);
     const { feedDetails, feedItems } = processRSSData(response);
     setFeedDetails(feedDetails);
     setFeedItems(feedItems);
+    if(feedContainer){
     try {
       await renderFeed(feedItems, feedDetails).catch(error => {
         console.error("Error rendering the feed:", error);
@@ -345,6 +331,9 @@ navigator.serviceWorker.addEventListener("message", async function(event) {
     } catch (error) {
       console.log("feed container not found:", error);
     }
+  } else if (settingsPage) {
+    await displaySubscribedFeeds();
+  }
   }
 });
 
@@ -398,7 +387,7 @@ function processRSSData(rssData) {
   // Initialize arrays to hold the processed feed details and items
   const feedDetails = [];
   const feedItems = [];
-  
+
   if (rssData && rssData.feedDetails && rssData.items) {
     // Process the feed details
     rssData.feedDetails.forEach(feed => {
@@ -418,7 +407,7 @@ function processRSSData(rssData) {
       feedItems.sort((a, b) => new Date(b.published) - new Date(a.published));
     }
   }
-  
+
   // Return the processed data
   return { feedDetails, feedItems };
 }
@@ -681,14 +670,18 @@ async function setupSubscriptionForm() {
     console.log(feeds.subscribedFeeds);
     setSubscribedFeeds(feeds.subscribedFeeds);
     form.reset();
-    await refreshFeeds();
+    await clearCachedRenderedCards();
+    cachedCards = null;
+    refreshFeeds();
     await displaySubscribedFeeds();
   });
 }
 
 function setupUnsubscribeButton(elem, feedUrl) {
-  elem.addEventListener("click", () => {
+  elem.addEventListener("click", async () => {
     removeFeed(feedUrl);
+    await clearCachedRenderedCards();
+    cachedCards = null;
     console.log(`Removing feed: ${feedUrl}`);
     displaySubscribedFeeds();
   });
@@ -876,7 +869,7 @@ async function setupNTP() {
   lazySizes.cfg.loadMode = 2;
   lazySizes.cfg.expFactor = 2;
   lazySizes.init();
-discoverFeeds();
+  discoverFeeds();
   await initializeMostVisitedSitesCache();
   console.log(`Feed discovery is set to : ${getFeedDiscovery()}`);
 
