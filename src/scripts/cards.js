@@ -7,7 +7,7 @@ function createElement(tag, properties = {}, textContent = '') {
 
 function sanitizeHTML(html) {
     const tempElement = document.createElement('div');
-    tempElement.innerHTML = html;
+    tempElement.textContent = html;
     return tempElement.textContent;
 }
 
@@ -23,7 +23,7 @@ function createImageContainer(thumbnailUrl, siteTitle) {
     return { imageContainer, cardbg };
 }
 
-async function createCard(item) {
+function createCard(item) {
     const docFrag = document.createDocumentFragment();
     const card = createElement('div', { className: 'card' });
 
@@ -98,10 +98,10 @@ function reapplyEventHandlersToCachedCards() {
     console.log("reapplying event handlers to cached cards");
     const feedContainer = document.getElementById("feed-container");
     const cards = feedContainer.querySelectorAll(".card");
-    const eventHandlersRestored = Array.from(cards).map((card) => {
+    const eventHandlersRestored = Array.from(cards).filter((card) => {
         const linkURL = card.querySelector("a").href; // Example: getting the URL from the card's read more link
         applyCardEventHandlers(card, linkURL);
-        return 1;
+        return true;
     }).length;
     console.log(`Restored ${eventHandlersRestored} event handlers`);
 }
