@@ -11,6 +11,10 @@ const refreshTimer = 15 * 60 * 1000; //fifteen minutes
 const NTP_PERMISSION_DEFAULT = false;
 var NTP_PERMISSON;
 let startY; // Variable to store the start Y position of the touch
+let feedsCache = null;
+let cachedCards = null; // Store the cards in an array to avoid re-creating them for every new tab
+let initialLoad = true;
+
 
 defaultFeeds = [
   "http://www.theverge.com/rss/index.xml",
@@ -66,10 +70,7 @@ navigator.serviceWorker.addEventListener("controllerchange", function () {
   }
 });
 
-//Create an empty feedcache object. Store feeds here once received for the first time
-let feedsCache = null;
-let cachedCards = null; // Store the cards in an array to avoid re-creating them for every new tab
-let initialLoad = true;
+
 // Create a BroadcastChannel object
 const channel = new BroadcastChannel("rss_feeds_channel");
 const CARD_CACHE_NAME = "card-items-cache";
@@ -78,7 +79,7 @@ const CARD_CACHE_NAME = "card-items-cache";
 const siteInfoCache = {};
 let mostVisitedSitesCache = null;
 
-let lastRefreshed = new Date().getTime(); // Get the current timestamp
+let lastRefreshed = new Date(); // 
 const getGreeting = () => {
   const date = new Date();
   const hours = date.getHours();
@@ -152,14 +153,22 @@ async function setupSearch() {
 // on exit, clear old caches
 window.addEventListener("unload", async () => {
   cachedCards = [];
-  await clearCachedRenderedCards();
+  await clearCache();
   localStorage.removeItem("mostVisitedSitesCache");
 });
 
 function shouldRefreshFeeds() {
   const currentTimestamp = new Date().getTime();
-  // If lastRefreshed isn't set or is older than 15 minutes, refresh
-  return !lastRefreshed || currentTimestamp - lastRefreshed > refreshTimer;
+  console.log(`'lastRefreshed' is ${lastRefreshed}`);
+  // If lastRefreshed isn't set, set it to current time and clear the cache
+  if (!lastRefreshed) {
+    lastRefreshed = currentTimestamp;
+    clearCache();
+    console.log("lastRefreshed is not set, setting it to current time");
+    return false;
+  }
+  // If lastRefreshed is older than 15 minutes, refresh
+  return currentTimestamp - lastRefreshed > refreshTimer;
 }
 
 async function autoRefreshFeed() {
@@ -174,19 +183,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-async function clearOldCaches() {
-  const cacheNames = await caches.keys();
-  await Promise.all(
-    cacheNames
-      .filter(name => name !== CARD_CACHE_NAME)
-      .map(name => caches.delete(name))
-  );
-}
+
 function loadSubscribedFeeds() {
   const feedContainer = document.getElementById("feed-container");
   feedContainer.innerHTML = "";
   !shouldRefreshFeeds() && feedsCache
-    ? (renderFeed(cachedCards), setLastRefreshedTimestamp(new Date(lastRefreshed)))
+    ? (renderFeed(cachedCards), setLastRefreshedTimestamp(lastRefreshed))
     : refreshFeeds();
 }
 
@@ -252,15 +254,14 @@ function initializeMasonry() {
   window.addEventListener("resize", debouncedLayout);
 }
 
-async function renderFeed(feeditems, feedDetails = null, cachedCards = null) {
-  const feedContainer = document.getElementById("feed-container");
+async function renderFeed(feeditems = null, feedDetails = null, cachedCards = null) {
   if (cachedCards) {
     console.log("rendering feed from cache");
     feedContainer.innerHTML = cachedCards;
     initializeMasonry();
     await cacheRenderedCards(feedContainer.innerHTML);
     feedContainer.style.opacity = "1";
-    setLastRefreshedTimestamp(new Date(lastRefreshed));
+    setLastRefreshedTimestamp(lastRefreshed);
   } else {
     feedsCache = feeditems;
     let cardCount = 0;
@@ -280,12 +281,11 @@ async function renderFeed(feeditems, feedDetails = null, cachedCards = null) {
     }
     feedContainer.appendChild(fragment);
     await cacheRenderedCards(feedContainer.innerHTML);
-    setLastRefreshedTimestamp();
+    setLastRefreshedTimestamp(lastRefreshed);
     feedContainer.style.opacity = "1";
     initializeMasonry();
-    // insertGridSizer();
   }
-}//parallax effect for image container
+}
 
 function setupParallaxEffect(card) {
   const imageContainer = card.querySelector("#thumbnail-image");
@@ -575,13 +575,12 @@ async function cacheFavicon(domain) {
   return dataURL;
 }
 
-function setLastRefreshedTimestamp() {
+function setLastRefreshedTimestamp(lastRefreshed) {
   const timestampDiv = document.getElementById(
     "last-refreshed-timestamp-container"
   );
-  const now = new Date();
-  timestampDiv.textContent = `Last refreshed: ${now.toLocaleTimeString()}`;
-}
+  lastRefreshed = new Date(lastRefreshed);
+timestampDiv.textContent = `Last refreshed: ${lastRefreshed.toLocaleTimeString()}`;}
 
 if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
   navigator.serviceWorker.controller.postMessage({ action: "fetchBingImage" });
@@ -600,6 +599,7 @@ if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
 }
 
 function setBingImage(imageDetails) {
+  if(feedContainer){
   // console.log(`setBingImage: ${JSON.stringify(imageDetails)}`);
   const bgContainer = document.querySelector(".background-image-container");
   const imageUrl = URL.createObjectURL(imageDetails.imageBlob);
@@ -615,6 +615,7 @@ function setBingImage(imageDetails) {
       `;
   bgContainer.appendChild(attributionContainer);
   bgContainer.style.backgroundImage = `url(${imageUrl})`;
+  }
 }
 
 async function fetchBingImageOfTheDay() {
@@ -656,7 +657,6 @@ function bgImageScrollHandler() {
   });
 }
 
-//Settings page code
 
 // Function to get the current state of feed discovery
 function getFeedDiscovery() {
@@ -697,79 +697,33 @@ function setSearchPreference(state) {
   );
 }
 
-function setupFeedDiscoveryToggle() {
-  const feedDiscoveryToggle = document.getElementById("feed-discovery-toggle");
 
-  // Initialize the toggle state based on stored value
-  feedDiscoveryToggle.checked = getFeedDiscovery();
-  console.log(feedDiscoveryToggle.checked);
-
-  // Add event listener to toggle button
-  feedDiscoveryToggle.addEventListener("change", () => {
-    setFeedDiscovery(feedDiscoveryToggle.checked);
-  });
-}
-
-function setupSearchPreferenceToggle() {
-  const searchPreferenceToggle = document.getElementById(
-    "search-preference-toggle"
-  );
-
-  // Initialize the toggle state based on stored value
-  searchPreferenceToggle.checked = getSearchPreference();
-  console.log(getSearchPreference());
-  console.log(`Search Preference set to ${searchPreferenceToggle.checked}`);
-
-  // Add event listener to toggle button
-  searchPreferenceToggle.addEventListener("change", () => {
-    setSearchPreference(searchPreferenceToggle.checked);
-  });
-}
-
-async function setupApiUrlFormEventHandler() {
-  const apiUrlForm = document.getElementById("apiUrl-form");
-  const apiUrlInput = document.getElementById("apiUrl-input");
-  apiUrlInput.value = await getApiUrl();
-  const apiUrlSubmitButton = document.getElementById("apiUrl-submit-button");
-
-  apiUrlForm.addEventListener("submit", event => {
-    event.preventDefault();
-    setApiUrl(apiUrlInput.value);
-  });
-
-  apiUrlSubmitButton.addEventListener("click", () => {
-    setApiUrl(apiUrlInput.value);
-  });
-}
 
 // Setup NTP
-
 async function setupNTP() {
   setupSearch();
   lazySizes.cfg.expand = 300;
   lazySizes.cfg.preloadAfterLoad = true;
   lazySizes.cfg.loadMode = 2;
-  lazySizes.cfg.expFactor = 2;
+  lazySizes.cfg.expFactor = 3;
   lazySizes.init();
   discoverFeeds();
   await initializeMostVisitedSitesCache();
   console.log(`Feed discovery is set to : ${getFeedDiscovery()}`);
 
   cachedCards = await getCachedRenderedCards();
-  if (cachedCards !== null) {
-    const feedContainer = document.getElementById("feed-container");
+  const feedContainer = document.getElementById("feed-container");
+  if (shouldRefreshFeeds() && cachedCards !== null) {
     feedContainer.innerHTML = cachedCards;
-    // setupParallaxEffect();
+    setLastRefreshedTimestamp(lastRefreshed);
     initializeMasonry();
     reapplyEventHandlersToCachedCards();
     feedContainer.style.opacity = "1"; // apply the fade-in effect
-
-    bgImageScrollHandler();
   } else {
     console.log("rendering feed from scratch");
-    bgImageScrollHandler();
-    await loadSubscribedFeeds();
+     loadSubscribedFeeds();
   }
+  bgImageScrollHandler();
 }
 
 async function setupSettingsPage() {

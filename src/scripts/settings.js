@@ -1,119 +1,134 @@
+function setupEventListener(id, eventType, eventHandler) {
+  const element = document.getElementById(id);
+  element.addEventListener(eventType, eventHandler);
+}
 
 async function setupSubscriptionForm() {
-    const form = document.getElementById("subscription-form");
-    form.addEventListener("submit", async event => {
-      event.preventDefault();
-      const feedURL = form.elements["feed-url"].value;
-      const feeds = getSubscribedFeeds();
-      // console.log(feeds);
-      feeds.subscribedFeeds.push(feedURL);
-      console.log(`Settings: New feed added: ${feeds.subscribedFeeds}`);
-      console.log(feeds.subscribedFeeds);
-      setSubscribedFeeds(feeds.subscribedFeeds);
-      form.reset();
-      await clearCachedRenderedCards();
-      cachedCards = null;
-      refreshFeeds();
-      await displaySubscribedFeeds();
-    });
-  }
+  setupEventListener("subscription-form", "submit", async event => {
+    event.preventDefault();
+    const form = event.target;
+    const feedURL = form.elements["feed-url"].value;
+    const feeds = getSubscribedFeeds();
+    feeds.subscribedFeeds.push(feedURL);
+    setSubscribedFeeds(feeds.subscribedFeeds);
+    form.reset();
+    await clearCache();
+    refreshFeeds();
+    await displaySubscribedFeeds();
+  });
+}
+
+function setupUnsubscribeButton(elem, feedUrl) {
+  elem.addEventListener("click", async () => {
+    removeFeed(feedUrl);
+    await clearCache();
+    displaySubscribedFeeds();
+  });
+}
+
+function setupBackButton() {
+  setupEventListener("back-to-main", "click", () => {
+    window.location.href = "newtab.html";
+  });
+}
+
+async function displaySubscribedFeeds() {
+  const { subscribedFeeds: feeds, feedDetails } = getSubscribedFeeds();
+  const list = document.getElementById("subscribed-feeds-list");
+  if (list === null) return;
+  list.innerHTML = ""; // Clear the list
+  list.style.visibility = "hidden";
+  list.style.height = "0px";
+
+  const listfragment = document.createDocumentFragment();
+
+  const feedPromises = feedDetails.map(async (detail, index) => {
+    const feedURL = feeds[index]; // Corresponding URL from feeds array
+    if (feedURL != null) {
+      const listItem = await createListItem(detail, feedURL);
+      listfragment.appendChild(listItem);
+    }
+  });
+
+  Promise.all(feedPromises).then(() => {
+    list.appendChild(listfragment);
+    list.style.visibility = "visible";
+    list.style.height = "auto";
+  });
+}
+async function createListItem(detail, feedURL) {
+    const listItem = createElement("div", "list-item");
+    const bgImageContainer = createElement("div", "bg");
+    const faviconSrc = detail.favicon || await getSiteFavicon(new URL(feedURL).hostname);
+    const bgImage = createElement("img", "bg lazyload", {"data-src": faviconSrc});
+    const noiseLayer = createElement("div", "noise");
+    const websiteInfo = createElement("div", "website-info");
+    const favicon = createElement("img", "site-favicon", {src: faviconSrc, alt: `${detail.siteTitle} Favicon`});
+    const websiteName = createElement("h3", "", {}, detail.siteTitle || detail.feedTitle);
+    const feedTitle = createElement("p", "feed-title", {}, detail.feedTitle || detail.siteTitle);
+    const feedUrl = createElement("p", "feed-url", {}, feedURL);
+    const removeButton = createElement("button", "remove-feed-button");
+    const removeButtonText = createElement("p", "unsubscribe-button", {}, "Unsubscribe");
   
-  function setupUnsubscribeButton(elem, feedUrl) {
-    elem.addEventListener("click", async () => {
-      removeFeed(feedUrl);
-      await clearCachedRenderedCards();
-      cachedCards = null;
-      console.log(`Removing feed: ${feedUrl}`);
+    bgImageContainer.append(bgImage, noiseLayer);
+    websiteInfo.append(favicon, websiteName, feedTitle, feedUrl);
+    removeButton.appendChild(removeButtonText);
+    listItem.append(websiteInfo, removeButton, bgImageContainer);
+  
+    setupEventListener(removeButton, "click", async () => {
+      removeFeed(feedURL);
+      await clearCache();
       displaySubscribedFeeds();
     });
+  
+    return listItem;
   }
-  
-  function setupBackButton() {
-    const backButton = document.getElementById("back-to-main");
-    backButton.addEventListener("click", () => {
-      window.location.href = "newtab.html";
-      //refresh the feeds
-    });
+
+function createElement(tag, className, attributes = {}, textContent = '') {
+  const element = document.createElement(tag);
+  element.className = className;
+  if (typeof attributes === 'object' && attributes !== null) {
+    Object.keys(attributes).forEach(key => element.setAttribute(key, attributes[key]));
   }
-  
-  async function displaySubscribedFeeds() {
-    const { subscribedFeeds: feeds, feedDetails } = getSubscribedFeeds();
-    const list = document.getElementById("subscribed-feeds-list");
-    const listfragment = document.createDocumentFragment();
-    if (list !== null) {
-      list.innerHTML = ""; // Clear the list
-      list.style.visibility = "hidden";
-      list.style.height = "0px";
-    }
-  
-    const feedPromises = feedDetails.map(async (detail, index) => {
-      const feedURL = feeds[index]; // Corresponding URL from feeds array
-      if (feedURL != null) {
-        const listItem = document.createElement("div");
-        listItem.className = "list-item";
-  
-        const bgImageContainer = document.createElement("div");
-        bgImageContainer.className = "bg";
-  
-        const bgImage = document.createElement("img");
-        bgImage.setAttribute("data-src", detail.favicon);
-        bgImage.className = "bg lazyload";
-        bgImageContainer.appendChild(bgImage);
-  
-        const noiseLayer = document.createElement("div");
-        noiseLayer.className = "noise";
-        bgImageContainer.appendChild(noiseLayer);
-  
-        const websiteInfo = document.createElement("div");
-        websiteInfo.className = "website-info";
-  
-        const favicon = document.createElement("img");
-        favicon.src = detail.favicon || (await getSiteFavicon(new URL(feedURL).hostname)); // Use the favicon from feedDetails if available
-        favicon.alt = `${detail.siteTitle} Favicon`;
-        favicon.className = "site-favicon";
-        websiteInfo.appendChild(favicon);
-  
-        const websiteName = document.createElement("h3");
-        websiteName.textContent = detail.siteTitle || detail.feedTitle; // Use the siteTitle from feedDetails
-        websiteInfo.appendChild(websiteName);
-  
-        const feedTitle = document.createElement("p");
-        feedTitle.textContent = detail.feedTitle || detail.siteTitle; // Use the feedTitle from feedDetails
-        feedTitle.className = "feed-title";
-        websiteInfo.appendChild(feedTitle);
-  
-        const feedUrl = document.createElement("p");
-        feedUrl.className = "feed-url";
-        feedUrl.textContent = feedURL;
-        websiteInfo.appendChild(feedUrl);
-  
-        listItem.appendChild(websiteInfo);
-  
-        const removeButton = document.createElement("button");
-        removeButton.className = "remove-feed-button";
-        const removeButtonText = document.createElement("p");
-        removeButtonText.textContent = "Unsubscribe";
-        removeButtonText.className = "unsubscribe-button";
-        removeButton.appendChild(removeButtonText);
-        setupUnsubscribeButton(removeButton, feedURL);
-  
-        listItem.appendChild(removeButton);
-        listItem.appendChild(bgImageContainer);
-  
-        if (list !== null) {
-          list.appendChild(listItem);
-        }
-      }
-    });
-  
-    // Since feedDetails.map is non-blocking and we're awaiting inside it,
-    // we need to handle the visibility change after all async operations have completed.
-    Promise.all(feedPromises).then(() => {
-      if (list !== null) {
-        list.style.visibility = "visible";
-        list.style.height = "auto";
-        list.appendChild(listfragment);
-      }
-    });
+  element.textContent = textContent;
+  return element;
+}
+
+function setupEventListener(element, eventType, eventHandler) {
+  if (typeof element === 'string') {
+    element = document.getElementById(element);
   }
-  
+  element.addEventListener(eventType, eventHandler);
+}
+
+function setupToggle(id, getter, setter) {
+  const toggle = document.getElementById(id);
+  toggle.checked = getter();
+  toggle.addEventListener("change", () => {
+    setter(toggle.checked);
+  });
+}
+
+function setupFeedDiscoveryToggle() {
+  setupToggle("feed-discovery-toggle", getFeedDiscovery, setFeedDiscovery);
+}
+
+function setupSearchPreferenceToggle() {
+  setupToggle("search-preference-toggle", getSearchPreference, setSearchPreference);
+}
+
+async function setupApiUrlFormEventHandler() {
+  const apiUrlForm = document.getElementById("apiUrl-form");
+  const apiUrlInput = document.getElementById("apiUrl-input");
+  apiUrlInput.value = await getApiUrl();
+  const apiUrlSubmitButton = document.getElementById("apiUrl-submit-button");
+
+  apiUrlForm.addEventListener("submit", event => {
+    event.preventDefault();
+    setApiUrl(apiUrlInput.value);
+  });
+
+  apiUrlSubmitButton.addEventListener("click", () => {
+    setApiUrl(apiUrlInput.value);
+  });
+}

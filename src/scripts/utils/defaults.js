@@ -117,3 +117,9 @@ async function clearCachedRenderedCards() {
     console.log("Successfully cleared cached rendered cards");
   };
 }
+
+async function clearCache() {
+  await clearCachedRenderedCards();
+  cachedCards = null;
+  console.log("Successfully cleared cache");
+}

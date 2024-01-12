@@ -15,7 +15,7 @@ let bingImageCache = {
 
 chrome.runtime.onStartup.addListener(function() {
   console.log("chrome.runtime.onStartup clearing stale cache");
-clearCachedRenderedCards();
+  clearCache();
 });
 
 chrome.action.onClicked.addListener((tab) => {
