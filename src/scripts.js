@@ -656,7 +656,6 @@ function bgImageScrollHandler() {
   });
 }
 
-//Settings page code
 
 // Function to get the current state of feed discovery
 function getFeedDiscovery() {
@@ -697,50 +696,7 @@ function setSearchPreference(state) {
   );
 }
 
-function setupFeedDiscoveryToggle() {
-  const feedDiscoveryToggle = document.getElementById("feed-discovery-toggle");
 
-  // Initialize the toggle state based on stored value
-  feedDiscoveryToggle.checked = getFeedDiscovery();
-  console.log(feedDiscoveryToggle.checked);
-
-  // Add event listener to toggle button
-  feedDiscoveryToggle.addEventListener("change", () => {
-    setFeedDiscovery(feedDiscoveryToggle.checked);
-  });
-}
-
-function setupSearchPreferenceToggle() {
-  const searchPreferenceToggle = document.getElementById(
-    "search-preference-toggle"
-  );
-
-  // Initialize the toggle state based on stored value
-  searchPreferenceToggle.checked = getSearchPreference();
-  console.log(getSearchPreference());
-  console.log(`Search Preference set to ${searchPreferenceToggle.checked}`);
-
-  // Add event listener to toggle button
-  searchPreferenceToggle.addEventListener("change", () => {
-    setSearchPreference(searchPreferenceToggle.checked);
-  });
-}
-
-async function setupApiUrlFormEventHandler() {
-  const apiUrlForm = document.getElementById("apiUrl-form");
-  const apiUrlInput = document.getElementById("apiUrl-input");
-  apiUrlInput.value = await getApiUrl();
-  const apiUrlSubmitButton = document.getElementById("apiUrl-submit-button");
-
-  apiUrlForm.addEventListener("submit", event => {
-    event.preventDefault();
-    setApiUrl(apiUrlInput.value);
-  });
-
-  apiUrlSubmitButton.addEventListener("click", () => {
-    setApiUrl(apiUrlInput.value);
-  });
-}
 
 // Setup NTP
 

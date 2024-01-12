@@ -1,11 +1,15 @@
+function setupEventListener(id, eventType, eventHandler) {
+  const element = document.getElementById(id);
+  element.addEventListener(eventType, eventHandler);
+}
+
 async function setupSubscriptionForm() {
-  const form = document.getElementById("subscription-form");
-  form.addEventListener("submit", async event => {
+  setupEventListener("subscription-form", "submit", async event => {
     event.preventDefault();
+    const form = event.target;
     const feedURL = form.elements["feed-url"].value;
     const feeds = getSubscribedFeeds();
     feeds.subscribedFeeds.push(feedURL);
-    console.log(`Settings: New feed added: ${feeds.subscribedFeeds}`);
     setSubscribedFeeds(feeds.subscribedFeeds);
     form.reset();
     await clearCachedRenderedCards();
@@ -20,14 +24,12 @@ function setupUnsubscribeButton(elem, feedUrl) {
     removeFeed(feedUrl);
     await clearCachedRenderedCards();
     cachedCards = null;
-    console.log(`Removing feed: ${feedUrl}`);
     displaySubscribedFeeds();
   });
 }
 
 function setupBackButton() {
-  const backButton = document.getElementById("back-to-main");
-  backButton.addEventListener("click", () => {
+  setupEventListener("back-to-main", "click", () => {
     window.location.href = "newtab.html";
   });
 }
@@ -112,4 +114,35 @@ async function createListItem(detail, feedURL) {
   listItem.appendChild(bgImageContainer);
 
   return listItem;
+}
+function setupToggle(id, getter, setter) {
+  const toggle = document.getElementById(id);
+  toggle.checked = getter();
+  toggle.addEventListener("change", () => {
+    setter(toggle.checked);
+  });
+}
+
+function setupFeedDiscoveryToggle() {
+  setupToggle("feed-discovery-toggle", getFeedDiscovery, setFeedDiscovery);
+}
+
+function setupSearchPreferenceToggle() {
+  setupToggle("search-preference-toggle", getSearchPreference, setSearchPreference);
+}
+
+async function setupApiUrlFormEventHandler() {
+  const apiUrlForm = document.getElementById("apiUrl-form");
+  const apiUrlInput = document.getElementById("apiUrl-input");
+  apiUrlInput.value = await getApiUrl();
+  const apiUrlSubmitButton = document.getElementById("apiUrl-submit-button");
+
+  apiUrlForm.addEventListener("submit", event => {
+    event.preventDefault();
+    setApiUrl(apiUrlInput.value);
+  });
+
+  apiUrlSubmitButton.addEventListener("click", () => {
+    setApiUrl(apiUrlInput.value);
+  });
 }
