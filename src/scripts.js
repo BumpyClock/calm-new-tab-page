@@ -704,7 +704,7 @@ async function setupNTP() {
   lazySizes.cfg.expand = 300;
   lazySizes.cfg.preloadAfterLoad = true;
   lazySizes.cfg.loadMode = 2;
-  lazySizes.cfg.expFactor = 2;
+  lazySizes.cfg.expFactor = 3;
   lazySizes.init();
   discoverFeeds();
   await initializeMostVisitedSitesCache();
@@ -714,7 +714,6 @@ async function setupNTP() {
   const feedContainer = document.getElementById("feed-container");
   if (cachedCards !== null) {
     feedContainer.innerHTML = cachedCards;
-    // setupParallaxEffect();
     initializeMasonry();
     reapplyEventHandlersToCachedCards();
     feedContainer.style.opacity = "1"; // apply the fade-in effect
