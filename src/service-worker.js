@@ -1,6 +1,11 @@
 var apiUrl = "https://rss.bumpyclock.com";
 importScripts(...["/scripts/utils/defaults.js"]);
 console.log("SW: apiUrl: ", getApiUrl());
+const ACTION_SET_API_URL = "setApiUrl";
+const ACTION_GET_API_URL = "getApiUrl";
+const ACTION_DISCOVER_FEEDS = "discoverFeeds";
+const ACTION_FETCH_RSS = "fetchRSS";
+const ACTION_FETCH_BING_IMAGE = "fetchBingImage";
 const BING_CACHE_NAME ='bing-image-cache';
 const BING_IMAGE_URL = 'https://www.bing.com/HPImageArchive.aspx?resoultion=3840&format=js&image_format=webp&idx=random&n=1&mkt=en-US';
 var bingImageCache = {
@@ -10,11 +15,48 @@ var bingImageCache = {
   timestamp: null
 };
 
-self.addEventListener("install", function (event) {
-  // RSS feed logic here or any caching logic if needed
-  // console.log("installing service worker");
-  // fetchRSSFeedAndUpdateCache();
+chrome.action.onClicked.addListener((tab) => {
+  chrome.tabs.create({'url': chrome.runtime.getURL('newtab.html')});
 });
+
+self.addEventListener("message", function (event) {
+  switch (event.data.action) {
+    case ACTION_SET_API_URL:
+      console.log("SW: updating ApiUrl: ", event.data.apiUrl);
+      acceptApiUrl(event.data.apiUrl);
+      break;
+    case ACTION_GET_API_URL:
+      console.log("apiUrl: ", apiUrl);
+      event.ports[0].postMessage({
+        action: ACTION_GET_API_URL,
+        apiUrl: getApiUrl(),
+      });
+      break;
+    case ACTION_DISCOVER_FEEDS:
+      handleDiscoverFeeds(event);
+      break;
+    case ACTION_FETCH_RSS:
+      fetchRSSFeedAndUpdateCache(event.data.feedUrls);
+      break;
+    case ACTION_FETCH_BING_IMAGE:
+      handleFetchBingImage(event);
+      break;
+    default:
+      console.error("Unknown action: ", event.data.action);
+  }
+});
+
+async function handleFetchBingImage(event) {
+    const cachedData = await getCachedBingImageBlob();
+    event.source.postMessage({ 
+      action: "bingImageResponse", 
+      imageBlob: cachedData.imageBlob,
+      title: cachedData.title,
+      copyright: cachedData.copyright,
+      timestamp: cachedData.timestamp
+    });
+  }
+
 
 chrome.runtime.onInstalled.addListener(function(details) {
   if (details.reason === "install") {
@@ -23,35 +65,49 @@ chrome.runtime.onInstalled.addListener(function(details) {
   // Other installation logic if needed
 });
 
-self.addEventListener("message", function (event) {
-  if (event.data.action === "setApiUrl") {
-    console.log("SW: updating ApiUrl: ", event.data.apiUrl);
-    acceptApiUrl(event.data.apiUrl);
-  }
-});
+// self.addEventListener("message", function (event) {
+//   if (event.data.action === "setApiUrl") {
+//     console.log("SW: updating ApiUrl: ", event.data.apiUrl);
+//     acceptApiUrl(event.data.apiUrl);
+//   }
+// });
 
-self.addEventListener("message", function (event) {
-  if (event.data.action === "getApiUrl") {
-    console.log("apiUrl: ", apiUrl);
-    event.ports[0].postMessage({
-      action: "getapiUrl",
-      apiUrl: getApiUrl(),
-    });
-  }
-});
-
-self.addEventListener("message", function (event) {
+// self.addEventListener("message", function (event) {
+//   if (event.data.action === "getApiUrl") {
+//     console.log("apiUrl: ", apiUrl);
+//     event.ports[0].postMessage({
+//       action: "getapiUrl",
+//       apiUrl: getApiUrl(),
+//     });
+//   }
+// });
+async function handleDiscoverFeeds(event) {
   if (event.data.action === "discoverFeeds") {
-    const feeds = event.data.feeds;
-    console.log(`[Service Worker] Fetching feeds for ${feeds}`);
-    const feedUrls = discoverFeedUrls(feeds);
+    const urls = event.data.discoverUrls;
+    console.log(`[Service Worker] discovering Feeds for site ${urls}`);
+    console.log("URLs: ", urls);
+    const feedUrls = await discoverFeedUrls(urls);
+    
+    console.log("discovered feedUrls: ", feedUrls);
     //Sending fetched feed data to tab
+    this.self.clients.matchAll().then((clients) => {
+      if (clients && clients.length) {
+        clients.forEach(client => {
+          client.postMessage({
+            action: "discoveredFeeds",
+            feedUrls: feedUrls,
+          });
+        });
+      }
+    });
 
   }
-});
+}
 
 async function discoverFeedUrls(siteUrls){
-  var requestUrl = getApiUrl()+"/discover";
+  var requestUrl = await getApiUrl() + "/discover";
+  console.log("[Discover Feed URLs] fetchRSSFeed: getApiUrl" + apiUrl);
+  console.log(siteUrls);
   const urlsForPostRequest = {
     urls: siteUrls,
   };
@@ -64,51 +120,36 @@ async function discoverFeedUrls(siteUrls){
     body: JSON.stringify(urlsForPostRequest), // Sending the urls in the body
   };
 
-  return fetch(requestUrl, requestOptions).then((response) => {
-    const fetchedFeedUrls = response.json();
+  try {
+    const response = await fetch(requestUrl, requestOptions);
+    const fetchedFeedUrls = await response.json();
     console.log(`[ServiceWorker] Discover Feed response ${fetchedFeedUrls}`);
 
-    if (response.ok) {
-      return fetchedFeedData;
-    } else {
-      console.log("API response: ", JSON.stringify(fetchedFeedData));
+    if (!response.ok) {
+      console.log("API response: ", JSON.stringify(fetchedFeedUrls));
       throw new Error("Failed to discover RSS feeds");
     }
-  });
 
-  //put the status check back in after debugging, also need to update api endpoint to send back status
-  // .then(data => {
-  //   // Assuming the new API returns data in a similar format
-  //   if (data.status === "ok") {
-  //     return data;
-  //   } else {
-  //     throw new Error("Failed to parse RSS feeds");
-  //   }
-  // });
+    console.log("fetchedFeedUrls: ", fetchedFeedUrls);
+    //fetchedFeedUls is a JSON object that contains an array called feeds. Each item has a field status. if status = error, remove the item from the response
+    const filteredFeeds = fetchedFeedUrls.feeds.filter(feed => feed.status !== "error"); 
+    fetchedFeedUrls.feeds = filteredFeeds;
+    console.log("filteredFeeds: ", filteredFeeds);
+
+    return filteredFeeds;
+  } catch (error) {
+    console.error("Failed to discover RSS feeds:", error);
+  }
 }
 
 
-// function getApiUrl() {
-//   // Get api url from local storage
-//   const apiUrl = localStorage.getItem('apiUrl');
-  
-//   if (!apiUrl) {
-//     console.error('No API URL found in local storage.');
-//     return null;
-//   }
 
-//   return apiUrl;
-// }
 function acceptApiUrl(url) {
   console.log("SW: setting apiUrl: ", url);
   apiUrl = url;
 }
 
-self.addEventListener("message", function (event) {
-  if (event.data.action === "fetchRSS") {
-    fetchRSSFeedAndUpdateCache(event.data.feedUrls); //Sending fetched feed data to tab
-  }
-});
+
 
 
 async function fetchRSSFeedAndUpdateCache(feedUrls) {
@@ -277,18 +318,7 @@ self.addEventListener('activate', async (event) => {
   
 });
 
-self.addEventListener('message', async (event) => {
-  if (event.data.action === "fetchBingImage") {
-    const cachedData = await getCachedBingImageBlob();
-    event.source.postMessage({ 
-      action: "bingImageResponse", 
-      imageBlob: cachedData.imageBlob,
-      title: cachedData.title,
-      copyright: cachedData.copyright,
-      timestamp: cachedData.timestamp
-    });
-  }
-});
+
 
 
 async function getCachedBingImageBlob() {

@@ -19,6 +19,22 @@ async function showReaderView(url) {
         article.title = data[0].title;
         article.textContent = data[0].textContent;
       }
+      else {
+        const response = await fetch(url, {
+  headers: {
+    'Content-Type': 'application/json',
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  }
+});
+
+        const html = await response.text();
+        console.log("response", html);
+        const pure = DOMPurify.sanitize(html);
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(pure, "text/html");
+        const reader = new Readability(doc);
+        article = reader.parse();
+      }
       const item = findItemFromUrl(getFeedItems(), url);
   
       if (article) {

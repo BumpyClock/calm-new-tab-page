@@ -1,5 +1,6 @@
 // Path: scripts.js
 const SUBSCRIBED_FEEDS_KEY = "subscribedFeeds";
+const DISCOVERED_FEEDS_KEY = "discoveredFeeds";
 const FEED_DISCOVERY_KEY = "feedDiscoveryPref"; // By default feed discovery is enabled
 const FEED_DETAILS_KEY = "feedDetails";
 const SEARCH_PREFERENCE_KEY = "searchPref";
@@ -99,36 +100,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Welcome screen logic
   if (welcomePage) {
     setupWelcomePage();
-
+discoverFeeds();
     setGreeting();
   }
   // setGreeting();
   if (feedContainer) {
     // Main page
-    setupSearch();
-    lazySizes.cfg.expand = 1000;
-    lazySizes.cfg.preloadAfterLoad = true;
-    lazySizes.cfg.loadMode = 2;
-    lazySizes.cfg.expFactor = 2;
-    lazySizes.init();
-
-    await initializeMostVisitedSitesCache();
-
-    cachedCards = await getCachedRenderedCards();
-    if (cachedCards !== null) {
-      const feedContainer = document.getElementById("feed-container");
-      feedContainer.innerHTML = cachedCards;
-      // setupParallaxEffect();
-      initializeMasonry();
-      reapplyEventHandlersToCachedCards();
-      feedContainer.style.opacity = "1"; // apply the fade-in effect
-
-      bgImageScrollHandler();
-    } else {
-      console.log("rendering feed from scratch");
-      bgImageScrollHandler();
-      await loadSubscribedFeeds();
-    }
+    await setupNTP();
   } else if (settingsPage) {
     // Settings page
     setupSettingsPage();
@@ -236,10 +214,10 @@ async function refreshFeeds() {
   const serviceWorker = navigator.serviceWorker.controller;
   if (serviceWorker) {
     lastRefreshed = new Date().getTime();
-    // console.log(
-    //   "Sending message to service worker to fetch feeds",
-    //   feedList.subscribedFeeds
-    // );
+    console.log(
+      `Sending message to service worker to fetch feeds
+      ${feedList.subscribedFeeds}`
+    );
     serviceWorker.postMessage({
       action: "fetchRSS",
       feedUrls: feedList.subscribedFeeds
@@ -248,6 +226,27 @@ async function refreshFeeds() {
     console.error("Service worker is not active or not controlled.");
   }
 }
+
+async function discoverFeeds() {
+  const serviceWorker = navigator.serviceWorker.controller;
+  if (serviceWorker) {
+    console.log("Sending message to service worker to discover feeds");
+
+    chrome.topSites.get(async function(topSites) {
+      const discoverUrls = topSites
+        .filter(site => {
+          const url = new URL(site.url);
+          return !url.protocol.startsWith('chrome-extension') && !url.hostname.match(/^[\d.]+$/);
+        })
+        .map(site => site.url);
+
+      serviceWorker.postMessage({ action: "discoverFeeds", discoverUrls });
+    });
+  } else {
+    console.error("Service worker is not active or not controlled.");
+  }
+}
+
 async function updateDisplayOnNewTab() {
   const cachedCards = await getCachedRenderedCards();
   if (cachedCards) {
@@ -368,27 +367,6 @@ function setupParallaxEffect(card) {
   }
 }
 
-async function cacheRenderedCards(htmlContent) {
-  try {
-    localStorage.setItem("renderedCards", htmlContent);
-  } catch (error) {
-    console.error("Error saving cards to local storage:", error);
-  }
-}
-
-async function getCachedRenderedCards() {
-  try {
-    console.log("Checking cache for rendered cards");
-    if (localStorage.getItem("renderedCards")) {
-      return localStorage.getItem("renderedCards");
-    } else {
-      return null;
-    }
-  } catch (error) {
-    console.error("Error getting cards from local storage:", error);
-  }
-}
-
 navigator.serviceWorker.addEventListener("message", async function(event) {
   if (event.data.action === "rssUpdate") {
     // console.log("Received RSS update from service worker,rendering feed");
@@ -407,6 +385,14 @@ navigator.serviceWorker.addEventListener("message", async function(event) {
     }
   }
 });
+
+navigator.serviceWorker.addEventListener('message', event => {
+  if (event.data.action === 'discoveredFeeds') {
+    console.log('Received discovered feeds:', event.data.feedUrls);
+    // Do something with event.data.feeds...
+  }
+});
+
 async function getWebsiteTitle(url) {
   try {
     console.log("getting website title for;" + url);
@@ -452,9 +438,6 @@ function processRSSData(rssData) {
   // Initialize arrays to hold the processed feed details and items
   let feedDetails = [];
   let feedItems = [];
-  //print rssData JSON object to console, convert to string before logging
-
-  // Check if the rssData object has the 'feedDetails' and 'items' arrays
   if (rssData && rssData.feedDetails && rssData.items) {
     // Process the feed details
     feedDetails = rssData.feedDetails.map(feed => ({
@@ -491,7 +474,6 @@ function processRSSData(rssData) {
     feedItems.forEach(item => {
       if (item.published) {
         item.published = new Date(item.published).toISOString();
-        // console.log(`item.published: ${item.published} converts to ${new Date(item.published)}`);
       }
       if (item.created) {
         item.created = new Date(item.created).toISOString();
@@ -561,7 +543,7 @@ async function initializeMostVisitedSitesCache() {
 }
 
 function setTopSitesCache(sitecards) {
-  // console.log(sitecards);
+  console.log(sitecards);
   localStorage.setItem("mostVisitedSites", JSON.stringify(sitecards));
 }
 function getTopSitesCache() {
@@ -689,14 +671,14 @@ if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
         title: event.data.title,
         copyright: event.data.copyright
       };
-      console.log(JSON.stringify(imageDetails));
+      // console.log(JSON.stringify(imageDetails));
       setBingImage(imageDetails);
     }
   });
 }
 
 function setBingImage(imageDetails) {
-  console.log(`setBingImage: ${JSON.stringify(imageDetails)}`);
+  // console.log(`setBingImage: ${JSON.stringify(imageDetails)}`);
   const bgContainer = document.querySelector(".background-image-container");
   const imageUrl = URL.createObjectURL(imageDetails.imageBlob);
   const title = imageDetails.title;
@@ -721,7 +703,7 @@ async function fetchBingImageOfTheDay() {
     const data = await response.json();
     let imageUrl = "https://www.bing.com" + data.images[0].url;
     imageUrl = imageUrl.replace(/1920x1080/g, "UHD");
-    console.log(imageUrl);
+    // console.log(imageUrl);
 
     const title = data.images[0].title;
     const copyright = data.images[0].copyright;
@@ -959,6 +941,36 @@ async function setupApiUrlFormEventHandler() {
   });
 }
 
+// Setup NTP
+
+async function setupNTP() {
+  setupSearch();
+  lazySizes.cfg.expand = 300;
+  lazySizes.cfg.preloadAfterLoad = true;
+  lazySizes.cfg.loadMode = 2;
+  lazySizes.cfg.expFactor = 2;
+  lazySizes.init();
+discoverFeeds();
+  await initializeMostVisitedSitesCache();
+  console.log(`Feed discovery is set to : ${getFeedDiscovery()}`);
+
+  cachedCards = await getCachedRenderedCards();
+  if (cachedCards !== null) {
+    const feedContainer = document.getElementById("feed-container");
+    feedContainer.innerHTML = cachedCards;
+    // setupParallaxEffect();
+    initializeMasonry();
+    reapplyEventHandlersToCachedCards();
+    feedContainer.style.opacity = "1"; // apply the fade-in effect
+
+    bgImageScrollHandler();
+  } else {
+    console.log("rendering feed from scratch");
+    bgImageScrollHandler();
+    await loadSubscribedFeeds();
+  }
+}
+
 async function setupSettingsPage() {
   await displaySubscribedFeeds();
   setupSubscriptionForm();
@@ -1035,6 +1047,26 @@ function getSubscribedFeeds() {
 function setSubscribedFeeds(feeds) {
   feedList.subscribedFeeds = feeds;
   localStorage.setItem(SUBSCRIBED_FEEDS_KEY, JSON.stringify(feeds));
+}
+
+function getDiscoveredFeeds() {
+  if (!localStorage.getItem(DISCOVERED_FEEDS_KEY)) {
+    setDiscoveredFeeds(defaultFeeds);
+    return {
+      discoveredFeeds: defaultFeeds,
+      feedDetails: JSON.parse(localStorage.getItem(FEED_DETAILS_KEY)) || []
+    };
+  } else {
+    return {
+      discoveredFeeds: JSON.parse(localStorage.getItem(DISCOVERED_FEEDS_KEY)),
+      feedDetails: JSON.parse(localStorage.getItem(FEED_DETAILS_KEY)) || []
+    };
+  }
+}
+
+function setDiscoveredFeeds(feeds) {
+  feedList.discoveredFeeds = feeds;
+  localStorage.setItem(DISCOVERED_FEEDS_KEY, JSON.stringify(feeds));
 }
 
 function setNtpPermission(permission) {
