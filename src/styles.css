@@ -268,14 +268,14 @@ body > *:not(.background-image-container)::selection {
 }
 .card .card-bg img {
   position: absolute;
-  bottom: -20%;
-  left: -20%;
-  width: 140%;
+  bottom: -10%;
+  left: -10%;
+  width: 120%;
   height: 120%;
   filter: blur(60px) brightness(1.5);
   z-index: -2;
   opacity: 0.7;
-  transform: scale(1.4);
+  transform: scale(1.2) rotate(180deg);
   transition: var(--transition-slow);
 }
 
@@ -808,8 +808,8 @@ body {
 .reader-view-page-content {
   position: relative;
   border-radius: 7px;
-  /* other styles */
-}
+  -webkit-overflow-scrolling: touch;
+  -webkit-overflow-scroll:touch;}
 
 .reader-view-modal hr.solid {
   border-top: 1px solid #bbb;
@@ -1134,8 +1134,9 @@ filter: brightness(1.7);
   gap: 1rem;
   opacity: 0;
   transition: all 0.25s ease-in-out;
-  -webkit-overflow-scrolling: auto;
-  -webkit-overflow-scroll:auto;
+  -webkit-overflow-scrolling: touch;
+  -webkit-overflow-scroll:touch;
+
 }
 .reader-view-modal .noise {
   position: absolute;

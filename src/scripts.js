@@ -36,8 +36,6 @@ function debounce(func, wait) {
   };
 }
 
-
-
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {
     chrome.tabs.create({ url: "welcome.html" });
@@ -117,23 +115,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await initializeMostVisitedSitesCache();
     await fetchBingImageOfTheDay();
-    
-
     cachedCards = await getCachedRenderedCards();
     if (cachedCards !== null) {
       const feedContainer = document.getElementById("feed-container");
       feedContainer.innerHTML = cachedCards;
-      // setupParallaxEffect();
       initializeMasonry();
       reapplyEventHandlersToCachedCards();
       feedContainer.style.opacity = "1"; // apply the fade-in effect
-      
       // bgImageScrollHandler();
     } else {
       console.log("rendering feed from scratch");
       await loadSubscribedFeeds();
     }
-   
   } else if (settingsPage) {
     // Settings page
     setupSettingsPage();
@@ -511,8 +504,6 @@ function processRSSData(rssData) {
   return { feedDetails, feedItems };
 }
 
-
-
 // Search code
 
 function handleSearch() {
@@ -680,29 +671,46 @@ function setLastRefreshedTimestamp() {
 
 async function fetchBingImageOfTheDay() {
   try {
+    const cachedImage = localStorage.getItem('bingImage');
+    const cachedDate = new Date(localStorage.getItem('bingImageDate'));
+
+    // If there's a cached image and it's less than 24 hours old, use it
+    if (cachedImage && (new Date() - cachedDate) < 24 * 60 * 60 * 1000) {
+      const { imageUrl, title, copyright } = JSON.parse(cachedImage);
+      displayImage(imageUrl, title, copyright);
+      return;
+    }
+
     const response = await fetch(
       "https://www.bing.com/HPImageArchive.aspx?resoultion=3840&format=js&image_format=webp&idx=random&n=1&mkt=en-US"
     );
     const data = await response.json();
     let imageUrl = "https://www.bing.com" + data.images[0].url;
     imageUrl = imageUrl.replace(/1920x1080/g, "UHD");
-    console.log(imageUrl);
 
     const title = data.images[0].title;
     const copyright = data.images[0].copyright;
-    const bgContainer = document.querySelector(".background-image-container");
-    bgContainer.innerHTML = `<img id="background-image-container" data-src="${imageUrl}"  alt="${title}" class="background-image-container extension-bg lazyload" style>`;
-    // bgContainer.style.backgroundImage = `url(${imageUrl})`;
-    const attributionContainer = document.createElement("div");
-    attributionContainer.className = "attribution-container";
-    attributionContainer.innerHTML = `
-        <p class="attribution-title">${title}</p>
-        <p class="attribution-copyright">${copyright} | Bing & Microsoft</p>
-      `;
-    bgContainer.appendChild(attributionContainer);
+
+    // Store the Data URL and the current date in the localStorage
+    localStorage.setItem('bingImage', JSON.stringify({ imageUrl, title, copyright }));
+    localStorage.setItem('bingImageDate', new Date().toString());
+
+    displayImage(imageUrl, title, copyright);
   } catch (error) {
     console.error("Failed to fetch Bing image of the day:", error);
   }
+}
+
+function displayImage(imageUrl, title, copyright) {
+  const bgContainer = document.querySelector(".background-image-container");
+  bgContainer.innerHTML = `<img id="background-image-container" data-src="${imageUrl}"  alt="${title}" class="background-image-container extension-bg lazyload" style>`;
+  const attributionContainer = document.createElement("div");
+  attributionContainer.className = "attribution-container";
+  attributionContainer.innerHTML = `
+    <p class="attribution-title">${title}</p>
+    <p class="attribution-copyright">${copyright} | Bing & Microsoft</p>
+  `;
+  bgContainer.appendChild(attributionContainer);
 }
 
 function bgImageScrollHandler() {
@@ -955,21 +963,16 @@ function setupWelcomePage() {
   });
 }
 function checkNTPConsent() {
-  
-  
-   if(getNtpPermission()) {
-      
-        // Activate the new tab override
-        chrome.storage.local.set({ newTabOverrideActive: true });
-        // Replace the new tab page (e.g., open your extension's new tab page)
-        chrome.tabs.query({ url: "chrome://newtab" }, (tabs) => {
-          if (tabs && tabs.length) {
-            chrome.tabs.update(tabs[0].id, { url: "index.html" });
-          }
-        });
-     
-    }
-  
+  if (getNtpPermission()) {
+    // Activate the new tab override
+    chrome.storage.local.set({ newTabOverrideActive: true });
+    // Replace the new tab page (e.g., open your extension's new tab page)
+    chrome.tabs.query({ url: "chrome://newtab" }, (tabs) => {
+      if (tabs && tabs.length) {
+        chrome.tabs.update(tabs[0].id, { url: "index.html" });
+      }
+    });
+  }
 }
 // getter and setter functions
 function setFeedDetails(feedDetails) {
