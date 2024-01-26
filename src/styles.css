@@ -534,6 +534,7 @@ body > *:not(.background-image-container)::selection {
 #main-container {
   margin: 0 auto;
   padding: 1rem;
+  max-width: 2600px;
 }
 /* Search Container */
 body {
