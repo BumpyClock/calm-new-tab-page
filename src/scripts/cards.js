@@ -25,11 +25,13 @@ function createImageContainer(thumbnailUrl, siteTitle) {
 
 function createCard(item) {
     const docFrag = document.createDocumentFragment();
-   const { r, g, b } = item.thumbnailColor;
-const card = createElement('div', {
-  className: 'card',
-  style: `box-shadow: 0 4px 8px 0 rgba(${r}, ${g}, ${b}, 1), 0 6px 20px 0 rgba(0, 0, 0, 0.19)`
-});
+   // Usage in your createCard function
+  const boxShadow = generateBoxShadow(item.thumbnailColor, 5, 0.4, 10, 2);
+  const card = createElement('div', {
+    className: 'card',
+    style: `box-shadow: ${boxShadow}`
+  });
+
 
     // Set thumbnail URL
     let thumbnailUrl = item.thumbnail;
