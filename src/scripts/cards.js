@@ -26,7 +26,7 @@ function createImageContainer(thumbnailUrl, siteTitle) {
 function createCard(item) {
     const docFrag = document.createDocumentFragment();
    // Usage in your createCard function
-  const boxShadow = generateBoxShadow(item.thumbnailColor, 5, 0.4, 10, 2);
+  const boxShadow = generateBoxShadow(item.thumbnailColor, 5, 0.3, 6, 2);
   const card = createElement('div', {
     className: 'card',
     style: `box-shadow: ${boxShadow}`

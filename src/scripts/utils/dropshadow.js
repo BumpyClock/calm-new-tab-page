@@ -4,7 +4,8 @@ function generateBoxShadow(color, elevation, opacity, blur, horizontalDistance) 
     if (!parsedColor.isValid()) {
       throw new Error('Invalid color');
     }
-    parsedColor = makeVibrant(parsedColor, 5);
+    const theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    parsedColor = adjustColorForTheme(parsedColor, theme);
     const hsl = parsedColor.toHsl();
     const layerAmount = Math.max(3, elevation); // At least 3 layers, or as many as the elevation
 
@@ -22,6 +23,18 @@ function generateBoxShadow(color, elevation, opacity, blur, horizontalDistance) 
     console.error('Error in generateBoxShadow:', error);
     return null; // or render some fallback UI
   }
+}
+
+function adjustColorForTheme(color, theme) {
+  const hsl = color.toHsl();
+  if (theme === 'dark') {
+    hsl.s = Math.min(1, hsl.s * 1.2); // Increase saturation by 20%
+    hsl.l = Math.max(0, hsl.l * 0.8); // Decrease luminance by 20%
+  } else {
+    hsl.s = Math.min(0.4, hsl.s * (1 + 5 / 100)); // Increase saturation
+    hsl.l = Math.min(0.4, hsl.l * (1 + 5 / 100)); // Increase luminance
+  }
+  return tinycolor(hsl);
 }
 
 function makeVibrant(color, percent) {
