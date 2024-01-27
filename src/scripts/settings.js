@@ -43,9 +43,8 @@ async function displaySubscribedFeeds() {
   const listfragment = document.createDocumentFragment();
 
   const feedPromises = feedDetails.map(async (detail, index) => {
-    const feedURL = feeds[index]; // Corresponding URL from feeds array
-    if (feedURL != null) {
-      const listItem = await createListItem(detail, feedURL);
+    if ( feedDetails[index].feedUrl != null) {
+      const listItem = await createListItem(detail,  feedDetails[index].feedUrl);
       listfragment.appendChild(listItem);
     }
   });

@@ -397,10 +397,10 @@ function processRSSData(rssData) {
 
     // Process the feed items
     rssData.items.forEach(item => {
-      const { id, title, siteTitle, feedUrl, feedTitle, favicon, thumbnail, link, author, published, created, category, content, media, enclosures, podcastInfo } = item;
+      const { id, title, siteTitle, feedUrl, feedTitle, favicon, thumbnail,thumbnailColor, link, author, published, created, category, content, media, enclosures, podcastInfo } = item;
       const publishedDate = published ? new Date(published).toISOString() : null;
       const createdDate = created ? new Date(created).toISOString() : null;
-      feedItems.push({ id, title, siteTitle, feedUrl, feedTitle, favicon, thumbnail, link, author, published: publishedDate, created: createdDate, category, content, media, enclosures, podcastInfo });
+      feedItems.push({ id, title, siteTitle, feedUrl, feedTitle, favicon, thumbnail,thumbnailColor, link, author, published: publishedDate, created: createdDate, category, content, media, enclosures, podcastInfo });
     });
 
     if (feedItems.length > 0) {

@@ -135,7 +135,7 @@ async function fetchRSSFeedAndUpdateCache(feedUrls) {
         feed.siteTitle = await getWebsiteTitle(feed.favicon) || await getWebsiteTitle(feed.feedUrl);
         console.log("searching for site title");
       } else {
-        feed.feedUrl = feed.siteTitle;
+        feed.feedTitle = feed.siteTitle;
       }
 
       feedDetails.push({
@@ -156,6 +156,7 @@ async function fetchRSSFeedAndUpdateCache(feedUrls) {
           siteTitle: isErrorTitle ? feed.feedTitle : feed.siteTitle,
           feedTitle: feed.feedTitle,
           thumbnail: item.thumbnail,
+          thumbnailColor: item.thumbnailColor,
           link: item.link,
           feedUrl: feed.feedUrl,
           favicon: feed.favicon,
