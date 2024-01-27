@@ -646,14 +646,12 @@ async function fetchBingImageOfTheDay() {
 }
 
 function bgImageScrollHandler() {
-  // console.log(`adding bg-scroll event handler`);
   window.addEventListener("scroll", () => {
     const scrollPosition = window.scrollY || document.documentElement.scrollTop;
     const blurIntensity = Math.min(scrollPosition / 100, 10); // Adjust the maximum blur intensity as per your preference
-    const darkIntensity = Math.min(scrollPosition / 100, 0.5); // Adjust the maximum dark intensity as per your preference
+    const darkIntensity = Math.min(scrollPosition / 1000, 0.4); // Adjust the maximum dark intensity as per your preference
     const bgContainer = document.getElementById("background-image-container");
-    bgContainer.style.filter = `blur(${blurIntensity}px) brightness(${1 -
-      darkIntensity})`;
+    bgContainer.style.filter = `blur(${blurIntensity}px) brightness(${0.7 - darkIntensity})`;
   });
 }
 

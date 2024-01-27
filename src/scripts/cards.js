@@ -26,7 +26,7 @@ function createImageContainer(thumbnailUrl, siteTitle) {
 function createCard(item) {
     const docFrag = document.createDocumentFragment();
    // Usage in your createCard function
-  const boxShadow = generateBoxShadow(item.thumbnailColor, 5, 0.3, 6, 2);
+  const boxShadow = generateBoxShadow(item.thumbnailColor, 5, 0.3, 4);
   const card = createElement('div', {
     className: 'card',
     style: `box-shadow: ${boxShadow}`
@@ -80,7 +80,7 @@ function createCard(item) {
     const readMoreLink = createElement('a', { href: item.link, target: '_blank', className: 'read-more-link' }, 'Read more');
     textContentDiv.appendChild(readMoreLink);
 
-    applyCardEventHandlers(card, item.link);
+    applyCardEventHandlers(card, item.link, item.thumbnailColor);
 
     docFrag.appendChild(textContentDiv);
     card.appendChild(docFrag);
@@ -88,12 +88,22 @@ function createCard(item) {
     return card;
 }
   
-function applyCardEventHandlers(card, url) {
+function applyCardEventHandlers(card, url, color) {
     try {
         card.addEventListener("click", (e) => {
             if (e.target.tagName.toLowerCase() !== "a") {
                 showReaderView(url);
             }
+        });
+
+        card.addEventListener("mouseover", () => {
+            const boxShadowHover = generateBoxShadow(color, 8, 0.4, 5);
+            card.style.boxShadow = boxShadowHover;
+        });
+
+        card.addEventListener("mouseout", () => {
+            const boxShadowNormal = generateBoxShadow(color, 5, 0.3, 4);
+            card.style.boxShadow = boxShadowNormal;
         });
     } catch (error) {
         console.log(error, "error in applyCardEventHandlers", url);

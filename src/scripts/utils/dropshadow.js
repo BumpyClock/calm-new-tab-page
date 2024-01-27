@@ -1,4 +1,4 @@
-function generateBoxShadow(color, elevation, opacity, blur, horizontalDistance) {
+function generateBoxShadow(color, elevation, opacity, blur, ) {
   try {
     let parsedColor = tinycolor(`rgb(${color.r}, ${color.g}, ${color.b})`);
     if (!parsedColor.isValid()) {
@@ -11,11 +11,9 @@ function generateBoxShadow(color, elevation, opacity, blur, horizontalDistance) 
 
     const boxShadows = [];
     for (let i = 0; i < layerAmount; i++) {
-      const x = (i + 1) * horizontalDistance;
-      const y = (i + 1) * elevation;
       const blurValue = (i + 1) * blur;
       const alpha = (i + 1) * (opacity / layerAmount);
-      boxShadows.push(`${x}px ${y}px ${blurValue}px hsla(${hsl.h}, ${hsl.s * 100}%, ${hsl.l * 100}%, ${alpha})`);
+      boxShadows.push(`${0}px ${0}px ${blurValue}px hsla(${hsl.h}, ${hsl.s * 100}%, ${hsl.l * 100}%, ${alpha})`);
     }
 
     return boxShadows.join(", ");
@@ -27,6 +25,9 @@ function generateBoxShadow(color, elevation, opacity, blur, horizontalDistance) 
 
 function adjustColorForTheme(color, theme) {
   const hsl = color.toHsl();
+  if (hsl.l <= 0.2) { // if the color is already dark
+    hsl.l += (1 - hsl.l) * (percent / 100); // Lighten the color
+  }
   if (theme === 'dark') {
     hsl.s = Math.min(1, hsl.s * 1.2); // Increase saturation by 20%
     hsl.l = Math.max(0, hsl.l * 0.8); // Decrease luminance by 20%
