@@ -238,7 +238,7 @@ function initializeMasonry() {
   msnry = new Masonry(feedContainer, {
     itemSelector: ".card",
     columnWidth: ".card",
-    gutter: 12,
+    gutter: 24,
     fitWidth: true
   });
   document.querySelectorAll(".masonry-item").forEach(item => {
@@ -397,10 +397,10 @@ function processRSSData(rssData) {
 
     // Process the feed items
     rssData.items.forEach(item => {
-      const { id, title, siteTitle, feedUrl, feedTitle, favicon, thumbnail, link, author, published, created, category, content, media, enclosures, podcastInfo } = item;
+      const { id, title, siteTitle, feedUrl, feedTitle, favicon, thumbnail,thumbnailColor, link, author, published, created, category, content, media, enclosures, podcastInfo } = item;
       const publishedDate = published ? new Date(published).toISOString() : null;
       const createdDate = created ? new Date(created).toISOString() : null;
-      feedItems.push({ id, title, siteTitle, feedUrl, feedTitle, favicon, thumbnail, link, author, published: publishedDate, created: createdDate, category, content, media, enclosures, podcastInfo });
+      feedItems.push({ id, title, siteTitle, feedUrl, feedTitle, favicon, thumbnail,thumbnailColor, link, author, published: publishedDate, created: createdDate, category, content, media, enclosures, podcastInfo });
     });
 
     if (feedItems.length > 0) {
@@ -646,14 +646,12 @@ async function fetchBingImageOfTheDay() {
 }
 
 function bgImageScrollHandler() {
-  // console.log(`adding bg-scroll event handler`);
   window.addEventListener("scroll", () => {
     const scrollPosition = window.scrollY || document.documentElement.scrollTop;
     const blurIntensity = Math.min(scrollPosition / 100, 10); // Adjust the maximum blur intensity as per your preference
-    const darkIntensity = Math.min(scrollPosition / 100, 0.5); // Adjust the maximum dark intensity as per your preference
+    const darkIntensity = Math.min(scrollPosition / 1000, 0.4); // Adjust the maximum dark intensity as per your preference
     const bgContainer = document.getElementById("background-image-container");
-    bgContainer.style.filter = `blur(${blurIntensity}px) brightness(${1 -
-      darkIntensity})`;
+    bgContainer.style.filter = `blur(${blurIntensity}px) brightness(${0.7 - darkIntensity})`;
   });
 }
 

@@ -114,7 +114,7 @@ body {
   width: 105%;
   height: 105%;
   z-index: -2;
-  filter: dim(.5);
+  filter: brightness(.7);
   background-repeat: no-repeat;
   background-size: cover;
   transition: all .1s linear
@@ -183,6 +183,8 @@ body > :not(.background-image-container)::selection {
   backdrop-filter: var(--blur);
   transition: var(--transition-standard)
 }
+
+
 .card .card-bg .noise {
   background-image: url(./images/noisy-background.jpg);
   position: absolute;
@@ -216,26 +218,25 @@ body > :not(.background-image-container)::selection {
 .card .image-container img {
   border-radius: 24px;
   transform: scale(1);
-  transition: transform .25s ease-in-out
+  max-height:320px;
+  object-fit: cover;
+  transition: all.25s ease-in-out !important;
 }
 .card:hover .image-container img {
   border-radius: 24px 24px 0 0;
   transform: scale(1.1);
-  transition: transform .25s ease-in-out
+  transition: all.25s ease-in-out !important;
 }
 .card:hover .card-bg img {
   opacity: .5;
   filter: blur(60px) brightness(1.1)
 }
-.card:hover {
-  background: var(--background-color-hover);
-  box-shadow: var(--box-shadow-hover)
-}
+
+
 .card:active .card-bg {
-  background: var(--active-color);
   filter: blur(90px) brightness(1.1);
-  box-shadow: var(--box-shadow-hover);
   transform: scale(1.15);
+  width: 140%;
   transition: var(--transition-standard)
 }
 .card .image-container {
@@ -243,9 +244,10 @@ body > :not(.background-image-container)::selection {
   width: 100%;
   height: 100%;
   max-height: 320px;
+  object-fit: cover;
   top: 0;
   left: 0;
-  transition: transform .25s ease-in-out;
+  transition: all .25s ease-in-out;
   overflow: hidden;
   border-radius: 24px 24px 0 0
 }
@@ -271,7 +273,7 @@ body > :not(.background-image-container)::selection {
   height: auto;
   background-repeat: no-repeat;
   background-position: center center;
-  object-fit: contain;
+  object-fit: cover;
   transform-origin: center;
   border-radius: 24px;
   transform: var(--transition-fast);
