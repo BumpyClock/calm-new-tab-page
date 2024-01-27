@@ -238,7 +238,7 @@ function initializeMasonry() {
   msnry = new Masonry(feedContainer, {
     itemSelector: ".card",
     columnWidth: ".card",
-    gutter: 12,
+    gutter: 24,
     fitWidth: true
   });
   document.querySelectorAll(".masonry-item").forEach(item => {

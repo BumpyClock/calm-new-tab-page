@@ -183,6 +183,8 @@ body > :not(.background-image-container)::selection {
   backdrop-filter: var(--blur);
   transition: var(--transition-standard)
 }
+
+
 .card .card-bg .noise {
   background-image: url(./images/noisy-background.jpg);
   position: absolute;
@@ -229,15 +231,12 @@ body > :not(.background-image-container)::selection {
   opacity: .5;
   filter: blur(60px) brightness(1.1)
 }
-.card:hover {
-  background: var(--background-color-hover);
-  box-shadow: var(--box-shadow-hover)
-}
+
+
 .card:active .card-bg {
-  background: var(--active-color);
   filter: blur(90px) brightness(1.1);
-  box-shadow: var(--box-shadow-hover);
   transform: scale(1.15);
+  width: 140%;
   transition: var(--transition-standard)
 }
 .card .image-container {
