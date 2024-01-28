@@ -82,13 +82,20 @@ function createCard(item) {
 
     const readMoreLink = createElement('a', { href: item.link, target: '_blank', className: 'read-more-link' }, 'Read more');
     textContentDiv.appendChild(readMoreLink);
-    
+    if(item.thumbnailUrl){
+
     img = imageContainer.querySelector('.thumbnail-image');
     img.addEventListener('load', () => {
         card.style.transition = 'all 0.5s ease-in-out';
 
         card.style.opacity = 1;
     });
+}
+else {
+    card.style.transition = 'all 0.5s ease-in-out';
+
+    card.style.opacity = 1;
+}
 
     applyCardEventHandlers(card, item.link, item.thumbnailColor);
 
