@@ -1,24 +1,5 @@
 async function showReaderView(url) {
-  let article = {};
   try {
-    const response = await fetch(`${await getApiUrl()}/getreaderview`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ urls: [url] })
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    if (data[0].status === "ok") {
-      article.content = data[0].content;
-      article.title = data[0].title;
-      article.textContent = data[0].textContent;
-    } else {
       const response = await fetch(url, {
   headers: {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -38,8 +19,7 @@ async function showReaderView(url) {
       const doc = parser.parseFromString(pure, "text/html");
       const reader = new Readability(doc);
       article = reader.parse();
-    }
-    const item = findItemFromUrl(getFeedItems(), url);
+      const item = findItemFromUrl(getFeedItems(), url);
 
     if (article) {
       const readerViewModal = createReaderViewModal(article);
