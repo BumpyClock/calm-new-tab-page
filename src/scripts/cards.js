@@ -12,13 +12,13 @@ function sanitizeHTML(html) {
 }
 
 function createImageContainer(thumbnailUrl, siteTitle) {
-    const imageProxyURL = "https://digests-imgproxy-a4crwf5b7a-uw.a.run.app/unsafe/rs:fit:0:300:0/g:no/plain/" + thumbnailUrl;
+    const imageProxyURL = "https://digests-imgproxy-a4crwf5b7a-uw.a.run.app/unsafe/rs:fit:0:300:0/g:no/plain/" + thumbnailUrl+"@webp";
     const imageContainer = createElement('div', { className: 'image-container loading' });
     const cardbg = createElement('div', { className: 'card-bg' });
 
     if (thumbnailUrl) {
-        imageContainer.innerHTML = `<img data-src="${imageProxyURL}" id="thumbnail-image" alt="${siteTitle} Thumbnail" class="thumbnail-image lazyload masonry-item">`;
-        cardbg.innerHTML = `<div class=noise></div><img data-src="${imageProxyURL}" alt="${siteTitle} Thumbnail" class="card-bg lazyload">`;
+        imageContainer.innerHTML = `<img data-src="${thumbnailUrl}" id="thumbnail-image" alt="${siteTitle} Thumbnail" class="thumbnail-image lazyload masonry-item">`;
+        cardbg.innerHTML = `<div class=noise></div><img data-src="${thumbnailUrl}" alt="${siteTitle} Thumbnail" class="card-bg lazyload">`;
        
     }
 

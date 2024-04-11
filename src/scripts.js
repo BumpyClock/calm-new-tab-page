@@ -243,8 +243,8 @@ function initializeMasonry() {
     itemSelector: ".card",
     columnWidth: ".card",
     gutter: 24,
-    transitionDuration: '0.25s', // set the transition duration
-    stagger: 30 // set the stagger delay
+    transitionDuration: '0.2s', // set the transition duration
+    stagger: 10 // set the stagger delay
 });
   document.querySelectorAll(".masonry-item").forEach(item => {
     item.addEventListener("load", () => {
