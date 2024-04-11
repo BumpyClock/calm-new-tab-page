@@ -3,20 +3,45 @@ function setupEventListener(id, eventType, eventHandler) {
   element.addEventListener(eventType, eventHandler);
 }
 
+async function updateSubscribedFeeds(feedURLs) {
+  // If feedURLs is not an array, convert it into an array with a single element
+  if (!Array.isArray(feedURLs)) {
+    feedURLs = [feedURLs];
+  }
+
+  const feeds = getSubscribedFeeds();
+
+  for (let feedURL of feedURLs) {
+    // Check if the feed URL already exists in the subscribedFeeds array
+    if (!feeds.subscribedFeeds.includes(feedURL)) {
+      feeds.subscribedFeeds.push(feedURL);
+    } else {
+      console.log(`Feed ${feedURL} is already subscribed.`);
+    }
+  }
+
+  setSubscribedFeeds(feeds.subscribedFeeds);
+  await clearCache();
+  refreshFeeds();
+  await displaySubscribedFeeds();
+}
+
 async function setupSubscriptionForm() {
-  setupEventListener("subscription-form", "submit", async event => {
+  setupEventListener("subscription-form", "submit", async (event) => {
     event.preventDefault();
     const form = event.target;
     const feedURL = form.elements["feed-url"].value;
-    const feeds = getSubscribedFeeds();
-    feeds.subscribedFeeds.push(feedURL);
-    setSubscribedFeeds(feeds.subscribedFeeds);
+    await updateSubscribedFeeds(feedURL);
     form.reset();
-    await clearCache();
-    refreshFeeds();
-    await displaySubscribedFeeds();
   });
 }
+
+document.getElementById("upload-button").addEventListener("click", function () {
+  console.log("upload button clicked");
+  var fileInput = document.getElementById("opml-upload");
+  var file = fileInput.files[0];
+  handleFileUpload(file);
+});
 
 function setupUnsubscribeButton(elem, feedUrl) {
   elem.addEventListener("click", async () => {
@@ -43,8 +68,8 @@ async function displaySubscribedFeeds() {
   const listfragment = document.createDocumentFragment();
 
   const feedPromises = feedDetails.map(async (detail, index) => {
-    if ( feedDetails[index].feedUrl != null) {
-      const listItem = await createListItem(detail,  feedDetails[index].feedUrl);
+    if (feedDetails[index].feedUrl != null) {
+      const listItem = await createListItem(detail, feedDetails[index].feedUrl);
       listfragment.appendChild(listItem);
     }
   });
@@ -56,45 +81,68 @@ async function displaySubscribedFeeds() {
   });
 }
 async function createListItem(detail, feedURL) {
-    const listItem = createElement("div", "list-item");
-    const bgImageContainer = createElement("div", "bg");
-    const faviconSrc = detail.favicon || await getSiteFavicon(new URL(feedURL).hostname);
-    const bgImage = createElement("img", "bg lazyload", {"data-src": faviconSrc});
-    const noiseLayer = createElement("div", "noise");
-    const websiteInfo = createElement("div", "website-info");
-    const favicon = createElement("img", "site-favicon", {src: faviconSrc, alt: `${detail.siteTitle} Favicon`});
-    const websiteName = createElement("h3", "", {}, detail.siteTitle || detail.feedTitle);
-    const feedTitle = createElement("p", "feed-title", {}, detail.feedTitle || detail.siteTitle);
-    const feedUrl = createElement("p", "feed-url", {}, feedURL);
-    const removeButton = createElement("button", "remove-feed-button");
-    const removeButtonText = createElement("p", "unsubscribe-button", {}, "Unsubscribe");
-  
-    bgImageContainer.append(bgImage, noiseLayer);
-    websiteInfo.append(favicon, websiteName, feedTitle, feedUrl);
-    removeButton.appendChild(removeButtonText);
-    listItem.append(websiteInfo, removeButton, bgImageContainer);
-  
-    setupEventListener(removeButton, "click", async () => {
-      removeFeed(feedURL);
-      await clearCache();
-      displaySubscribedFeeds();
-    });
-  
-    return listItem;
-  }
+  const listItem = createElement("div", "list-item");
+  const bgImageContainer = createElement("div", "bg");
+  const faviconSrc =
+    detail.favicon || (await getSiteFavicon(new URL(feedURL).hostname));
+  const bgImage = createElement("img", "bg lazyload", {
+    "data-src": faviconSrc
+  });
+  const noiseLayer = createElement("div", "noise");
+  const websiteInfo = createElement("div", "website-info");
+  const favicon = createElement("img", "site-favicon", {
+    src: faviconSrc,
+    alt: `${detail.siteTitle} Favicon`
+  });
+  const websiteName = createElement(
+    "h3",
+    "",
+    {},
+    detail.siteTitle || detail.feedTitle
+  );
+  const feedTitle = createElement(
+    "p",
+    "feed-title",
+    {},
+    detail.feedTitle || detail.siteTitle
+  );
+  const feedUrl = createElement("p", "feed-url", {}, feedURL);
+  const removeButton = createElement("button", "remove-feed-button");
+  const removeButtonText = createElement(
+    "p",
+    "unsubscribe-button",
+    {},
+    "Unsubscribe"
+  );
 
-function createElement(tag, className, attributes = {}, textContent = '') {
+  bgImageContainer.append(bgImage, noiseLayer);
+  websiteInfo.append(favicon, websiteName, feedTitle, feedUrl);
+  removeButton.appendChild(removeButtonText);
+  listItem.append(websiteInfo, removeButton, bgImageContainer);
+
+  setupEventListener(removeButton, "click", async () => {
+    removeFeed(feedURL);
+    await clearCache();
+    displaySubscribedFeeds();
+  });
+
+  return listItem;
+}
+
+function createElement(tag, className, attributes = {}, textContent = "") {
   const element = document.createElement(tag);
   element.className = className;
-  if (typeof attributes === 'object' && attributes !== null) {
-    Object.keys(attributes).forEach(key => element.setAttribute(key, attributes[key]));
+  if (typeof attributes === "object" && attributes !== null) {
+    Object.keys(attributes).forEach((key) =>
+      element.setAttribute(key, attributes[key])
+    );
   }
   element.textContent = textContent;
   return element;
 }
 
 function setupEventListener(element, eventType, eventHandler) {
-  if (typeof element === 'string') {
+  if (typeof element === "string") {
     element = document.getElementById(element);
   }
   element.addEventListener(eventType, eventHandler);
@@ -113,7 +161,11 @@ function setupFeedDiscoveryToggle() {
 }
 
 function setupSearchPreferenceToggle() {
-  setupToggle("search-preference-toggle", getSearchPreference, setSearchPreference);
+  setupToggle(
+    "search-preference-toggle",
+    getSearchPreference,
+    setSearchPreference
+  );
 }
 
 async function setupApiUrlFormEventHandler() {
@@ -122,7 +174,7 @@ async function setupApiUrlFormEventHandler() {
   apiUrlInput.value = await getApiUrl();
   const apiUrlSubmitButton = document.getElementById("apiUrl-submit-button");
 
-  apiUrlForm.addEventListener("submit", event => {
+  apiUrlForm.addEventListener("submit", (event) => {
     event.preventDefault();
     setApiUrl(apiUrlInput.value);
   });

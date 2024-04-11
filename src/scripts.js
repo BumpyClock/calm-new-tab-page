@@ -243,8 +243,10 @@ function initializeMasonry() {
     itemSelector: ".card",
     columnWidth: ".card",
     gutter: 24,
-    transitionDuration: '0.2s', // set the transition duration
-    stagger: 10 // set the stagger delay
+    transitionDuration: '0.12s', // set the transition duration
+    stagger: 5, // set the stagger delay
+    fitwidth: true,
+    isFitWidth: true,
 });
   document.querySelectorAll(".masonry-item").forEach(item => {
     item.addEventListener("load", () => {
@@ -255,7 +257,7 @@ function initializeMasonry() {
   });
   const debouncedLayout = debounce(() => {
     msnry.layout();
-  }, 100);
+  }, 300);
   window.addEventListener("resize", debouncedLayout);
 }
 

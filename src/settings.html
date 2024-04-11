@@ -19,12 +19,27 @@
     <h1>Settings</h1>
     <h2>Subscribed Feeds</h2>
     <div id="subscribed-feeds-list" class="subscribed-feeds-list"></div>
-
     <h2>Add a new feed</h2>
+    <div id="add-a-url-container" class="settings-section">
+
+    
     <form id="subscription-form" class="subscription-form">
       <input type="url" id="feed-url" placeholder="Enter feed URL" required>
       <button type="submit">Subscribe</button>
     </form>
+   
+</div>
+
+<div id="opml-import-container" class="settings-section">
+  <div class="infoContainer">
+    <h3>OPML Import</h3>
+    <p>Import an OPML file to subscribe to multiple feeds at once</p>
+  </div>
+  <form id="opml-import-form" class="opml-import-form">
+    <input type="file" id="opml-file" accept=".opml" required>
+    <button type="submit">Import</button>
+  </form>
+</div>
 <!-- ... -->
 <div id="display-preferences-container" class="display-preferences-container">
 <h2>Display Preferences</h2>
@@ -85,6 +100,7 @@
   <script src="./scripts/utils/lazysizes.min.js" defer></script>
   <script src="./scripts/utils/purify.min.js" defer></script>
   <script src="./scripts/settings.js" defer></script>
+  <script src="./scripts/utils/opmlhelper.js" defer></script>
   <script src="scripts.js" defer></script>
 
 
