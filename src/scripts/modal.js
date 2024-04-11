@@ -14,9 +14,9 @@ async function showReaderView(url) {
 
       const html = await response.text();
       console.log("response", html);
-      const pure = DOMPurify.sanitize(html);
+      // const pure = DOMPurify.sanitize(html);
       const parser = new DOMParser();
-      const doc = parser.parseFromString(pure, "text/html");
+      const doc = parser.parseFromString(html, "text/html");
       const reader = new Readability(doc);
       article = reader.parse();
       const item = findItemFromUrl(getFeedItems(), url);

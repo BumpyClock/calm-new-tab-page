@@ -192,20 +192,24 @@ function loadSubscribedFeeds() {
     : refreshFeeds();
 }
 
-function refreshFeeds() {
-  const { subscribedFeeds } = getSubscribedFeeds();
-  const serviceWorker = navigator.serviceWorker.controller;
-  if (!serviceWorker) {
-    console.error("Service worker is not active or not controlled.");
-    return;
+async function refreshFeeds() {
+  try {
+      const { subscribedFeeds } = await getSubscribedFeeds();
+      const serviceWorker = navigator.serviceWorker.controller;
+      if (!serviceWorker) {
+          throw new Error("Service worker is not active or not controlled.");
+      }
+      feedList.subscribedFeeds = subscribedFeeds;
+      lastRefreshed = new Date().getTime();
+      serviceWorker.postMessage({
+          action: "fetchRSS",
+          feedUrls: feedList.subscribedFeeds
+      });
+  } catch (error) {
+      console.error("Failed to refresh feeds:", error);
   }
-  feedList.subscribedFeeds = subscribedFeeds;
-  lastRefreshed = new Date().getTime();
-  serviceWorker.postMessage({
-    action: "fetchRSS",
-    feedUrls: feedList.subscribedFeeds
-  });
 }
+
 
 function discoverFeeds() {
   const serviceWorker = navigator.serviceWorker.controller;
@@ -235,12 +239,13 @@ async function updateDisplayOnNewTab() {
 }
 
 function initializeMasonry() {
-  msnry = new Masonry(feedContainer, {
+ msnry = new Masonry(feedContainer, {
     itemSelector: ".card",
     columnWidth: ".card",
     gutter: 24,
-    fitWidth: true
-  });
+    transitionDuration: '0.25s', // set the transition duration
+    stagger: 30 // set the stagger delay
+});
   document.querySelectorAll(".masonry-item").forEach(item => {
     item.addEventListener("load", () => {
       msnry.layout();
@@ -250,7 +255,7 @@ function initializeMasonry() {
   });
   const debouncedLayout = debounce(() => {
     msnry.layout();
-  }, 300);
+  }, 100);
   window.addEventListener("resize", debouncedLayout);
 }
 
