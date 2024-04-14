@@ -13,7 +13,7 @@ async function updateSubscribedFeeds(feedURLs) {
 
   for (let feedURL of feedURLs) {
     // Check if the feed URL already exists in the subscribedFeeds array
-    if (!feeds.subscribedFeeds.includes(feedURL)) {
+    if (!feeds.subscribedFeeds.some(subscribedFeed => removeProtocol(subscribedFeed) === removeProtocol(feedURL))) {
       feeds.subscribedFeeds.push(feedURL);
     } else {
       console.log(`Feed ${feedURL} is already subscribed.`);
@@ -36,10 +36,12 @@ async function setupSubscriptionForm() {
   });
 }
 
-document.getElementById("upload-button").addEventListener("click", function () {
-  console.log("upload button clicked");
-  var fileInput = document.getElementById("opml-upload");
-  var file = fileInput.files[0];
+document.getElementById("import-button").addEventListener("click", function () {
+  document.getElementById("opml-file").click();
+});
+
+document.getElementById("opml-file").addEventListener("change", function () {
+  var file = this.files[0];
   handleFileUpload(file);
 });
 

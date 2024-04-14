@@ -29,3 +29,7 @@ updateSubscribedFeeds(urls);        };
     // Return an empty array if the file is not an OPML file
     return [];
 }
+
+function removeProtocol(url) {
+    return url.replace(/^https?:\/\//, "");
+}
