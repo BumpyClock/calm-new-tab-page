@@ -195,22 +195,27 @@ async function fetchRSSFeedAndUpdateCache(feedUrls) {
 
 //Get thumbnailUrl from the feed items and cache the images
 async function fetchRSSFeed(feedUrls) {
-  const apiUrl = await getApiUrl();
-  const requestUrl = `${apiUrl}/parse`;
-  const requestOptions = createRequestOptions(feedUrls);
+  try {
+    const apiUrl = await getApiUrl();
+    const requestUrl = `${apiUrl}/parse`;
+    const requestOptions = createRequestOptions(feedUrls);
 
-  console.log("fetchRSSFeed: getApiUrl" + apiUrl);
+    console.log("fetchRSSFeed: getApiUrl" + apiUrl);
 
-  const response = await fetch(requestUrl, requestOptions);
-  const fetchedFeedData = await response.json();
+    const response = await fetch(requestUrl, requestOptions);
+    const fetchedFeedData = await response.json();
 
-  if (response.ok) {
-    // Filter out feeds with a status other than "ok"
-    fetchedFeedData.feeds = fetchedFeedData.feeds.filter(feed => feed.status === "ok");
-    return fetchedFeedData;
-  } else {
-    console.error("API response: ", JSON.stringify(fetchedFeedData));
-    throw new Error("Failed to fetch RSS feeds");
+    if (response.ok) {
+      // Filter out feeds with a status other than "ok"
+      fetchedFeedData.feeds = fetchedFeedData.feeds.filter(feed => feed.status === "ok");
+      return fetchedFeedData;
+    } else {
+      console.error("API response: ", JSON.stringify(fetchedFeedData));
+      throw new Error("Failed to fetch RSS feeds");
+    }
+  } catch (error) {
+    console.error('An error occurred:', error);
+    throw error;  // re-throw the error if you want it to propagate
   }
 }
 
@@ -230,11 +235,16 @@ self.addEventListener('activate', async (event) => {
 
 
 async function fetchJson(url, options) {
-  const response = await fetch(url, options);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${url}`);
+  try {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${url}`);
+    }
+    return response.json();
+  } catch (error) {
+    console.error('An error occurred:', error);
+    throw error;  // re-throw the error if you want it to propagate
   }
-  return response.json();
 }
 
 async function getCachedBingImageBlob() {
