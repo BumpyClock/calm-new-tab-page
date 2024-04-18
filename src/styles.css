@@ -5,7 +5,7 @@
   font-style: normal
 }
 :root {
-  --font-family: "Lato","Open Sans","Noto Sans","GeistVariableVF","Roboto",sans-serif;
+  --font-family: "Noto Sans","Open Sans", "Lato","Open Sans","Noto Sans","GeistVariableVF","Roboto",sans-serif;
   --font-weight-light: 300;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
@@ -90,6 +90,8 @@ body {
   margin: 0;
   overflow-x: hidden
 }
+
+
 .material-symbols-rounded {
   font-variation-settings: "FILL" 0,"wght" 400,"GRAD" 0,"opsz" 48
 }
@@ -298,7 +300,7 @@ body > :not(.background-image-container)::selection {
 .card p {
   margin: 0;
   margin-bottom: 12px;
-  font-size: 14px;
+  font-size: 1rem;
   line-height: 1.33
 }
 .card a {
@@ -346,7 +348,7 @@ body > :not(.background-image-container)::selection {
 .card .text-content .website-info p {
   width: -webkit-fill-available;
   font-weight: 600;
-  font-size: 12px;
+  font-size: .8rem;
   font-kerning: none;
   display: -webkit-box;
   margin-top: 4px;
@@ -406,7 +408,7 @@ body > :not(.background-image-container)::selection {
   overflow: hidden;
   text-overflow: ellipsis;
   margin-bottom: 10px;
-  font-size: 14px;
+  font-size: 1rem;
   font-weight: 400
 }
 .long-description {
@@ -701,10 +703,10 @@ cite {
 .reader-view-page-content blockquote p{
   margin: 0;
   padding: 0;
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   font-style: italic;
   font-weight: 400;
-  line-height: 1.8;
+  line-height: 2.3rem;
   font-family: var(--font-family);
   color: var(--color);
   margin-bottom: 1rem;
@@ -941,7 +943,7 @@ a {
 }
 #subscribed-feeds-list .list-item .website-info p {
   font-family: var(--font-family);
-  font-size: 12px;
+  font-size: .8rem;
   font-weight: 600;
   opacity: .8;
   color: var(--color);
@@ -1021,6 +1023,39 @@ a {
   font-family: var(--font-family);
   font-weight: 500
 }
+
+.reader-view-modal h1 {
+  font-size: 2rem;
+  margin: 1.5rem 0;
+  line-height: 1.2
+}
+
+.reader-view-modal h2 {
+  font-size: 2rem;
+  margin: 1.5rem 0;
+  line-height: 1.2
+}
+
+.reader-view-modal h3 {
+  font-size: 1.75rem;
+  margin: 1.5rem 0;
+  line-height: 1.2
+}
+
+.reader-view-modal h4 {
+  font-size: 1.5rem;
+  margin: 1.5rem 0;
+  line-height: 1.2;
+  font-weight:600;
+}
+
+.reader-view-modal h5 {
+  font-size: 1.25rem;
+  margin: 1.5rem 0;
+  line-height: 1.2
+}
+
+
 .reader-view-modal a {
   clear: both;
   color: var(--accent-color);
@@ -1039,7 +1074,10 @@ a {
   stroke: #000
 }
 .reader-view-modal p {
-  margin: 1.33em 0
+  margin: 1.33em 0;
+  font-size: 1.15rem;
+  line-height: 2.8rem;
+  font-weight: var(--font-weight-normal);
 }
 .reader-view-modal figcaption {
   font-size: 14px;
@@ -1085,10 +1123,10 @@ a {
   font-weight: 400
 }
 .reader-view-reading-time {
-  font-size: 14px;
+  font-size: .9rem !important;
   margin: 8px 0!important;
   margin-bottom: 4px;
-  font-weight: var(--font-weight-medium)!important;
+  font-weight: var(--font-weight-bold)!important;
   opacity: .7
 }
 .reader-view-reading-time p {
@@ -1203,7 +1241,7 @@ a {
 }
 .site-title p {
   color: var(--color);
-  font-size: 12px;
+  font-size: .8rem;
   text-align: center;
   font-weight: 400;
   overflow: hidden;
@@ -1521,7 +1559,7 @@ a {
   color: var(--color)
 }
 .settings-section .infoContainer p {
-  font-size: 14px;
+  font-size: 1rem;
   font-weight: 400;
   color: var(--color);
   opacity: .7
