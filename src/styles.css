@@ -1075,9 +1075,9 @@ a {
 }
 .reader-view-modal p {
   margin: 1.33em 0;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   line-height: 2.8rem;
-  font-weight: var(--font-weight-normal);
+  font-weight: var(--font-weight-regular);
 }
 .reader-view-modal figcaption {
   font-size: 14px;
@@ -1118,14 +1118,15 @@ a {
   color: var(--color)
 }
 .reader-view-author {
-  font-size: 16px;
-  margin: 0;
-  font-weight: 400
+  font-size: .9rem !important;
+  margin: 0 !important;
+  font-weight: 500;
 }
 .reader-view-reading-time {
   font-size: .9rem !important;
   margin: 8px 0!important;
-  margin-bottom: 4px;
+  margin-bottom: 12px !important;
+  line-height: 1.2 !important;
   font-weight: var(--font-weight-bold)!important;
   opacity: .7
 }
