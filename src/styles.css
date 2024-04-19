@@ -1026,8 +1026,8 @@ a {
 
 .reader-view-modal h1 {
   font-size: 2rem;
-  margin: 1.5rem 0;
-  line-height: 1.2
+  margin: 1.5rem 0 .8rem 0;
+  line-height: 1.5;
 }
 
 .reader-view-modal h2 {
@@ -1074,9 +1074,9 @@ a {
   stroke: #000
 }
 .reader-view-modal p {
-  margin: 1.33em 0;
+  margin: 2rem 0;
   font-size: 1.05rem;
-  line-height: 2.8rem;
+  line-height: 2.3rem;
   font-weight: var(--font-weight-regular);
 }
 .reader-view-modal figcaption {
