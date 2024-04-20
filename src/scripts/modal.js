@@ -91,7 +91,7 @@ function createReaderViewModal(article) {
             <span class="reader-view-close material-symbols-rounded">close</span>
             <h1 class="reader-view-title"><span id="website-info-placeholder"></span>${article.title}</h1>
             ${article.byline
-              ? `<h2 class="reader-view-author">${article.byline}</h2>`
+              ? `<h4 class="reader-view-author">${article.byline}</h4>`
               : ""}
             <p class="reader-view-reading-time">${estimateReadingTime(
               article.textContent
