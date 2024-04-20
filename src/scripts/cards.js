@@ -67,7 +67,7 @@ function createCard(item) {
                 textContentDiv.appendChild(snippet);
             }
         } catch (error) {
-            console.log(`Error creating content snippet for : ${item.content} `, error);
+            // console.log(`Error creating content snippet for : ${item.content} `, error);
         }
     }
 
@@ -129,7 +129,7 @@ function applyCardEventHandlers(card, url, color) {
             card.style.boxShadow = boxShadowActive;
         });
     } catch (error) {
-        console.log(error, "error in applyCardEventHandlers", url);
+        // console.log(error, "error in applyCardEventHandlers", url);
     }
 }
 
