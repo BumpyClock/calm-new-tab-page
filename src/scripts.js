@@ -243,7 +243,7 @@ function initializeMasonry() {
     itemSelector: ".card",
     columnWidth: ".card",
     gutter: 24,
-    transitionDuration: '0.12s', // set the transition duration
+    transitionDuration: '0.08s', // set the transition duration
     stagger: 5, // set the stagger delay
     fitwidth: true,
     isFitWidth: true,
@@ -707,7 +707,7 @@ function setSearchPreference(state) {
 // Setup NTP
 async function setupNTP() {
   setupSearch();
-  lazySizes.cfg.expand = 300;
+  lazySizes.cfg.expand = 600;
   lazySizes.cfg.preloadAfterLoad = true;
   lazySizes.cfg.loadMode = 2;
   lazySizes.cfg.expFactor = 3;
