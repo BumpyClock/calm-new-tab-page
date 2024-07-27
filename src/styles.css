@@ -236,6 +236,15 @@ body > :not(.background-image-container)::selection {
 }
 
 
+.lazyload,
+.lazyloading {
+	opacity: 0;
+}
+.lazyloaded {
+	opacity: 1;
+	transition: opacity 300ms;
+}
+
 .card:active .card-bg {
   filter: blur(90px) brightness(1.1);
   transform: scale(1.15);
