@@ -449,57 +449,102 @@ function removeFeed(feedURL) {
 }
 
 // Show Top Sites
+const TOPSITES_CACHE_EXPIRATION_TIME = 7 * (24 * 60 * 60 * 1000); // 1 week in milliseconds
+
 async function initializeMostVisitedSitesCache() {
-  mostVisitedSitesCache = await new Promise(resolve => {
-    chrome.topSites.get(async sites => {
-      const siteCards = await Promise.all(
-        sites
-          .filter(site => !site.url.startsWith("chrome-extension://"))
-          .slice(0, 10)
-          .map(async site => {
-            const siteCard = await createMostVisitedSiteCard(site);
-            return siteCard;
-          })
-      );
-      setTopSitesCache(siteCards);
-      mostVisitedSitesCache = siteCards;
-      resolve(siteCards);
+  try {
+    const cacheData = getTopSitesCache();
+    if (cacheData) {
+      const { timestamp, siteCardsHTML } = cacheData;
+      const currentTime = Date.now();
+      if (currentTime - timestamp < TOPSITES_CACHE_EXPIRATION_TIME) {
+        mostVisitedSitesCache = siteCardsHTML;
+        console.log("initializeMostVisitedSitesCache: ", mostVisitedSitesCache);
+      } else {
+        console.log("Cache expired, refreshing...");
+        mostVisitedSitesCache = null;
+      }
+    } else {
+      mostVisitedSitesCache = null;
+    }
+  } catch (error) {
+    console.error("Failed to get most visited sites cache:", error);
+    mostVisitedSitesCache = null;
+  }
+
+  if (mostVisitedSitesCache === null) {
+    mostVisitedSitesCache = await new Promise(resolve => {
+      chrome.topSites.get(async sites => {
+        const siteCards = await Promise.all(
+          sites
+            .filter(site => !site.url.startsWith("chrome-extension://"))
+            .slice(0, 10)
+            .map(async site => {
+              const siteCard = await createMostVisitedSiteCard(site);
+              return siteCard;
+            })
+        );
+        const siteCardsHTML = siteCards.map(card => card.outerHTML).join('');
+        setTopSitesCache(siteCardsHTML);
+        console.log("Setting topSitesCache:", siteCardsHTML);
+        resolve(siteCardsHTML);
+      });
     });
-  });
+  }
 
   // Call fetchMostVisitedSites to display the most visited sites once the cache is initialized
   fetchMostVisitedSites();
 }
 
-function setTopSitesCache(sitecards) {
-  // console.log(sitecards);
-  localStorage.setItem("mostVisitedSites", JSON.stringify(sitecards));
+function setTopSitesCache(siteCardsHTML) {
+  const cacheData = {
+    timestamp: Date.now(),
+    siteCardsHTML: siteCardsHTML
+  };
+  console.log("setTopSitesCache: ", cacheData);
+  localStorage.setItem("mostVisitedSites", JSON.stringify(cacheData));
 }
+
 function getTopSitesCache() {
-  if (!localStorage.getItem("mostVisitedSites")) {
-    return null;
-  } else {
-    return JSON.parse(localStorage.getItem("mostVisitedSites"));
+  const cacheData = localStorage.getItem("mostVisitedSites");
+  return cacheData ? JSON.parse(cacheData) : null;
+}
+
+function fetchMostVisitedSites() {
+  const mostVisitedSitesContainer = document.getElementById('mostVisitedSitesContainer');
+  if (mostVisitedSitesContainer) {
+    mostVisitedSitesContainer.innerHTML = mostVisitedSitesCache || '';
   }
 }
+
 async function createMostVisitedSiteCard(site) {
   const siteUrl = new URL(site.url);
   const mainDomain = siteUrl.hostname;
   const siteCard = document.createElement("div");
   siteCard.className = "site-card";
   const sitefaviconUrl = await getSiteFavicon(mainDomain);
-  //send a get request to get the favicon url from http://192.168.1.51:3000/get-favicon?url=${mainDomain}
+  const dataUrl = await convertBlobToDataUrl(sitefaviconUrl);
   siteCard.innerHTML = `
   <a href="${site.url}" class="site-link">
-  <img src="${sitefaviconUrl}" alt="${site.title} Favicon" class="site-favicon lazyload">
+  <img src="${dataUrl}" alt="${site.title} Favicon" class="site-favicon lazyload">
     <div class="site-title"><p>${site.title}</p></div>
     
-  </a>      <div class="site-card-background-image-container lazyload" style="background-image: url('${sitefaviconUrl}');"></div>
+  </a>      <div class="site-card-background-image-container lazyload" style="background-image: url('${dataUrl}');"></div>
 
 `;
   return siteCard;
 }
 
+async function convertBlobToDataUrl(blobUrl) {
+  const response = await fetch(blobUrl);
+  const blob = await response.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
 async function getSiteFavicon(mainDomain) {
   // Add http:// to the start of the URL if it's not already there
   if (!mainDomain.startsWith("http://") && !mainDomain.startsWith("https://")) {
@@ -559,20 +604,21 @@ function fetchMostVisitedSites(siteCards) {
 
     return;
   }
+  else {
+    console.log("fetchMostVisitedSites: ", mostVisitedSitesCache);
 
   const mostVisitedSitesContainer = document.querySelector(
     ".most-visited-sites-container"
   );
-  mostVisitedSitesContainer.innerHTML = "";
-  const fragment = document.createDocumentFragment();
-  for (const siteCard of mostVisitedSitesCache) {
-    fragment.appendChild(siteCard);
-  }
-  mostVisitedSitesContainer.appendChild(fragment);
+  mostVisitedSitesContainer.innerHTML = mostVisitedSitesCache;
+  // const fragment = document.createDocumentFragment();
+  // fragment.innerHTML = mostVisitedSitesCache;
+  // mostVisitedSitesContainer.appendChild(fragment);
 
   // mostVisitedSitesCache.forEach((siteCard) => {
   //   mostVisitedSitesContainer.appendChild(siteCard.cloneNode(true));
   // });
+}
 }
 
 //cache favicons for improve perf
@@ -632,7 +678,7 @@ async function fetchBingImageOfTheDay() {
     );
     const data = await response.json();
     let imageUrl = "https://www.bing.com" + data.images[0].url;
-    imageUrl = imageUrl.replace(/1920x1080/g, "UHD");
+    // imageUrl = imageUrl.replace(/1920x1080/g, "UHD");
     // console.log(imageUrl);
 
     const title = data.images[0].title;
