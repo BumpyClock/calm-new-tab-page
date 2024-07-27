@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Calm New Tab Page",
 
-  "version": "0.0.8.7",
+  "version": "0.0.9.1",
 
   "description": "A Clean New Tab Page with a focus on privacy, simplicity and customizability.",
   "action": {
