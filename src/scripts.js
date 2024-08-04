@@ -18,7 +18,20 @@ let initialLoad = true;
 
 defaultFeeds = [
   "http://www.theverge.com/rss/index.xml",
-  "https://www.vox.com/rss/index.xml"
+  "https://www.vox.com/rss/index.xml",
+  "https://www.polygon.com/rss/index.xml",
+  "https://www.wired.com/feed/rss",
+  "https://www.engadget.com/rss.xml",
+  "https://www.techradar.com/rss",
+  "https://www.androidcentral.com/feed",
+  "https://www.androidauthority.com/feed",
+  "https://www.rockpapershotgun.com/feed",
+  "https://www.gamespot.com/feeds/mashup/",
+  "https://www.pcgamer.com/feed",
+  "https://www.ign.com/articles.rss",
+  "https://www.gamesradar.com/all-platforms/news/rss/",
+  "https://www.tomshardware.com/feeds/all",
+  "https://www.daringfireball.net/feeds/json",
 ];
 
 // JSON array for holding default feeds url array
