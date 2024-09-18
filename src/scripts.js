@@ -14,6 +14,8 @@ let startY; // Variable to store the start Y position of the touch
 let feedsCache = null;
 let cachedCards = null; // Store the cards in an array to avoid re-creating them for every new tab
 let initialLoad = true;
+let itemsRendered = 0;
+
 
 
 defaultFeeds = [
@@ -196,14 +198,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-
 function loadSubscribedFeeds() {
   const feedContainer = document.getElementById("feed-container");
   feedContainer.innerHTML = "";
+  itemsRendered = 0; // Reset itemsRendered
   !shouldRefreshFeeds() && feedsCache
-    ? (renderFeed(cachedCards), setLastRefreshedTimestamp(lastRefreshed))
+    ? (renderFeed(cachedCards, null, null, itemsRendered, 20), setLastRefreshedTimestamp(lastRefreshed))
     : refreshFeeds();
 }
+
 
 async function refreshFeeds() {
   try {
@@ -252,15 +255,21 @@ async function updateDisplayOnNewTab() {
 }
 
 function initializeMasonry() {
- msnry = new Masonry(feedContainer, {
-    itemSelector: ".card",
-    columnWidth: ".card",
-    gutter: 24,
-    transitionDuration: '0.08s', // set the transition duration
-    stagger: 5, // set the stagger delay
-    fitwidth: true,
-    isFitWidth: true,
-});
+  if (!msnry) {
+    msnry = new Masonry(feedContainer, {
+      itemSelector: ".card",
+      columnWidth: ".card",
+      gutter: 36,
+      transitionDuration: '0.08s', // set the transition duration
+      stagger: 5, // set the stagger delay
+      fitwidth: true,
+      isFitWidth: true,
+    });
+  } else {
+    msnry.reloadItems();
+    msnry.layout();
+  }
+  
   document.querySelectorAll(".masonry-item").forEach(item => {
     item.addEventListener("load", () => {
       msnry.layout();
@@ -268,13 +277,15 @@ function initializeMasonry() {
       item.parentElement.classList.remove("loading");
     });
   });
+  
   const debouncedLayout = debounce(() => {
     msnry.layout();
   }, 300);
   window.addEventListener("resize", debouncedLayout);
 }
 
-async function renderFeed(feeditems = null, feedDetails = null, cachedCards = null) {
+
+async function renderFeed(feeditems = null, feedDetails = null, cachedCards = null, startIndex = 0, count = 20) {
   if (cachedCards) {
     console.log("rendering feed from cache");
     feedContainer.innerHTML = cachedCards;
@@ -286,7 +297,9 @@ async function renderFeed(feeditems = null, feedDetails = null, cachedCards = nu
     feedsCache = feeditems;
     let cardCount = 0;
     const fragment = document.createDocumentFragment();
-    for (const item of feeditems) {
+    const endIndex = Math.min(startIndex + count, feeditems.length);
+    for (let i = startIndex; i < endIndex; i++) {
+      const item = feeditems[i];
       const card = await createCard(item, feedDetails);
       if (card instanceof Node) {
         fragment.appendChild(card);
@@ -296,16 +309,21 @@ async function renderFeed(feeditems = null, feedDetails = null, cachedCards = nu
       }
     }
     console.log(`rendered ${cardCount} cards`);
-    if (feedContainer) {
+    if (startIndex === 0) {
       feedContainer.innerHTML = "";
     }
     feedContainer.appendChild(fragment);
+    if (msnry) {
+      msnry.appended(Array.from(fragment.children));
+      msnry.layout();
+    }
     await cacheRenderedCards(feedContainer.innerHTML);
     setLastRefreshedTimestamp(lastRefreshed);
     feedContainer.style.opacity = "1";
     initializeMasonry();
   }
 }
+
 
 function setupParallaxEffect(card) {
   const imageContainer = card.querySelector("#thumbnail-image");
@@ -343,19 +361,22 @@ navigator.serviceWorker.addEventListener("message", async function (event) {
     const { feedDetails, feedItems } = processRSSData(response);
     setFeedDetails(feedDetails);
     setFeedItems(feedItems);
+    itemsRendered = 0; // Reset itemsRendered
     if(feedContainer){
-    try {
-      await renderFeed(feedItems, feedDetails).catch(error => {
-        console.error("Error rendering the feed:", error);
-      });
-    } catch (error) {
-      console.log("feed container not found:", error);
+      try {
+        await renderFeed(feedItems, feedDetails, null, itemsRendered, 20).catch(error => {
+          console.error("Error rendering the feed:", error);
+        });
+        itemsRendered += 20; // Update itemsRendered
+      } catch (error) {
+        console.log("feed container not found:", error);
+      }
+    } else if (settingsPage) {
+      await displaySubscribedFeeds();
     }
-  } else if (settingsPage) {
-    await displaySubscribedFeeds();
-  }
   }
 });
+
 
 navigator.serviceWorker.addEventListener('message', event => {
   if (event.data.action === 'discoveredFeeds') {
@@ -715,20 +736,42 @@ function setSearchPreference(state) {
   );
 }
 
+function setupInfiniteScroll() {
+  let isLoading = false;
+  window.addEventListener('scroll', async () => {
+    if (isLoading) return;
+    const scrollTop = window.scrollY || window.pageYOffset;
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.body.scrollHeight;
+    const scrollPercentage = (scrollTop + windowHeight) / documentHeight;
+    if (scrollPercentage > 0.7) {
+      // Start loading new cards
+      isLoading = true;
+      await loadMoreItems();
+      isLoading = false;
+    }
+  });
+}
+
+async function loadMoreItems() {
+  if (feedsCache && itemsRendered < feedsCache.length) {
+    const count = 20; // Number of items to load per batch
+    await renderFeed(feedsCache, null, null, itemsRendered, count);
+    itemsRendered += count;
+  } else {
+    console.log('No more items to load');
+  }
+}
 
 
 // Setup NTP
 async function setupNTP() {
   setupSearch();
-  lazySizes.cfg.expand = 600;
-  lazySizes.cfg.preloadAfterLoad = true;
-  lazySizes.cfg.loadMode = 2;
-  lazySizes.cfg.expFactor = 3;
-  lazySizes.init();
-  discoverFeeds();
+  // Existing code...
   await initializeMostVisitedSitesCache();
   console.log(`Feed discovery is set to : ${getFeedDiscovery()}`);
 
+  itemsRendered = 0; // Reset itemsRendered on initial load
   cachedCards = await getCachedRenderedCards();
   const feedContainer = document.getElementById("feed-container");
   if (shouldRefreshFeeds() && cachedCards !== null) {
@@ -739,10 +782,12 @@ async function setupNTP() {
     feedContainer.style.opacity = "1"; // apply the fade-in effect
   } else {
     console.log("rendering feed from scratch");
-     loadSubscribedFeeds();
+    loadSubscribedFeeds();
   }
   bgImageScrollHandler();
+  setupInfiniteScroll(); // Add this line
 }
+
 
 async function setupSettingsPage() {
   await displaySubscribedFeeds();
