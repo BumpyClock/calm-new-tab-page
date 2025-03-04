@@ -18,7 +18,20 @@ let initialLoad = true;
 
 defaultFeeds = [
   "http://www.theverge.com/rss/index.xml",
-  "https://www.vox.com/rss/index.xml"
+  "https://www.vox.com/rss/index.xml",
+  "https://www.polygon.com/rss/index.xml",
+  "https://www.wired.com/feed/rss",
+  "https://www.engadget.com/rss.xml",
+  "https://www.techradar.com/rss",
+  "https://www.androidcentral.com/feed",
+  "https://www.androidauthority.com/feed",
+  "https://www.rockpapershotgun.com/feed",
+  "https://www.gamespot.com/feeds/mashup/",
+  "https://www.pcgamer.com/feed",
+  "https://www.ign.com/articles.rss",
+  "https://www.gamesradar.com/all-platforms/news/rss/",
+  "https://www.tomshardware.com/feeds/all",
+  "https://www.daringfireball.net/feeds/json",
 ];
 
 // JSON array for holding default feeds url array
@@ -243,7 +256,7 @@ function initializeMasonry() {
     itemSelector: ".card",
     columnWidth: ".card",
     gutter: 24,
-    transitionDuration: '0.12s', // set the transition duration
+    transitionDuration: '0.08s', // set the transition duration
     stagger: 5, // set the stagger delay
     fitwidth: true,
     isFitWidth: true,
@@ -353,7 +366,7 @@ navigator.serviceWorker.addEventListener('message', event => {
 
 async function getWebsiteTitle(url) {
   try {
-    console.log("getting website title for;" + url);
+    // console.log("getting website title for;" + url);
     const parsedUrl = new URL(url);
     const rootDomain = `${parsedUrl.protocol}//${parsedUrl.host}`;
 
@@ -405,8 +418,8 @@ function processRSSData(rssData) {
     // Process the feed items
     rssData.items.forEach(item => {
       const { id, title, siteTitle, feedUrl, feedTitle, favicon, thumbnail,thumbnailColor, link, author, published, created, category, content, media, enclosures, podcastInfo } = item;
-      const publishedDate = published ? new Date(published).toISOString() : null;
-      const createdDate = created ? new Date(created).toISOString() : null;
+      const publishedDate = published && !isNaN(Date.parse(published)) ? new Date(published).toISOString() : null;
+      const createdDate = created && !isNaN(Date.parse(created)) ? new Date(created).toISOString() : null;
       feedItems.push({ id, title, siteTitle, feedUrl, feedTitle, favicon, thumbnail,thumbnailColor, link, author, published: publishedDate, created: createdDate, category, content, media, enclosures, podcastInfo });
     });
 
@@ -472,7 +485,7 @@ async function initializeMostVisitedSitesCache() {
 }
 
 function setTopSitesCache(sitecards) {
-  console.log(sitecards);
+  // console.log(sitecards);
   localStorage.setItem("mostVisitedSites", JSON.stringify(sitecards));
 }
 function getTopSitesCache() {
@@ -548,7 +561,7 @@ async function getSiteFavicon(mainDomain) {
     const blob = await response.blob();
     return URL.createObjectURL(blob);
   } catch (error) {
-    console.log("Failed to fetch favicon for:", mainDomain);
+    // console.log("Failed to fetch favicon for:", mainDomain);
   }
 }
 
@@ -707,7 +720,7 @@ function setSearchPreference(state) {
 // Setup NTP
 async function setupNTP() {
   setupSearch();
-  lazySizes.cfg.expand = 300;
+  lazySizes.cfg.expand = 600;
   lazySizes.cfg.preloadAfterLoad = true;
   lazySizes.cfg.loadMode = 2;
   lazySizes.cfg.expFactor = 3;

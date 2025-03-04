@@ -24,6 +24,7 @@ function generateBoxShadow(color, elevation, opacity, blur, ) {
 }
 
 function adjustColorForTheme(color, theme) {
+  const percent = 10;
   const hsl = color.toHsl();
   if (hsl.l <= 0.2) { // if the color is already dark
     hsl.l += (1 - hsl.l) * (percent / 100); // Lighten the color

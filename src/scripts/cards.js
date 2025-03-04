@@ -12,7 +12,9 @@ function sanitizeHTML(html) {
 }
 
 function createImageContainer(thumbnailUrl, siteTitle) {
-    const imageProxyURL = "https://digests-imgproxy-a4crwf5b7a-uw.a.run.app/unsafe/rs:fit:0:300:0/g:no/plain/" + thumbnailUrl+"@webp";
+    // const imageProxyURL = "https://digests-imgproxy-a4crwf5b7a-uw.a.run.app/unsafe/rs:fit:0:300:0/g:no/plain/" + thumbnailUrl+"@webp";
+        const imageProxyURL =  thumbnailUrl;
+
     const imageContainer = createElement('div', { className: 'image-container loading' });
     const cardbg = createElement('div', { className: 'card-bg' });
 
@@ -67,7 +69,7 @@ function createCard(item) {
                 textContentDiv.appendChild(snippet);
             }
         } catch (error) {
-            console.log(`Error creating content snippet for : ${item.content} `, error);
+            // console.log(`Error creating content snippet for : ${item.content} `, error);
         }
     }
 
@@ -129,7 +131,7 @@ function applyCardEventHandlers(card, url, color) {
             card.style.boxShadow = boxShadowActive;
         });
     } catch (error) {
-        console.log(error, "error in applyCardEventHandlers", url);
+        // console.log(error, "error in applyCardEventHandlers", url);
     }
 }
 
