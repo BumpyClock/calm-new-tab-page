@@ -5,3 +5,4 @@ package-lock.json
 pnpm-lock.yaml
 *.pem
 src.pem
+build
