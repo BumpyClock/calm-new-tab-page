@@ -7,7 +7,9 @@
     "default_icon": {
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
-    }
+    },
+    "default_title": "Calm New Tab Page",
+    "default_popup": "settings.html"
   },
   "permissions": [
     "topSites",
@@ -37,11 +39,13 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "index.html"
+        "index.html",
+        "settings.html"
       ],
       "matches": [
         "<all_urls>"
       ]
     }
-  ]
+  ],
+  "options_page": "settings.html"
 }

@@ -5,3 +5,4 @@ pnpm-lock.yaml
 *.pem
 src.pem
 build
+**/.claude/settings.local.json
