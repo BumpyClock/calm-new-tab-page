@@ -6,3 +6,7 @@ pnpm-lock.yaml
 src.pem
 build
 **/.claude/settings.local.json
+
+# Ignore binary archives and extension packages
+*.zip
+*.crx
